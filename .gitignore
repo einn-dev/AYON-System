@@ -1,0 +1,13 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Ignore node_modules in any folder
+**/node_modules
+node_modules/
+# Ignore environment files
+.env
+
+# Ignore build/coverage/misc
+/build
+/coverage
+.DS_Store
+*.log
