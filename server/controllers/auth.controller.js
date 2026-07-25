@@ -1,47 +1,64 @@
-const bcrypt = require('bcryptjs');
-const jwt    = require('jsonwebtoken');
-const db     = require('../config/db');
+const bcrypt   = require('bcryptjs');
+const jwt      = require('jsonwebtoken');
+const supabase = require('../config/supabase');
 
-// ─── REGISTER ────────────────────────────────────────────────
+/* ── PUBLIC REGISTER — always creates a RESEARCHER account ──
+   Other roles can only be created by an admin via /api/admin/users */
 const register = async (req, res) => {
-  const { email, password, first_name, last_name,
-          employee_id, department, college, contact_number, role } = req.body;
+  const {
+    email, password, first_name, last_name,
+    employee_id, department, college, contact_number,
+  } = req.body;
 
   if (!email || !password || !first_name || !last_name) {
     return res.status(400).json({ message: 'Please fill in all required fields.' });
   }
 
+  if (password.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+  }
+
   try {
-    const [existing] = await db.query(
-      'SELECT user_id FROM users WHERE email = ?', [email]
-    );
-    if (existing.length > 0) {
+    const { data: existing } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (existing) {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [result] = await db.query(
-      `INSERT INTO users
-         (email, password, first_name, last_name,
-          employee_id, department, college, contact_number)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email, hashedPassword, first_name, last_name,
-       employee_id || null, department || null,
-       college || null, contact_number || null]
-    );
+    const { data: newUser, error: userError } = await supabase
+      .from('users')
+      .insert({
+        email:          email.toLowerCase(),
+        password:       hashedPassword,
+        first_name,
+        last_name,
+        employee_id:    employee_id    || null,
+        department:     department     || null,
+        college:        college        || null,
+        contact_number: contact_number || null,
+      })
+      .select('user_id')
+      .single();
 
-    const newUserId = result.insertId;
-    const assignedRole = role || 'researcher';
+    if (userError) throw userError;
 
-    await db.query(
-      'INSERT INTO user_roles (user_id, role_type) VALUES (?, ?)',
-      [newUserId, assignedRole]
-    );
+    /* SECURITY: public sign-ups are ALWAYS researchers.
+       Any "role" field sent by the client is ignored. */
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({ user_id: newUser.user_id, role_type: 'researcher' });
+
+    if (roleError) throw roleError;
 
     return res.status(201).json({
-      message: 'Account created successfully.',
-      user_id: newUserId,
+      message: 'Researcher account created successfully.',
+      user_id: newUser.user_id,
     });
   } catch (err) {
     console.error('Register error:', err);
@@ -49,7 +66,7 @@ const register = async (req, res) => {
   }
 };
 
-// ─── LOGIN ───────────────────────────────────────────────────
+/* ── LOGIN ── */
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -58,21 +75,18 @@ const login = async (req, res) => {
   }
 
   try {
-    const [users] = await db.query(
-      `SELECT u.user_id, u.email, u.password, u.first_name,
-              u.last_name, u.is_active, r.role_type
-       FROM users u
-       JOIN user_roles r ON u.user_id = r.user_id
-       WHERE u.email = ?
-       LIMIT 1`,
-      [email]
-    );
+    const { data: user, error } = await supabase
+      .from('users')
+      .select(`
+        user_id, email, password, first_name, last_name, is_active,
+        user_roles ( role_type )
+      `)
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
 
-    if (users.length === 0) {
+    if (error || !user) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
-
-    const user = users[0];
 
     if (!user.is_active) {
       return res.status(403).json({ message: 'Your account has been deactivated.' });
@@ -83,13 +97,14 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
+    const role  = user.user_roles?.[0]?.role_type || 'researcher';
     const token = jwt.sign(
       {
         user_id:    user.user_id,
         email:      user.email,
         first_name: user.first_name,
         last_name:  user.last_name,
-        role:       user.role_type,
+        role,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
@@ -103,7 +118,7 @@ const login = async (req, res) => {
         email:      user.email,
         first_name: user.first_name,
         last_name:  user.last_name,
-        role:       user.role_type,
+        role,
       },
     });
   } catch (err) {
@@ -112,28 +127,64 @@ const login = async (req, res) => {
   }
 };
 
-// ─── GET CURRENT USER PROFILE ────────────────────────────────
+/* ── GET PROFILE ── */
 const getProfile = async (req, res) => {
   try {
-    const [rows] = await db.query(
-      `SELECT u.user_id, u.email, u.first_name, u.last_name,
-              u.employee_id, u.department, u.college,
-              u.contact_number, u.created_at, r.role_type
-       FROM users u
-       JOIN user_roles r ON u.user_id = r.user_id
-       WHERE u.user_id = ?`,
-      [req.user.user_id]
-    );
+    const { data: user, error } = await supabase
+      .from('users')
+      .select(`
+        user_id, email, first_name, last_name,
+        employee_id, department, college,
+        contact_number, created_at,
+        user_roles ( role_type )
+      `)
+      .eq('user_id', req.user.user_id)
+      .single();
 
-    if (rows.length === 0) {
+    if (error || !user) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    return res.status(200).json({ user: rows[0] });
+    return res.status(200).json({
+      user: { ...user, role: user.user_roles?.[0]?.role_type },
+    });
   } catch (err) {
     console.error('Profile error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { register, login, getProfile };
+/* ── UPDATE PROFILE ── */
+const updateProfile = async (req, res) => {
+  const {
+    first_name, last_name, department,
+    college, contact_number, password,
+  } = req.body;
+
+  try {
+    const updates = {};
+    if (first_name)     updates.first_name     = first_name;
+    if (last_name)      updates.last_name      = last_name;
+    if (department)     updates.department     = department;
+    if (college)        updates.college        = college;
+    if (contact_number) updates.contact_number = contact_number;
+
+    if (password && password.trim().length >= 8) {
+      updates.password = await bcrypt.hash(password, 10);
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('user_id', req.user.user_id);
+
+    if (error) throw error;
+
+    return res.status(200).json({ message: 'Profile updated successfully.' });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile };
