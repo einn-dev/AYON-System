@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import ReportsPage from './ReportsPage';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard',    icon: '⊞' },
@@ -146,7 +147,7 @@ const UsersPage = ({ users, onRefresh }) => {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      await API.post('/auth/register', form);
+      await API.post('/admin/users', form);
       setAlert({ type: 'success', msg: 'User created successfully!' });
       setShowAdd(false);
       setForm({ first_name:'',last_name:'',email:'',password:'',role:'researcher',employee_id:'',department:'',college:'' });
@@ -439,12 +440,7 @@ const AdminDashboard = () => {
             <p>Coming soon — build after Researcher module</p>
           </div>
         } />
-        <Route path="reports" element={
-          <div className="page-header">
-            <h1>Reports</h1>
-            <p>Coming soon — build after all modules are done</p>
-          </div>
-        } />
+        <Route path="reports" element={<ReportsPage />} />
       </Routes>
     </Layout>
   );
