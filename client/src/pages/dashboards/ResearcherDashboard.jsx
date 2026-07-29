@@ -4,6 +4,7 @@ import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import '../../components/Layout.css';
+import NotificationsPage from './NotificationsPage';
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: '⊞' },
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/researcher/grants',      label: 'Grant & Incentives',icon: '🎓' },
   { path: '/researcher/repository',  label: 'Repository',        icon: '🗄' },
   { path: '/researcher/profile',     label: 'My Profile',        icon: '👤' },
+  { path: '/researcher/notifications', label: 'Notifications', icon: '🔔' },
 ];
 
 const PROPOSAL_TYPES = [
@@ -709,6 +711,7 @@ const ResearcherDashboard = () => {
         <Route path="grants"     element={<Grants proposals={proposals} />} />
         <Route path="repository" element={<Repository />} />
         <Route path="profile"    element={<Profile user={user} />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>
   );
