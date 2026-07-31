@@ -4,6 +4,7 @@ const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
 const db       = require('../config/supabase');
+const supabase = require('../config/supabase');
 
 const {
   getMyProposals, submitProposal, getAllProposals,
@@ -12,64 +13,97 @@ const {
 
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename:    (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-
+/* ── Multer — memory storage (files go to Supabase, not disk) ── */
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.pdf', '.doc', '.docx'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    allowed.includes(ext) ? cb(null, true) : cb(new Error('Only PDF/DOC/DOCX allowed.'));
+    const allowed = ['application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Only PDF/DOC/DOCX files allowed.'));
   },
 });
 
-const SA_ROLES = ['special_assistant', 'admin'];
-const REVIEW_ROLES = ['special_assistant', 'msric_director', 'ovcred', 'admin'];
-const VIEW_ROLES   = ['admin', 'msric_staff', 'special_assistant', 'msric_director',
-                      'ovcred', 'research_coordinator', 'chairperson', 'college_dean'];
+/* ── Supabase Storage upload middleware ── */
+const uploadToSupabase = async (req, res, next) => {
+  if (!req.file) return next();
+  try {
+    const ext      = req.file.originalname.split('.').pop();
+    const fileName = `proposals/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
+    const { error } = await supabase.storage
+      .from(process.env.SUPABASE_BUCKET)
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert:      false,
+      });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from(process.env.SUPABASE_BUCKET)
+      .getPublicUrl(fileName);
+
+    req.filePath = urlData?.publicUrl || fileName;
+    next();
+  } catch (err) {
+    console.error('Supabase upload error:', err);
+    return res.status(500).json({ message: 'File upload failed.' });
+  }
+};
+
+const SA_ROLES    = ['special_assistant', 'admin'];
+const REVIEW_ROLES = ['special_assistant','msric_director','ovcred','admin'];
+const VIEW_ROLES   = ['admin','msric_staff','special_assistant','msric_director',
+                      'ovcred','research_coordinator','chairperson','college_dean'];
+
+/* ── Routes ── */
 router.get('/my',           verifyToken, authorizeRoles('researcher'),  getMyProposals);
-router.post('/',            verifyToken, authorizeRoles('researcher'),  upload.single('file'), submitProposal);
+router.post('/',            verifyToken, authorizeRoles('researcher'),  upload.single('file'), uploadToSupabase, submitProposal);
 router.get('/',             verifyToken, authorizeRoles(...VIEW_ROLES), getAllProposals);
 router.get('/:id',          verifyToken, getProposalById);
 router.patch('/:id/status', verifyToken, authorizeRoles(...REVIEW_ROLES), updateProposalStatus);
 
+/* ── Save document checklist (Special Assistant) ── */
 router.post('/:id/checklist', verifyToken, authorizeRoles(...SA_ROLES),
   async (req, res) => {
     const { id } = req.params;
     const { requirements, remarks } = req.body;
     try {
-      const [sub] = await db.query(
-        'SELECT submission_id FROM submissions WHERE proposal_id = ?', [id]
-      );
-      if (sub.length === 0) return res.status(404).json({ message: 'Submission not found.' });
-      const sid = sub[0].submission_id;
+      const { data: sub } = await supabase
+        .from('submissions')
+        .select('submission_id')
+        .eq('proposal_id', id)
+        .single();
 
-      await db.query('DELETE FROM check_doc_req WHERE submission_id = ?', [sid]);
+      if (!sub) return res.status(404).json({ message: 'Submission not found.' });
 
-      for (const [name, status] of Object.entries(requirements || {})) {
-        await db.query(
-          `INSERT INTO check_doc_req
-             (submission_id, requirement_name, requirement_status, notes, checked_by, checked_at)
-           VALUES (?, ?, ?, ?, ?, NOW())`,
-          [sid, name, status, remarks || null, req.user.user_id]
-        );
+      await supabase
+        .from('check_doc_req')
+        .delete()
+        .eq('submission_id', sub.submission_id);
+
+      const rows = Object.entries(requirements || {}).map(([name, status]) => ({
+        submission_id:      sub.submission_id,
+        requirement_name:   name,
+        requirement_status: status,
+        notes:              remarks || null,
+        checked_by:         req.user.user_id,
+        checked_at:         new Date().toISOString(),
+      }));
+
+      if (rows.length > 0) {
+        const { error } = await supabase.from('check_doc_req').insert(rows);
+        if (error) throw error;
       }
 
-      await db.query(
-        'UPDATE submissions SET submission_status = ? WHERE submission_id = ?',
-        ['complete', sid]
-      );
+      await supabase
+        .from('submissions')
+        .update({ submission_status: 'complete' })
+        .eq('submission_id', sub.submission_id);
 
       return res.status(200).json({ message: 'Checklist saved.' });
     } catch (err) {
@@ -79,43 +113,46 @@ router.post('/:id/checklist', verifyToken, authorizeRoles(...SA_ROLES),
   }
 );
 
-module.exports = router;
-
-/* ── Save Director review/decision ── */
-router.post('/:id/review', verifyToken, authorizeRoles('msric_director', 'admin'),
+/* ── Save Director review ── */
+router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred','admin'),
   async (req, res) => {
     const { id } = req.params;
     const { decision, remarks } = req.body;
     try {
-      const [proposal] = await db.query(
-        'SELECT user_id, title FROM research_proposals WHERE proposal_id = ?', [id]
-      );
-      if (proposal.length === 0) return res.status(404).json({ message: 'Proposal not found.' });
+      const { data: proposal } = await supabase
+        .from('research_proposals')
+        .select('user_id, title')
+        .eq('proposal_id', id)
+        .single();
 
-      await db.query(
-        `INSERT INTO review_documents
-           (proposal_id, reviewer_id, remarks, decision, review_date)
-         VALUES (?, ?, ?, ?, NOW())`,
-        [id, req.user.user_id, remarks || null, decision]
-      );
+      if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
 
-      await db.query(
-        `INSERT INTO notifications
-           (user_id, proposal_id, notif_type, title, message)
-         VALUES (?, ?, 'review', 'Proposal Decision Made', ?)`,
-        [proposal[0].user_id, id,
-         `Your proposal "${proposal[0].title}" has been ${decision} by the MSRIC Director.`]
-      );
+      const { error } = await supabase.from('review_documents').insert({
+        proposal_id: parseInt(id),
+        reviewer_id: req.user.user_id,
+        remarks:     remarks || null,
+        decision,
+      });
+
+      if (error) throw error;
+
+      await supabase.from('notifications').insert({
+        user_id:     proposal.user_id,
+        proposal_id: parseInt(id),
+        notif_type:  'review',
+        title:       'Proposal Decision Made',
+        message:     `Your proposal "${proposal.title}" has been ${decision} by the MSRIC Director.`,
+      });
 
       return res.status(201).json({ message: 'Review saved.' });
     } catch (err) {
-      console.error('Review save error:', err);
+      console.error('Review error:', err);
       return res.status(500).json({ message: 'Server error.' });
     }
   }
 );
 
-/* ── POST endorse proposal (Coordinator / Chairperson / Dean) ── */
+/* ── Endorse proposal (Coordinator / Chairperson / Dean) ── */
 router.post('/:id/endorse', verifyToken,
   authorizeRoles('research_coordinator','chairperson','college_dean','admin'),
   async (req, res) => {
@@ -130,28 +167,33 @@ router.post('/:id/endorse', verifyToken,
     }
 
     try {
-      const [proposal] = await db.query(
-        'SELECT user_id, title FROM research_proposals WHERE proposal_id = ?', [id]
-      );
-      if (proposal.length === 0) return res.status(404).json({ message: 'Proposal not found.' });
+      const { data: proposal } = await supabase
+        .from('research_proposals')
+        .select('user_id, title')
+        .eq('proposal_id', id)
+        .single();
 
-      await db.query(
-        `INSERT INTO endorsements
-           (proposal_id, endorser_id, endorser_role, endorse_status, remarks,
-            date_endorsed, date_rejected)
-         VALUES (?, ?, ?, ?, ?,
-           ${endorse_status === 'endorsed' ? 'NOW()' : 'NULL'},
-           ${endorse_status === 'rejected' ? 'NOW()' : 'NULL'})`,
-        [id, req.user.user_id, endorser_role, endorse_status, remarks || null]
-      );
+      if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
 
-      await db.query(
-        `INSERT INTO notifications
-           (user_id, proposal_id, notif_type, title, message)
-         VALUES (?, ?, 'endorsement', 'Proposal Endorsement Update', ?)`,
-        [proposal[0].user_id, id,
-         `Your proposal "${proposal[0].title}" has been ${endorse_status} by the ${endorser_role.replace(/_/g, ' ')}.`]
-      );
+      const { error } = await supabase.from('endorsements').insert({
+        proposal_id:    parseInt(id),
+        endorser_id:    req.user.user_id,
+        endorser_role,
+        endorse_status,
+        remarks:        remarks || null,
+        date_endorsed:  endorse_status === 'endorsed' ? new Date().toISOString() : null,
+        date_rejected:  endorse_status === 'rejected' ? new Date().toISOString() : null,
+      });
+
+      if (error) throw error;
+
+      await supabase.from('notifications').insert({
+        user_id:     proposal.user_id,
+        proposal_id: parseInt(id),
+        notif_type:  'endorsement',
+        title:       'Proposal Endorsement Update',
+        message:     `Your proposal "${proposal.title}" has been ${endorse_status} by the ${endorser_role.replace(/_/g, ' ')}.`,
+      });
 
       return res.status(201).json({ message: `Proposal ${endorse_status} successfully.` });
     } catch (err) {
@@ -160,3 +202,5 @@ router.post('/:id/endorse', verifyToken,
     }
   }
 );
+
+module.exports = router;

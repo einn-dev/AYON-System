@@ -1,32 +1,39 @@
 const express = require('express');
 const router  = express.Router();
 const db       = require('../config/supabase');
+const express  = require('express');
+const router   = express.Router();
+const supabase = require('../config/supabase');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 /* ── GET my notifications ── */
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [rows] = await db.query(
-      `SELECT * FROM notifications
-       WHERE user_id = ?
-       ORDER BY date_sent DESC
-       LIMIT 50`,
-      [req.user.user_id]
-    );
-    return res.status(200).json({ notifications: rows });
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', req.user.user_id)
+      .order('date_sent', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    return res.status(200).json({ notifications: data });
   } catch (err) {
-    console.error('Notifications fetch error:', err);
+    console.error('Notifications error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 });
 
-/* ── PATCH mark notification as read ── */
+/* ── PATCH mark as read ── */
 router.patch('/:id/read', verifyToken, async (req, res) => {
   try {
-    await db.query(
-      'UPDATE notifications SET is_read = 1 WHERE notif_id = ? AND user_id = ?',
-      [req.params.id, req.user.user_id]
-    );
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('notif_id', req.params.id)
+      .eq('user_id',  req.user.user_id);
+
+    if (error) throw error;
     return res.status(200).json({ message: 'Marked as read.' });
   } catch (err) {
     console.error('Mark read error:', err);
@@ -37,11 +44,14 @@ router.patch('/:id/read', verifyToken, async (req, res) => {
 /* ── GET unread count ── */
 router.get('/unread-count', verifyToken, async (req, res) => {
   try {
-    const [rows] = await db.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0',
-      [req.user.user_id]
-    );
-    return res.status(200).json({ count: rows[0].count });
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', req.user.user_id)
+      .eq('is_read',  false);
+
+    if (error) throw error;
+    return res.status(200).json({ count });
   } catch (err) {
     return res.status(500).json({ message: 'Server error.' });
   }
