@@ -1,3 +1,6 @@
+const db   = require('../config/supabase');
+const path = require('path');
+const fs   = require('fs');
 const supabase = require('../config/supabase');
 
 /* ── GET my proposals ── */
