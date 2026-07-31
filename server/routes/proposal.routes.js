@@ -3,7 +3,7 @@ const router   = express.Router();
 const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
-const db       = require('../config/db');
+const db       = require('../config/supabase');
 
 const {
   getMyProposals, submitProposal, getAllProposals,

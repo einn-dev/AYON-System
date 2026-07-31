@@ -1,6 +1,6 @@
 const express = require('express');
 const router  = express.Router();
-const db      = require('../config/db');
+const db       = require('../config/supabase');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 /* ── GET repository items (public or all) ── */

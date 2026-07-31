@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/authService';
+import PasswordInput from '../components/PasswordInput';
 import './AuthPages.css';
 
 const ROLE_REDIRECTS = {
@@ -70,15 +71,13 @@ const LoginPage = () => {
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="••••••••"
               autoComplete="current-password"
             />
-          </div>
+          </div>  
 
           {error && <p className="auth-error">{error}</p>}
 
