@@ -147,7 +147,7 @@ const UsersPage = ({ users, onRefresh }) => {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      await API.post('/auth/register', form);
+      await API.post('/admin/users', form);
       setAlert({ type: 'success', msg: 'User created successfully!' });
       setShowAdd(false);
       setForm({ first_name:'',last_name:'',email:'',password:'',role:'researcher',employee_id:'',department:'',college:'' });

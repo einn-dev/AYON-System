@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../services/authService';
-import PasswordInput from '../components/PasswordInput';
 import './AuthPages.css';
 
 const COLLEGES = [
@@ -179,23 +178,14 @@ const RegisterPage = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Password *</label>
-              <PasswordInput
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-              />
+              <input type="password" name="password" value={form.password}
+                onChange={handleChange} placeholder="Min. 8 characters" />
             </div>
             <div className="form-group">
               <label>Confirm Password *</label>
-              <PasswordInput
-                name="confirm_password"
+              <input type="password" name="confirm_password"
                 value={form.confirm_password}
-                onChange={handleChange}
-                placeholder="Repeat password"
-                autoComplete="new-password"
-              />
+                onChange={handleChange} placeholder="Repeat password" />
             </div>
           </div>
 
