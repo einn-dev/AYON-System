@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import AllProposalsPage from './AllProposalsPage';
 import ReportsPage from './ReportsPage';
 
 const NAV_ITEMS = [
@@ -434,13 +435,8 @@ const AdminDashboard = () => {
         <Route path="dashboard" element={<Overview users={users} />} />
         <Route path="users"     element={<UsersPage users={users} onRefresh={fetchUsers} />} />
         <Route path="roles"     element={<RolesPage users={users} onRefresh={fetchUsers} />} />
-        <Route path="proposals" element={
-          <div className="page-header">
-            <h1>All Proposals</h1>
-            <p>Coming soon — build after Researcher module</p>
-          </div>
-        } />
-        <Route path="reports"    element={<ReportsPage />} />
+        <Route path="proposals" element={<AllProposalsPage />} />
+        <Route path="reports"   element={<ReportsPage />} />
       </Routes>
     </Layout>
   );

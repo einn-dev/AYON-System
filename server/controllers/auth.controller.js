@@ -2,8 +2,7 @@ const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
-/* ── PUBLIC REGISTER — always creates a RESEARCHER account ──
-   Other roles can only be created by an admin via /api/admin/users */
+/* ── PUBLIC REGISTER — always creates a RESEARCHER account ── */
 const register = async (req, res) => {
   const {
     email, password, first_name, last_name,
@@ -13,7 +12,6 @@ const register = async (req, res) => {
   if (!email || !password || !first_name || !last_name) {
     return res.status(400).json({ message: 'Please fill in all required fields.' });
   }
-
   if (password.length < 8) {
     return res.status(400).json({ message: 'Password must be at least 8 characters.' });
   }
@@ -48,8 +46,6 @@ const register = async (req, res) => {
 
     if (userError) throw userError;
 
-    /* SECURITY: public sign-ups are ALWAYS researchers.
-       Any "role" field sent by the client is ignored. */
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({ user_id: newUser.user_id, role_type: 'researcher' });
@@ -66,7 +62,9 @@ const register = async (req, res) => {
   }
 };
 
-/* ── LOGIN ── */
+/* ── LOGIN ──
+   NOTE: user_roles has TWO foreign keys to users (user_id, assigned_by),
+   so we MUST disambiguate the join with !user_roles_user_id_fkey  */
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -79,12 +77,17 @@ const login = async (req, res) => {
       .from('users')
       .select(`
         user_id, email, password, first_name, last_name, is_active,
-        user_roles ( role_type )
+        user_roles!user_roles_user_id_fkey ( role_type )
       `)
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
-    if (error || !user) {
+    if (error) {
+      console.error('Login query error:', error);   // real error is now visible
+      return res.status(500).json({ message: 'Server error. Please try again.' });
+    }
+
+    if (!user) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
@@ -136,7 +139,7 @@ const getProfile = async (req, res) => {
         user_id, email, first_name, last_name,
         employee_id, department, college,
         contact_number, created_at,
-        user_roles ( role_type )
+        user_roles!user_roles_user_id_fkey ( role_type )
       `)
       .eq('user_id', req.user.user_id)
       .single();

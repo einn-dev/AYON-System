@@ -1,7 +1,8 @@
 const bcrypt   = require('bcryptjs');
 const supabase = require('../config/supabase');
 
-/* ── GET all users with roles ── */
+/* ── GET all users with roles ──
+   Join disambiguated: user_roles has 2 FKs to users  */
 const getAllUsers = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -10,7 +11,7 @@ const getAllUsers = async (req, res) => {
         user_id, email, first_name, last_name,
         employee_id, department, college,
         contact_number, is_active, created_at,
-        user_roles ( role_id, role_type )
+        user_roles!user_roles_user_id_fkey ( role_id, role_type )
       `)
       .order('created_at', { ascending: false });
 
