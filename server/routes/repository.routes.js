@@ -1,6 +1,3 @@
-const express = require('express');
-const router  = express.Router();
-const db       = require('../config/supabase');
 const express  = require('express');
 const router   = express.Router();
 const supabase = require('../config/supabase');
