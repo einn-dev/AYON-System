@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import ReportsPage from './ReportsPage';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard',    icon: '⊞' },
@@ -439,12 +440,7 @@ const AdminDashboard = () => {
             <p>Coming soon — build after Researcher module</p>
           </div>
         } />
-        <Route path="reports" element={
-          <div className="page-header">
-            <h1>Reports</h1>
-            <p>Coming soon — build after all modules are done</p>
-          </div>
-        } />
+        <Route path="reports"    element={<ReportsPage />} />
       </Routes>
     </Layout>
   );
