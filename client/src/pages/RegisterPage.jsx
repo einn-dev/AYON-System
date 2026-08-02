@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../services/authService';
 import './AuthPages.css';
+import PasswordInput from '../components/PasswordInput';
 
 const COLLEGES = [
   'College of Information and Computing Sciences (CICS)',
@@ -178,14 +179,23 @@ const RegisterPage = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Password *</label>
-              <input type="password" name="password" value={form.password}
-                onChange={handleChange} placeholder="Min. 8 characters" />
+              <PasswordInput
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+              />
             </div>
             <div className="form-group">
               <label>Confirm Password *</label>
-              <input type="password" name="confirm_password"
+              <PasswordInput
+                name="confirm_password"
                 value={form.confirm_password}
-                onChange={handleChange} placeholder="Repeat password" />
+                onChange={handleChange}
+                placeholder="Repeat password"
+                autoComplete="new-password"
+              />
             </div>
           </div>
 
