@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import '../../components/Layout.css';
 import GrantsPage from './GrantsPage';
 import ExternalResearchPage from './ExternalResearchPage';
+import NotificationsPage from './NotificationsPage';
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: '⊞' },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { path: '/researcher/repository',  label: 'Repository',        icon: '🗄' },
   { path: '/researcher/profile',     label: 'My Profile',        icon: '👤' },
   { path: '/researcher/external',    label: 'External Research', icon: '🌐' },
+  { path: '/researcher/notifications', label: 'Notifications',   icon: '🔔' },
   
 ];
 
@@ -714,6 +716,7 @@ const ResearcherDashboard = () => {
         <Route path="external"   element={<ExternalResearchPage />} />
         <Route path="repository" element={<Repository />} />
         <Route path="profile"    element={<Profile user={user} />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>
   );
