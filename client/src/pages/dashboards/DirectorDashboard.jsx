@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import GrantReviewPage from './GrantReviewPage';
 
 const NAV_ITEMS = [
   { path: '/director/dashboard',    label: 'Dashboard',         icon: '⊞' },
@@ -10,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/director/approved',     label: 'Approved',          icon: '✅' },
   { path: '/director/rejected',     label: 'Rejected',          icon: '✗'  },
   { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: '📤' },
+  { path: '/director/grants',       label: 'Grant Applications',icon: '🎓' },
   { path: '/director/notifications',label: 'Notifications',     icon: '🔔' },
 ];
 
@@ -498,6 +500,8 @@ const DirectorDashboard = () => {
           element={<ProposalTable proposals={proposals} statusFilter="rejected" onRefresh={fetchProposals} />} />
         <Route path="endorsed"
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
+        <Route path="grants" 
+          element={<GrantReviewPage />} />
         <Route path="notifications"
           element={<Notifications />} />
       </Routes>

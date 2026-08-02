@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import GrantReviewPage from './GrantReviewPage';
 
 const NAV_ITEMS = [
   { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: '⊞' },
@@ -10,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/ovcred/approved',        label: 'Final Approved',      icon: '✅' },
   { path: '/ovcred/rejected',        label: 'Rejected',            icon: '✗'  },
   { path: '/ovcred/repository',      label: 'Store to Repository', icon: '🗄' },
+  { path: '/ovcred/grants',          label: 'Grant Applications',  icon: '🎓' },
   { path: '/ovcred/notifications',   label: 'Notifications',       icon: '🔔' },
 ];
 
@@ -803,6 +805,8 @@ const OvcredDashboard = () => {
           element={<FilteredList proposals={proposals} statusFilter="rejected" />} />
         <Route path="repository"
           element={<StoreToRepository proposals={proposals} />} />
+        <Route path="grants" 
+          element={<GrantReviewPage />} />
         <Route path="notifications"
           element={<Notifications />} />
       </Routes>
