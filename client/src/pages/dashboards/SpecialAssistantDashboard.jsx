@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
-import { useAuth } from '../../context/AuthContext';
 import '../../components/Layout.css';
 
 const NAV_ITEMS = [

@@ -452,59 +452,6 @@ const SubmitProposal = ({ onRefresh }) => {
   );
 };
 
-/* ─────────── Grant & Incentives ─────────── */
-const Grants = ({ proposals }) => {
-  const eligible = proposals.filter(p => p.status === 'approved');
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Grant &amp; Incentives</h1>
-        <p>Apply for grants and incentives for your approved research.</p>
-      </div>
-
-      {eligible.length === 0 ? (
-        <div className="panel">
-          <div className="panel-body">
-            <div className="empty-state">
-              <p style={{ fontSize: '1rem' }}>No approved proposals yet.</p>
-              <p>You can apply for grants once your proposal has been approved by MSIRC.</p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="panel">
-          <div className="panel-header"><h2>Approved Proposals — Eligible for Grants</h2></div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Approved On</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eligible.map(p => (
-                <tr key={p.proposal_id}>
-                  <td><strong>{p.title}</strong></td>
-                  <td>
-                    {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label}
-                  </td>
-                  <td>{p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}</td>
-                  <td>
-                    <button className="btn btn-primary btn-sm">Apply for Grant</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
-  );
-};
-
 /* ─────────── Repository ─────────── */
 const Repository = () => {
   const [items,   setItems]   = useState([]);
