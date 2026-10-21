@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { registerUser } from '../services/authService';
-import './AuthPages.css';
 import PasswordInput from '../components/PasswordInput';
+import ResendVerification from './components/ResendVerification';
+import logo from '../assets/ayon-logo.png';
+import './AuthPages.css';
 
 const COLLEGES = [
   'College of Information and Computing Sciences (CICS)',
@@ -21,25 +23,23 @@ const COLLEGES = [
 ];
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '',
     password: '', confirm_password: '',
     employee_id: '', department: '', college: '', contact_number: '',
   });
   const [error,   setError]   = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed,  setAgreed]  = useState(false);
+  const [done,    setDone]    = useState(null);   // { email, emailSent } after sign-up
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
 
-  /* ── Password strength ── */
   const getStrength = (pw) => {
-    if (!pw) return { level: 0, label: '', color: '#e8edf2' };
+    if (!pw) return { level: 0, label: '', color: '#e0d3d5' };
     let score = 0;
     if (pw.length >= 8)          score++;
     if (/[A-Z]/.test(pw))        score++;
@@ -48,7 +48,7 @@ const RegisterPage = () => {
     const levels = [
       { level: 1, label: 'Weak',   color: '#e53e3e' },
       { level: 2, label: 'Fair',   color: '#dd6b20' },
-      { level: 3, label: 'Good',   color: '#d69e2e' },
+      { level: 3, label: 'Good',   color: '#b09519' },
       { level: 4, label: 'Strong', color: '#38a169' },
     ];
     return levels[score - 1] || levels[0];
@@ -56,13 +56,12 @@ const RegisterPage = () => {
 
   const strength = getStrength(form.password);
 
-  /* ── Validation ── */
   const validate = () => {
     if (!form.first_name.trim() || !form.last_name.trim())
       return 'First name and last name are required.';
     if (!form.email.trim())
       return 'Email address is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       return 'Please enter a valid email address.';
     if (!form.college)
       return 'Please select your college.';
@@ -81,16 +80,13 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); setSuccess('');
-
+    setError('');
     const validationError = validate();
     if (validationError) return setError(validationError);
 
     setLoading(true);
     try {
-      // Note: role is NOT sent — the server always registers public
-      // sign-ups as 'researcher' for security.
-      await registerUser({
+      const res = await registerUser({
         first_name:     form.first_name.trim(),
         last_name:      form.last_name.trim(),
         email:          form.email.trim().toLowerCase(),
@@ -100,26 +96,87 @@ const RegisterPage = () => {
         college:        form.college               || null,
         contact_number: form.contact_number.trim() || null,
       });
-      setSuccess('Account created successfully! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      setDone({
+        email:     res.data.email || form.email.trim().toLowerCase(),
+        emailSent: res.data.emailSent !== false,
+      });
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(
+        err.response?.data?.message ||
+        (err.response
+          ? 'Registration failed. Please try again.'
+          : 'Cannot reach the server. It may be waking up. Please wait a minute and try again.')
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  /* ── After sign-up: "Check your email" screen ── */
+  if (done) {
+    return (
+      <div className="auth-wrapper">
+        <div className="auth-card" style={{ maxWidth: 480, textAlign: 'center' }}>
+          <div className="auth-logo">
+            <img src={logo} alt="AYON logo" />
+            <h1>AYON</h1>
+            <p>MSIRC – MSU Main Campus</p>
+          </div>
+
+          <div style={{ fontSize: '2.6rem', marginBottom: 6 }}>📧</div>
+          <h2>Check your email</h2>
+
+          {done.emailSent ? (
+            <p style={{ color: '#6b5e61', fontSize: '0.9rem', lineHeight: 1.7 }}>
+              We sent a verification link to<br />
+              <strong style={{ color: '#5e1420' }}>{done.email}</strong><br />
+              Click the link in that email to activate your account.
+              It is valid for 24 hours.
+            </p>
+          ) : (
+            <p className="auth-error" style={{ textAlign: 'left' }}>
+              Your account was created, but we could not send the verification
+              email right now. Please press the button below to try again.
+            </p>
+          )}
+
+          <p style={{ color: '#a08a8e', fontSize: '0.8rem', marginTop: 12 }}>
+            Can&apos;t find it? Check your spam or junk folder.
+          </p>
+
+          <ResendVerification email={done.email} />
+
+          <button
+            type="button"
+            onClick={() => setDone(null)}
+            style={{
+              marginTop: 16, background: 'none', border: 'none',
+              color: '#8d1b2d', fontSize: '0.85rem', fontWeight: 600,
+              cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Typed the wrong email? Go back and fix it
+          </button>
+
+          <p className="auth-footer"><Link to="/login">Back to sign in</Link></p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Registration form ── */
   return (
     <div className="auth-wrapper">
       <div className="auth-card" style={{ maxWidth: 540 }}>
         <div className="auth-logo">
+          <img src={logo} alt="AYON logo" />
           <h1>AYON</h1>
           <p>MSIRC – MSU Main Campus</p>
         </div>
 
         <h2>Researcher Registration</h2>
         <p style={{
-          textAlign: 'center', fontSize: '0.82rem', color: '#718096',
+          textAlign: 'center', fontSize: '0.82rem', color: '#8a7a7d',
           marginTop: -16, marginBottom: 24,
         }}>
           Create your researcher account to submit proposals,<br />
@@ -127,7 +184,6 @@ const RegisterPage = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {/* ── Personal Info ── */}
           <div className="form-row">
             <div className="form-group">
               <label>First Name *</label>
@@ -145,6 +201,9 @@ const RegisterPage = () => {
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
               onChange={handleChange} placeholder="you@msumain.edu.ph" />
+            <span style={{ fontSize: '0.74rem', color: '#a08a8e' }}>
+              Use an email you can open. We will send a verification link to it.
+            </span>
           </div>
 
           <div className="form-row">
@@ -160,7 +219,6 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          {/* ── Affiliation ── */}
           <div className="form-group">
             <label>College *</label>
             <select name="college" value={form.college} onChange={handleChange}>
@@ -175,38 +233,28 @@ const RegisterPage = () => {
               onChange={handleChange} placeholder="e.g. Information Technology Department" />
           </div>
 
-          {/* ── Password ── */}
           <div className="form-row">
             <div className="form-group">
               <label>Password *</label>
-              <PasswordInput
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-              />
+              <PasswordInput name="password" value={form.password}
+                onChange={handleChange} placeholder="Min. 8 characters"
+                autoComplete="new-password" />
             </div>
             <div className="form-group">
               <label>Confirm Password *</label>
-              <PasswordInput
-                name="confirm_password"
-                value={form.confirm_password}
-                onChange={handleChange}
-                placeholder="Repeat password"
-                autoComplete="new-password"
-              />
+              <PasswordInput name="confirm_password" value={form.confirm_password}
+                onChange={handleChange} placeholder="Repeat password"
+                autoComplete="new-password" />
             </div>
           </div>
 
-          {/* Password strength meter */}
           {form.password && (
             <div style={{ marginTop: -8 }}>
               <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} style={{
                     flex: 1, height: 4, borderRadius: 2,
-                    background: i <= strength.level ? strength.color : '#e8edf2',
+                    background: i <= strength.level ? strength.color : '#e0d3d5',
                     transition: 'background 0.2s',
                   }} />
                 ))}
@@ -218,27 +266,25 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {/* ── Terms ── */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10,
             cursor: 'pointer', padding: '4px 0',
           }} onClick={() => setAgreed(!agreed)}>
             <div style={{
               width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
-              border: `2px solid ${agreed ? '#1a3a5c' : '#d1d9e0'}`,
-              background: agreed ? '#1a3a5c' : '#fff',
+              border: `2px solid ${agreed ? '#8d1b2d' : '#e0d3d5'}`,
+              background: agreed ? '#8d1b2d' : '#fff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', fontSize: '0.7rem', fontWeight: 700,
               transition: 'all 0.15s',
             }}>{agreed ? '✓' : ''}</div>
-            <span style={{ fontSize: '0.8rem', color: '#4a5568', lineHeight: 1.5 }}>
+            <span style={{ fontSize: '0.8rem', color: '#6b5e61', lineHeight: 1.5 }}>
               I confirm that the information provided is accurate and I agree to the
               AYON research data policies of MSIRC – MSU Main Campus.
             </span>
           </div>
 
-          {error   && <p className="auth-error">{error}</p>}
-          {success && <p className="auth-success">{success}</p>}
+          {error && <p className="auth-error">{error}</p>}
 
           <button type="submit" className="auth-btn" disabled={loading}>
             {loading ? 'Creating your account...' : 'Create Researcher Account'}
@@ -250,7 +296,7 @@ const RegisterPage = () => {
         </p>
         <p style={{
           textAlign: 'center', fontSize: '0.72rem',
-          color: '#a0aec0', marginTop: 10,
+          color: '#b3a6a9', marginTop: 10,
         }}>
           Staff, Director, and other roles are created by the system administrator.
         </p>

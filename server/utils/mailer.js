@@ -1,6 +1,12 @@
 const nodemailer = require('nodemailer');
 const supabase   = require('../config/supabase');
 
+/* ── How emails are sent ──
+   1) If BREVO_API_KEY is set  -> Brevo's HTTPS API. This works on Render's
+      free plan, which blocks the SMTP ports (25 / 465 / 587).
+   2) Otherwise                -> Gmail SMTP via Nodemailer. Fine for local
+      development on your own computer.                                    */
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -9,26 +15,72 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const sendViaBrevo = async ({ to, subject, html }) => {
+  if (typeof fetch !== 'function') {
+    throw new Error('Node 18 or newer is required for Brevo email sending.');
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept:         'application/json',
+        'content-type': 'application/json',
+        'api-key':      process.env.BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: {
+          name:  process.env.BREVO_SENDER_NAME || 'AYON - MSIRC',
+          email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER,
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      throw new Error(`Brevo ${res.status}: ${detail}`);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 /**
  * Send an email and log it in email_logs.
- * Never throws — email failure should not break the main flow.
+ * Never throws — an email failure must not break the main flow.
+ * Returns true if sent, false if not.
+ * sensitive = true keeps the email body (e.g. a private link) out of the log.
  */
-const sendEmail = async ({ to, subject, html, notif_id = null }) => {
+const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false }) => {
+  const logBody = sensitive ? '[hidden: contains a private link]' : html;
+
   try {
-    await transporter.sendMail({
-      from: `"AYON - MSIRC" <${process.env.EMAIL_USER}>`,
-      to, subject, html,
-    });
+    if (process.env.BREVO_API_KEY) {
+      await sendViaBrevo({ to, subject, html });
+    } else {
+      await transporter.sendMail({
+        from: `"AYON - MSIRC" <${process.env.EMAIL_USER}>`,
+        to, subject, html,
+      });
+    }
+
     await supabase.from('email_logs').insert({
       notif_id, recipient_email: to, subject,
-      body: html, status: 'sent', sent_at: new Date().toISOString(),
+      body: logBody, status: 'sent', sent_at: new Date().toISOString(),
     });
     return true;
   } catch (err) {
     console.error('Email send failed:', err.message);
     await supabase.from('email_logs').insert({
       notif_id, recipient_email: to, subject,
-      body: html, status: 'failed',
+      body: logBody, status: 'failed',
     });
     return false;
   }

@@ -7,6 +7,7 @@ import LandingPage      from './pages/LandingPage';
 import LoginPage        from './pages/LoginPage';
 import RegisterPage     from './pages/RegisterPage';
 import Unauthorized     from './pages/Unauthorized';
+import VerifyEmailPage  from '../pages/VerifyEmailPage';
 
 import ResearcherDashboard      from './pages/dashboards/ResearcherDashboard';
 import MsricStaffDashboard      from './pages/dashboards/MsricStaffDashboard';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/login"      element={<LoginPage />} />
           <Route path="/register"   element={<RegisterPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Researcher */}
           <Route path="/researcher/*" element={
