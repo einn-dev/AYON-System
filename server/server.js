@@ -16,21 +16,33 @@ const reportRoutes       = require('./routes/report.routes');
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
-  .split(',')
-  .map(o => o.trim());
+// Gather all allowed origins (defaults + .env values)
+const envOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  : [];
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://10.12.76.138:3000',
+  ...envOrigins
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+    // Allow non-browser requests (Postman, curl) or matched origins
+    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://10.') || origin.startsWith('http://192.168.')) {
+      return callback(null, true);
     } else {
       console.warn('Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, false);
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(express.json());
 
 app.use('/api/auth',          authRoutes);
