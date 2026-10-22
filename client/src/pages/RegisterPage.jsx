@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../services/authService';
 import PasswordInput from '../components/PasswordInput';
-import ResendVerification from './components/ResendVerification';
+import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 

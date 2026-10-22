@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/authService';
 import PasswordInput from '../components/PasswordInput';
-import ResendVerification from './components/ResendVerification';
+import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 

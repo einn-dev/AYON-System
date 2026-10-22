@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import API from '../services/authService';
-import ResendVerification from './components/ResendVerification';
+import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 

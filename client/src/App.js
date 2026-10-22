@@ -7,7 +7,7 @@ import LandingPage      from './pages/LandingPage';
 import LoginPage        from './pages/LoginPage';
 import RegisterPage     from './pages/RegisterPage';
 import Unauthorized     from './pages/Unauthorized';
-import VerifyEmailPage  from '../pages/VerifyEmailPage';
+import VerifyEmailPage  from './pages/VerifyEmailPage';
 
 import ResearcherDashboard      from './pages/dashboards/ResearcherDashboard';
 import MsricStaffDashboard      from './pages/dashboards/MsricStaffDashboard';
