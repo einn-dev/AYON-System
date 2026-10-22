@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/authService';
@@ -19,13 +19,56 @@ const ROLE_REDIRECTS = {
   admin:                '/admin',
 };
 
+const EMPTY_FORM = { email: '', password: '' };
+
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate  = useNavigate();
-  const [form, setForm]             = useState({ email: '', password: '' });
+  const [form, setForm]             = useState(EMPTY_FORM);
   const [error, setError]           = useState('');
   const [unverified, setUnverified] = useState(false);
   const [loading, setLoading]       = useState(false);
+
+  const formRef  = useRef(null);
+  const typedRef = useRef(false);   // turns true once the person really types
+
+  /* Empties the fields in React AND in the browser itself
+     (the browser's autofill can fill a field without React knowing). */
+  const clearFields = useCallback(() => {
+    setForm(EMPTY_FORM);
+    setError('');
+    setUnverified(false);
+    if (formRef.current) {
+      formRef.current.querySelectorAll('input').forEach((el) => { el.value = ''; });
+    }
+  }, []);
+
+  useEffect(() => {
+    // 1) clear as soon as the page opens
+    clearFields();
+
+    // 2) Chrome sometimes autofills a moment AFTER the page loads,
+    //    so clear again a few times, but never once the person started typing
+    const timers = [150, 600, 1500].map((ms) =>
+      setTimeout(() => { if (!typedRef.current) clearFields(); }, ms)
+    );
+
+    // 3) coming back with the browser's Back button can restore the old page
+    const onPageShow = (e) => {
+      if (e.persisted) {
+        typedRef.current = false;
+        clearFields();
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [clearFields]);
+
+  const markTyped = () => { typedRef.current = true; };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -68,7 +111,14 @@ const LoginPage = () => {
 
         <h2>Sign in to your account</h2>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          onKeyDown={markTyped}
+          onPaste={markTyped}
+          className="auth-form"
+          autoComplete="off"
+        >
           <div className="form-group">
             <label>Email Address</label>
             <input
@@ -76,8 +126,8 @@ const LoginPage = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="you@msumain.edu.ph"
-              autoComplete="email"
+              placeholder="you@gmail.com"
+              autoComplete="off"
             />
           </div>
 
@@ -87,7 +137,7 @@ const LoginPage = () => {
               name="password"
               value={form.password}
               onChange={handleChange}
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
           </div>
 

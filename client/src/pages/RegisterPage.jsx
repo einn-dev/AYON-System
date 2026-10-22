@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../services/authService';
 import PasswordInput from '../components/PasswordInput';
@@ -22,16 +22,59 @@ const COLLEGES = [
   'Other',
 ];
 
+const EMPTY_FORM = {
+  first_name: '', last_name: '', email: '',
+  password: '', confirm_password: '',
+  employee_id: '', department: '', college: '', contact_number: '',
+};
+
 const RegisterPage = () => {
-  const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '',
-    password: '', confirm_password: '',
-    employee_id: '', department: '', college: '', contact_number: '',
-  });
+  const [form,    setForm]    = useState(EMPTY_FORM);
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed,  setAgreed]  = useState(false);
   const [done,    setDone]    = useState(null);   // { email, emailSent } after sign-up
+
+  const formRef  = useRef(null);
+  const typedRef = useRef(false);   // turns true once the person really types
+
+  /* Empties every field in React AND in the browser itself
+     (the browser's autofill can fill a field without React knowing). */
+  const clearFields = useCallback(() => {
+    setForm(EMPTY_FORM);
+    setAgreed(false);
+    setError('');
+    if (formRef.current) {
+      formRef.current.querySelectorAll('input, select').forEach((el) => { el.value = ''; });
+    }
+  }, []);
+
+  useEffect(() => {
+    // 1) clear as soon as the page opens
+    clearFields();
+
+    // 2) Chrome sometimes autofills a moment AFTER the page loads,
+    //    so clear again a few times, but never once the person started typing
+    const timers = [150, 600, 1500].map((ms) =>
+      setTimeout(() => { if (!typedRef.current) clearFields(); }, ms)
+    );
+
+    // 3) coming back with the browser's Back button can restore the old page
+    const onPageShow = (e) => {
+      if (e.persisted) {
+        typedRef.current = false;
+        clearFields();
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [clearFields]);
+
+  const markTyped = () => { typedRef.current = true; };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -183,24 +226,31 @@ const RegisterPage = () => {
           apply for grants, and track your research.
         </p>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          onKeyDown={markTyped}
+          onPaste={markTyped}
+          className="auth-form"
+          autoComplete="off"
+        >
           <div className="form-row">
             <div className="form-group">
               <label>First Name *</label>
               <input name="first_name" value={form.first_name}
-                onChange={handleChange} placeholder="Juan" />
+                onChange={handleChange} placeholder="Juan" autoComplete="off" />
             </div>
             <div className="form-group">
               <label>Last Name *</label>
               <input name="last_name" value={form.last_name}
-                onChange={handleChange} placeholder="Dela Cruz" />
+                onChange={handleChange} placeholder="Dela Cruz" autoComplete="off" />
             </div>
           </div>
 
           <div className="form-group">
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="you@msumain.edu.ph" />
+              onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
             <span style={{ fontSize: '0.74rem', color: '#a08a8e' }}>
               Use an email you can open. We will send a verification link to it.
             </span>
@@ -210,18 +260,18 @@ const RegisterPage = () => {
             <div className="form-group">
               <label>Employee / Faculty ID</label>
               <input name="employee_id" value={form.employee_id}
-                onChange={handleChange} placeholder="e.g. EMP-2024-001" />
+                onChange={handleChange} placeholder="e.g. EMP-2024-001" autoComplete="off" />
             </div>
             <div className="form-group">
               <label>Contact Number</label>
               <input name="contact_number" value={form.contact_number}
-                onChange={handleChange} placeholder="09XXXXXXXXX" />
+                onChange={handleChange} placeholder="09XXXXXXXXX" autoComplete="off" />
             </div>
           </div>
 
           <div className="form-group">
             <label>College *</label>
-            <select name="college" value={form.college} onChange={handleChange}>
+            <select name="college" value={form.college} onChange={handleChange} autoComplete="off">
               <option value="">— Select your college —</option>
               {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -230,7 +280,8 @@ const RegisterPage = () => {
           <div className="form-group">
             <label>Department</label>
             <input name="department" value={form.department}
-              onChange={handleChange} placeholder="e.g. Information Technology Department" />
+              onChange={handleChange} placeholder="e.g. Information Technology Department"
+              autoComplete="off" />
           </div>
 
           <div className="form-row">

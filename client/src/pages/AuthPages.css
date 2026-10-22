@@ -2,7 +2,7 @@
 
 body {
   font-family: 'Segoe UI', sans-serif;
-  background: #f0f4f8;
+  background: #faf7f7;
   min-height: 100vh;
 }
 
@@ -11,7 +11,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6f0b0d 25%, #c03434 100%);
+  background: linear-gradient(135deg, #4a0d16 0%, #8d1b2d 100%);
   padding: 20px;
 }
 
@@ -21,99 +21,66 @@ body {
   padding: 40px 36px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 32px rgba(46,13,20,0.25);
 }
 
-.auth-logo {
-  text-align: center;
-  margin-bottom: 24px;
+.auth-logo { text-align: center; margin-bottom: 24px; }
+.auth-logo img {
+  height: 64px;
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto 8px;
 }
-
 .auth-logo h1 {
   font-size: 2.2rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: #8d1b2d;
   letter-spacing: 2px;
 }
-
-.auth-logo p {
-  font-size: 0.8rem;
-  color: #7a8fa6;
-  margin-top: 2px;
-}
+.auth-logo p { font-size: 0.8rem; color: #a08a8e; margin-top: 2px; }
 
 .auth-card h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 24px;
-  text-align: center;
+  font-size: 1.1rem; font-weight: 600;
+  color: #3d3235; margin-bottom: 24px; text-align: center;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
+.form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #4a5568;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  font-size: 0.82rem; font-weight: 600; color: #6b5e61;
+  text-transform: uppercase; letter-spacing: 0.4px;
 }
-
 .form-group input,
 .form-group select {
-  border: 1px solid #d1d9e0;
+  border: 1px solid #e0d3d5;
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.95rem;
-  color: #2d3748;
-  background: #f8fafc;
+  color: #3d3235;
+  background: #faf7f7;
   transition: border-color 0.2s;
   outline: none;
 }
-
 .form-group input:focus,
-.form-group select:focus {
-  border-color: #2e6da4;
-  background: #fff;
-}
+.form-group select:focus { border-color: #8d1b2d; background: #fff; }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .auth-error {
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 8px;
-  padding: 10px 14px;
-  color: #c53030;
-  font-size: 0.85rem;
+  background: #fff5f5; border: 1px solid #fed7d7;
+  border-radius: 8px; padding: 10px 14px;
+  color: #c53030; font-size: 0.85rem;
 }
-
 .auth-success {
-  background: #f0fff4;
-  border: 1px solid #9ae6b4;
-  border-radius: 8px;
-  padding: 10px 14px;
-  color: #276749;
-  font-size: 0.85rem;
+  background: #f0fff4; border: 1px solid #9ae6b4;
+  border-radius: 8px; padding: 10px 14px;
+  color: #276749; font-size: 0.85rem;
 }
 
 .auth-btn {
-  background: #1a3a5c;
+  background: #8d1b2d;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -124,31 +91,20 @@ body {
   transition: background 0.2s, transform 0.1s;
   margin-top: 4px;
 }
-
-.auth-btn:hover    { background: #2e6da4; }
+.auth-btn:hover    { background: #a72a3e; }
 .auth-btn:active   { transform: scale(0.99); }
-.auth-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+.auth-btn:disabled { background: #c7b2b6; cursor: not-allowed; }
 
 .auth-footer {
   text-align: center;
   font-size: 0.85rem;
-  color: #718096;
+  color: #8a7a7d;
   margin-top: 20px;
 }
-
-.auth-footer a {
-  color: #2e6da4;
-  font-weight: 600;
-  text-decoration: none;
-}
-
+.auth-footer a { color: #8d1b2d; font-weight: 600; text-decoration: none; }
 .auth-footer a:hover { text-decoration: underline; }
 
 .loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-size: 1.1rem;
-  color: #4a5568;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; font-size: 1.1rem; color: #6b5e61;
 }
