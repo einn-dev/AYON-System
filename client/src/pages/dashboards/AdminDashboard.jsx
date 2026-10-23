@@ -5,6 +5,7 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import AllProposalsPage from './AllProposalsPage';
 import ReportsPage from './ReportsPage';
+import { COLLEGES, getDepartments } from '../../data/Colleges';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard',    icon: '⊞' },
@@ -21,16 +22,25 @@ const ROLES = [
 ];
 
 const ROLE_LABELS = {
-  researcher:           'Researcher',
-  msric_staff:          'MSRIC Staff',
-  research_coordinator: 'Research Coordinator',
-  chairperson:          'Chairperson',
+  researcher:               'Chairperson',
   college_dean:         'College Dean',
   special_assistant:    'Special Assistant',
-  msric_director:       'MSRIC Director',
+  msric_director:  'Researcher',
+  msric_staff:          'MSRIC Staff',
+  research_coordinator: 'Research Coordinator',
+  chairperson:           'MSRIC Director',
   ovcred:               'OVCRED',
   admin:                'Admin',
 };
+
+/* Which roles must have a college / department in the Add User form.
+   Coordinators and Deans are scoped by college, Chairpersons by department,
+   researchers need both. The other roles don't belong to a college. */
+const ROLES_NEED_COLLEGE    = ['researcher', 'research_coordinator', 'chairperson', 'college_dean'];
+const ROLES_NEED_DEPARTMENT = ['researcher', 'chairperson'];
+
+/* greyed-out look for a box that is locked */
+const LOCKED_STYLE = { background: '#f1ecec', color: '#a89b9e', cursor: 'not-allowed' };
 
 const roleBadge = (role) => {
   const map = {
@@ -133,7 +143,7 @@ const UsersPage = ({ users, onRefresh }) => {
   const [form,    setForm]    = useState({
     first_name: '', last_name: '', email: '',
     password: '', role: 'researcher',
-    employee_id: '', department: '', college: '',
+    department: '', college: '',
   });
 
   const filtered = users.filter(u => {
@@ -151,7 +161,7 @@ const UsersPage = ({ users, onRefresh }) => {
       await API.post('/admin/users', form);
       setAlert({ type: 'success', msg: 'User created successfully!' });
       setShowAdd(false);
-      setForm({ first_name:'',last_name:'',email:'',password:'',role:'researcher',employee_id:'',department:'',college:'' });
+      setForm({ first_name:'',last_name:'',email:'',password:'',role:'researcher',department:'',college:'' });
       onRefresh();
     } catch (err) {
       setAlert({ type: 'error', msg: err.response?.data?.message || 'Failed to create user.' });
@@ -166,6 +176,23 @@ const UsersPage = ({ users, onRefresh }) => {
       setAlert({ type: 'error', msg: 'Failed to update status.' });
     }
   };
+
+  const needsCollege    = ROLES_NEED_COLLEGE.includes(form.role);
+  const needsDepartment = ROLES_NEED_DEPARTMENT.includes(form.role);
+  const departments     = getDepartments(form.college);
+
+  // changing the role clears the boxes that no longer apply to it
+  const handleRoleChange = (role) => {
+    setForm({
+      ...form,
+      role,
+      college:    ROLES_NEED_COLLEGE.includes(role)    ? form.college    : '',
+      department: ROLES_NEED_DEPARTMENT.includes(role) ? form.department : '',
+    });
+  };
+
+  // a different college has different departments, so the old one is cleared
+  const handleCollegeChange = (college) => setForm({ ...form, college, department: '' });
 
   return (
     <>
@@ -202,7 +229,7 @@ const UsersPage = ({ users, onRefresh }) => {
               <th>#</th>
               <th>Name</th>
               <th>Email</th>
-              <th>Employee ID</th>
+              <th>Department</th>
               <th>College</th>
               <th>Role</th>
               <th>Status</th>
@@ -215,7 +242,7 @@ const UsersPage = ({ users, onRefresh }) => {
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td><strong>{u.first_name} {u.last_name}</strong></td>
                 <td style={{ color: '#718096' }}>{u.email}</td>
-                <td>{u.employee_id || '—'}</td>
+                <td>{u.department || '—'}</td>
                 <td>{u.college || '—'}</td>
                 <td>
                   <span className={`badge ${roleBadge(u.role_type)}`}>
@@ -268,38 +295,47 @@ const UsersPage = ({ users, onRefresh }) => {
                 <input type="text" required value={form.email}
                   onChange={e => setForm({...form, email: e.target.value})} />
               </div>
-              <div className="form-group">
-                <label>Password</label>
-                <input type="password" required value={form.password}
-                  onChange={e => setForm({...form, password: e.target.value})} />
-              </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Employee ID</label>
-                  <input value={form.employee_id}
-                    onChange={e => setForm({...form, employee_id: e.target.value})} />
+                  <label>Password</label>
+                  <input type="password" required value={form.password}
+                    onChange={e => setForm({...form, password: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label>Role</label>
                   <select value={form.role}
-                    onChange={e => setForm({...form, role: e.target.value})}>
+                    onChange={e => handleRoleChange(e.target.value)}>
                     {ROLES.map(r => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Department</label>
-                  <input value={form.department}
-                    onChange={e => setForm({...form, department: e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label>College</label>
-                  <input value={form.college}
-                    onChange={e => setForm({...form, college: e.target.value})} />
-                </div>
+              <div className="form-group">
+                <label>College{needsCollege ? ' *' : ''}</label>
+                <select required={needsCollege} disabled={!needsCollege}
+                  value={form.college} title={form.college}
+                  style={needsCollege ? undefined : LOCKED_STYLE}
+                  onChange={e => handleCollegeChange(e.target.value)}>
+                  <option value="">
+                    {needsCollege ? '— Select a college —' : '— Not needed for this role —'}
+                  </option>
+                  {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Department{needsDepartment ? ' *' : ''}</label>
+                <select required={needsDepartment} disabled={!needsDepartment || !form.college}
+                  value={form.department} title={form.department}
+                  style={(!needsDepartment || !form.college) ? LOCKED_STYLE : undefined}
+                  onChange={e => setForm({...form, department: e.target.value})}>
+                  <option value="">
+                    {!needsDepartment
+                      ? '— Not needed for this role —'
+                      : form.college ? '— Select a department —' : '— Select a college first —'}
+                  </option>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline"
@@ -443,5 +479,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-

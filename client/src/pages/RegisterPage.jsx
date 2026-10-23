@@ -4,28 +4,23 @@ import { registerUser } from '../services/authService';
 import PasswordInput from '../components/PasswordInput';
 import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
+import { COLLEGES, getDepartments } from '../data/Colleges';
 import './AuthPages.css';
-
-const COLLEGES = [
-  'College of Information and Computing Sciences (CICS)',
-  'College of Engineering',
-  'College of Natural Sciences and Mathematics',
-  'College of Social Sciences and Humanities',
-  'College of Education',
-  'College of Agriculture',
-  'College of Business Administration and Accountancy',
-  'College of Health Sciences',
-  'College of Fisheries',
-  'College of Forestry and Environmental Studies',
-  'College of Public Affairs',
-  'King Faisal Center for Islamic, Arabic and Asian Studies',
-  'Other',
-];
+import './RegisterPage.css';
 
 const EMPTY_FORM = {
   first_name: '', last_name: '', email: '',
   password: '', confirm_password: '',
-  employee_id: '', department: '', college: '', contact_number: '',
+  department: '', college: '', contact_number: '',
+};
+
+/* Contact number: digits only, must start with 09, at most 11 digits.
+   Letters, symbols and spaces are thrown away as the person types or pastes. */
+const cleanPhone = (raw) => {
+  let v = String(raw).replace(/\D/g, '').slice(0, 11);
+  if (v.length >= 1 && v[0] !== '0') v = '';
+  if (v.length >= 2 && v[1] !== '9') v = v.slice(0, 1);
+  return v;
 };
 
 const RegisterPage = () => {
@@ -45,7 +40,10 @@ const RegisterPage = () => {
     setAgreed(false);
     setError('');
     if (formRef.current) {
-      formRef.current.querySelectorAll('input, select').forEach((el) => { el.value = ''; });
+      formRef.current.querySelectorAll('input, select').forEach((el) => {
+        if (el.type === 'checkbox') el.checked = false;
+        else el.value = '';
+      });
     }
   }, []);
 
@@ -77,7 +75,13 @@ const RegisterPage = () => {
   const markTyped = () => { typedRef.current = true; };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'college') {
+      // a different college has different departments, so the old choice no longer applies
+      setForm({ ...form, college: value, department: '' });
+    } else {
+      setForm({ ...form, [name]: name === 'contact_number' ? cleanPhone(value) : value });
+    }
     setError('');
   };
 
@@ -98,6 +102,7 @@ const RegisterPage = () => {
   };
 
   const strength = getStrength(form.password);
+  const departments = getDepartments(form.college);
 
   const validate = () => {
     if (!form.first_name.trim() || !form.last_name.trim())
@@ -108,8 +113,10 @@ const RegisterPage = () => {
       return 'Please enter a valid email address.';
     if (!form.college)
       return 'Please select your college.';
-    if (form.contact_number && !/^09\d{9}$/.test(form.contact_number.replace(/[-\s]/g, '')))
-      return 'Contact number must be a valid PH mobile number (e.g. 09XXXXXXXXX).';
+    if (!form.department)
+      return 'Please select your department.';
+    if (form.contact_number && !/^09\d{9}$/.test(form.contact_number))
+      return 'Contact number must be exactly 11 digits, numbers only, starting with 09 (e.g. 09123456789).';
     if (form.password.length < 8)
       return 'Password must be at least 8 characters.';
     if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password))
@@ -134,7 +141,6 @@ const RegisterPage = () => {
         last_name:      form.last_name.trim(),
         email:          form.email.trim().toLowerCase(),
         password:       form.password,
-        employee_id:    form.employee_id.trim()    || null,
         department:     form.department.trim()     || null,
         college:        form.college               || null,
         contact_number: form.contact_number.trim() || null,
@@ -207,150 +213,157 @@ const RegisterPage = () => {
     );
   }
 
-  /* ── Registration form ── */
+  /* ── Registration form: wide two-panel layout ── */
   return (
     <div className="auth-wrapper">
-      <div className="auth-card" style={{ maxWidth: 540 }}>
-        <div className="auth-logo">
-          <img src={logo} alt="AYON logo" />
-          <h1>AYON</h1>
-          <p>MSIRC – MSU Main Campus</p>
-        </div>
+      <div className="reg-card">
 
-        <h2>Researcher Registration</h2>
-        <p style={{
-          textAlign: 'center', fontSize: '0.82rem', color: '#8a7a7d',
-          marginTop: -16, marginBottom: 24,
-        }}>
-          Create your researcher account to submit proposals,<br />
-          apply for grants, and track your research.
-        </p>
+        {/* Left: brand panel */}
+        <aside className="reg-brand">
+          <div>
+            <div className="reg-brand-top">
+              <div className="reg-logo-chip">
+                <img src={logo} alt="AYON logo" />
+              </div>
+              <span className="reg-wordmark">AYON</span>
+            </div>
 
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          onKeyDown={markTyped}
-          onPaste={markTyped}
-          className="auth-form"
-          autoComplete="off"
-        >
-          <div className="form-row">
-            <div className="form-group">
+            <h1>Let&apos;s get<br />started</h1>
+            <p className="reg-brand-text">
+              Create your researcher account to submit proposals, apply for
+              grants, and track your research.
+            </p>
+
+            <ul className="reg-points">
+              <li>Submit proposals online</li>
+              <li>Track every stage in real time</li>
+              <li>Apply for grants and incentives</li>
+              <li>Keep your research in one archive</li>
+            </ul>
+          </div>
+
+          <p className="reg-brand-foot">MSIRC · MSU Main Campus</p>
+        </aside>
+
+        {/* Right: the form */}
+        <section className="reg-form-side">
+          <div className="reg-mobile-head">
+            <img src={logo} alt="AYON logo" />
+            <span>AYON</span>
+          </div>
+
+          <h2>Researcher Registration</h2>
+          <p className="reg-sub">
+            Fill in your details. We will email you a link to verify your account.
+          </p>
+
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            onKeyDown={markTyped}
+            onMouseDown={markTyped}
+            onPaste={markTyped}
+            className="reg-grid"
+            autoComplete="off"
+          >
+            <div className="form-group reg-half">
               <label>First Name *</label>
               <input name="first_name" value={form.first_name}
                 onChange={handleChange} placeholder="Juan" autoComplete="off" />
             </div>
-            <div className="form-group">
+
+            <div className="form-group reg-half">
               <label>Last Name *</label>
               <input name="last_name" value={form.last_name}
                 onChange={handleChange} placeholder="Dela Cruz" autoComplete="off" />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Email Address *</label>
-            <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
-            <span style={{ fontSize: '0.74rem', color: '#a08a8e' }}>
-              Use an email you can open. We will send a verification link to it.
-            </span>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Employee / Faculty ID</label>
-              <input name="employee_id" value={form.employee_id}
-                onChange={handleChange} placeholder="e.g. EMP-2024-001" autoComplete="off" />
+            <div className="form-group reg-half">
+              <label>Email Address *</label>
+              <input type="text" name="email" value={form.email}
+                onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
             </div>
-            <div className="form-group">
+
+            <div className="form-group reg-half">
               <label>Contact Number</label>
               <input name="contact_number" value={form.contact_number}
-                onChange={handleChange} placeholder="09XXXXXXXXX" autoComplete="off" />
+                onChange={handleChange} placeholder="09XXXXXXXXX" autoComplete="off"
+                inputMode="numeric" maxLength={11} />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>College *</label>
-            <select name="college" value={form.college} onChange={handleChange} autoComplete="off">
-              <option value="">— Select your college —</option>
-              {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+            <div className="form-group reg-half reg-wide-sm">
+              <label>College *</label>
+              <select name="college" value={form.college} title={form.college}
+                onChange={handleChange} autoComplete="off">
+                <option value="">— Select your college —</option>
+                {COLLEGES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
 
-          <div className="form-group">
-            <label>Department</label>
-            <input name="department" value={form.department}
-              onChange={handleChange} placeholder="e.g. Information Technology Department"
-              autoComplete="off" />
-          </div>
+            <div className="form-group reg-half reg-wide-sm">
+              <label>Department *</label>
+              <select name="department" value={form.department} title={form.department}
+                onChange={handleChange} autoComplete="off" disabled={!form.college}>
+                <option value="">
+                  {form.college ? '— Select your department —' : '— Select a college first —'}
+                </option>
+                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
 
-          <div className="form-row">
-            <div className="form-group">
+            <div className="form-group reg-third">
               <label>Password *</label>
               <PasswordInput name="password" value={form.password}
                 onChange={handleChange} placeholder="Min. 8 characters"
                 autoComplete="new-password" />
             </div>
-            <div className="form-group">
+
+            <div className="form-group reg-third">
               <label>Confirm Password *</label>
               <PasswordInput name="confirm_password" value={form.confirm_password}
                 onChange={handleChange} placeholder="Repeat password"
                 autoComplete="new-password" />
             </div>
-          </div>
 
-          {form.password && (
-            <div style={{ marginTop: -8 }}>
-              <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} style={{
-                    flex: 1, height: 4, borderRadius: 2,
-                    background: i <= strength.level ? strength.color : '#e0d3d5',
-                    transition: 'background 0.2s',
-                  }} />
-                ))}
+            <div className="form-group reg-third reg-wide-sm">
+              <label>Password Strength</label>
+              <div className="reg-strength">
+                <div className="reg-bars">
+                  {[1, 2, 3, 4].map(i => (
+                    <span key={i}
+                      style={i <= strength.level ? { background: strength.color } : undefined} />
+                  ))}
+                </div>
+                <span className="reg-strength-label"
+                  style={form.password ? { color: strength.color } : undefined}>
+                  {form.password ? strength.label : '8+ characters, 1 uppercase, 1 number'}
+                </span>
               </div>
-              <p style={{ fontSize: '0.72rem', color: strength.color,
-                margin: 0, fontWeight: 600 }}>
-                {strength.label} — use 8+ characters with uppercase, numbers &amp; symbols
-              </p>
             </div>
-          )}
 
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 10,
-            cursor: 'pointer', padding: '4px 0',
-          }} onClick={() => setAgreed(!agreed)}>
-            <div style={{
-              width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
-              border: `2px solid ${agreed ? '#8d1b2d' : '#e0d3d5'}`,
-              background: agreed ? '#8d1b2d' : '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: '0.7rem', fontWeight: 700,
-              transition: 'all 0.15s',
-            }}>{agreed ? '✓' : ''}</div>
-            <span style={{ fontSize: '0.8rem', color: '#6b5e61', lineHeight: 1.5 }}>
-              I confirm that the information provided is accurate and I agree to the
-              AYON research data policies of MSIRC – MSU Main Campus.
-            </span>
-          </div>
+            <label className="reg-terms reg-span-3">
+              <input type="checkbox" checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)} />
+              <span>
+                I confirm that the information provided is accurate and I agree to the
+                AYON research data policies of MSIRC – MSU Main Campus.
+              </span>
+            </label>
 
-          {error && <p className="auth-error">{error}</p>}
+            {error && <p className="auth-error reg-span-3">{error}</p>}
 
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Creating your account...' : 'Create Researcher Account'}
-          </button>
-        </form>
+            <button type="submit" className="auth-btn reg-span-3" disabled={loading}>
+              {loading ? 'Creating your account...' : 'Create Researcher Account'}
+            </button>
+          </form>
 
-        <p className="auth-footer">
-          Already have an account? <Link to="/login">Sign in</Link>
-        </p>
-        <p style={{
-          textAlign: 'center', fontSize: '0.72rem',
-          color: '#b3a6a9', marginTop: 10,
-        }}>
-          Staff, Director, and other roles are created by the system administrator.
-        </p>
+          <p className="reg-footer">
+            Already have an account? <Link to="/login">Sign in</Link>
+          </p>
+          <p className="reg-note">
+            Staff, Director, and other roles are created by the system administrator.
+          </p>
+        </section>
       </div>
     </div>
   );

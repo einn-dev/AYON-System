@@ -1,0 +1,309 @@
+/* ═══ AYON Registration — wide two-panel layout ═══ */
+
+.reg-card {
+  /* ───────────── SIZE KNOBS: change these numbers to resize the card ───────────── */
+  --reg-width:        1240px;   /* total width of the white card              */
+  --reg-brand-width:  360px;    /* width of the maroon panel on the left      */
+  --reg-pad-x:        52px;     /* space left and right inside the form       */
+  --reg-pad-y:        40px;     /* space above and below the form             */
+  --reg-field-h:      46px;     /* height of every box                        */
+  --reg-font:         0.95rem;  /* text size inside the boxes                 */
+  --reg-label:        0.74rem;  /* size of the small labels above the boxes   */
+  --reg-gap-x:        18px;     /* space between columns                      */
+  --reg-gap-y:        18px;     /* space between rows                         */
+  --reg-title:        1.55rem;  /* "Researcher Registration"                  */
+  --reg-brand-title:  2.5rem;   /* "Let's get started"                        */
+  --reg-brand-text:   0.92rem;  /* text in the maroon panel                   */
+  --reg-logo-h:       46px;     /* logo height in the maroon panel            */
+  /* ────────────────────────────────────────────────────────────────────────── */
+
+  width: 100%;
+  max-width: var(--reg-width);
+  display: grid;
+  grid-template-columns: var(--reg-brand-width) minmax(0, 1fr);
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(46, 13, 20, 0.3);
+}
+
+/* ── Left: brand panel ── */
+.reg-brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  padding: calc(var(--reg-pad-y) + 4px) 32px calc(var(--reg-pad-y) - 8px);
+  color: #fff;
+  background: linear-gradient(160deg, #4a0d16 0%, #6f0b0d 55%, #8d1b2d 100%);
+}
+.reg-brand::before,
+.reg-brand::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.reg-brand::before {
+  width: 260px; height: 260px;
+  right: -105px; bottom: -85px;
+  background: rgba(176, 149, 25, 0.16);
+}
+.reg-brand::after {
+  width: 130px; height: 130px;
+  left: -55px; top: 42%;
+  background: rgba(255, 255, 255, 0.05);
+}
+.reg-brand > * { position: relative; z-index: 1; }
+
+.reg-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.reg-logo-chip {
+  display: flex;
+  background: #fff;
+  border-radius: 14px;
+  padding: 9px 14px;
+}
+.reg-logo-chip img { height: var(--reg-logo-h); width: auto; display: block; }
+.reg-wordmark {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.reg-brand h1 {
+  font-size: var(--reg-brand-title);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 14px;
+}
+.reg-brand-text {
+  font-size: var(--reg-brand-text);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 0 24px;
+}
+.reg-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.reg-points li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--reg-brand-text);
+  color: rgba(255, 255, 255, 0.92);
+}
+.reg-points li::before {
+  content: '✓';
+  color: #e0c65a;
+  font-weight: 800;
+}
+.reg-brand-foot {
+  font-size: 0.7rem;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Right: form panel ── */
+.reg-form-side {
+  padding: var(--reg-pad-y) var(--reg-pad-x) calc(var(--reg-pad-y) - 6px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.reg-mobile-head {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.reg-mobile-head img { height: 34px; width: auto; }
+.reg-mobile-head span {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #8d1b2d;
+}
+.reg-form-side h2 {
+  font-size: var(--reg-title);
+  font-weight: 700;
+  color: #5e1420;
+  margin: 0 0 4px;
+}
+.reg-sub {
+  font-size: calc(var(--reg-font) - 0.1rem);
+  color: #8a7a7d;
+  margin: 0 0 calc(var(--reg-gap-y) + 4px);
+}
+
+/* ── The form grid: 6 small columns, so rows can be split in halves
+      (2 boxes) or thirds (3 boxes) and still line up ── */
+.reg-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--reg-gap-y) var(--reg-gap-x);
+}
+.reg-half   { grid-column: span 3; }   /* 2 boxes per row, evenly divided */
+.reg-third  { grid-column: span 2; }   /* 3 boxes per row                 */
+.reg-span-3 { grid-column: 1 / -1; }   /* full width                      */
+
+.reg-card .form-group { gap: 5px; min-width: 0; }
+.reg-card .form-group label {
+  font-size: var(--reg-label);
+  letter-spacing: 0.4px;
+}
+
+/* Same look for every box, including the password boxes
+   (their style comes from PasswordInput, hence !important). */
+.reg-card .form-group input,
+.reg-card .form-group select,
+.reg-card input[name="password"],
+.reg-card input[name="confirm_password"] {
+  width: 100%;
+  height: var(--reg-field-h);
+  font-size: var(--reg-font);
+  border-radius: 9px;
+}
+.reg-card .form-group input,
+.reg-card .form-group select { padding: 0 13px; }
+.reg-card .form-group select { text-overflow: ellipsis; }
+.reg-card .form-group select:disabled {
+  background: #f1ecec;
+  color: #a89b9e;
+  cursor: not-allowed;
+}
+
+.reg-card input[name="password"],
+.reg-card input[name="confirm_password"] {
+  padding: 0 42px 0 13px !important;
+  border: 1px solid #e0d3d5 !important;
+  background: #faf7f7 !important;
+}
+.reg-card input[name="password"]:focus,
+.reg-card input[name="confirm_password"]:focus {
+  border-color: #8d1b2d !important;
+  background: #fff !important;
+}
+
+/* password strength sits beside the two password boxes */
+.reg-strength {
+  height: var(--reg-field-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+.reg-bars { display: flex; gap: 4px; }
+.reg-bars span {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #e0d3d5;
+  transition: background 0.2s;
+}
+.reg-strength-label {
+  font-size: calc(var(--reg-label) - 0.02rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #a08a8e;
+}
+
+.reg-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: calc(var(--reg-font) - 0.14rem);
+  color: #6b5e61;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.reg-terms input {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: #8d1b2d;
+}
+
+.reg-card .auth-error {
+  margin: 0;
+  padding: 9px 13px;
+  font-size: 0.84rem;
+}
+.reg-card .auth-btn {
+  width: 100%;
+  height: calc(var(--reg-field-h) + 4px);
+  padding: 0;
+  margin: 0;
+  font-size: calc(var(--reg-font) + 0.05rem);
+}
+
+.reg-footer {
+  text-align: center;
+  font-size: 0.84rem;
+  color: #8a7a7d;
+  margin-top: 16px;
+}
+.reg-footer a { color: #8d1b2d; font-weight: 600; text-decoration: none; }
+.reg-footer a:hover { text-decoration: underline; }
+.reg-note {
+  text-align: center;
+  font-size: 0.74rem;
+  color: #b3a6a9;
+  margin-top: 4px;
+}
+
+/* ── Short screens (most laptops): switch to the compact size so the
+      whole form still fits without scrolling ── */
+@media (max-height: 760px) {
+  .reg-card {
+    --reg-width:        1040px;
+    --reg-brand-width:  300px;
+    --reg-pad-x:        32px;
+    --reg-pad-y:        24px;
+    --reg-field-h:      38px;
+    --reg-font:         0.86rem;
+    --reg-label:        0.68rem;
+    --reg-gap-x:        14px;
+    --reg-gap-y:        10px;
+    --reg-title:        1.2rem;
+    --reg-brand-title:  2.1rem;
+    --reg-brand-text:   0.84rem;
+    --reg-logo-h:       38px;
+  }
+  .reg-footer { margin-top: 12px; }
+}
+
+@media (max-height: 600px) {
+  .reg-card { --reg-pad-y: 16px; --reg-gap-y: 8px; }
+}
+
+/* ── Tablets: hide the brand panel, 2 columns ── */
+@media (max-width: 900px) {
+  .reg-card { grid-template-columns: 1fr; max-width: 640px; }
+  .reg-brand { display: none; }
+  .reg-mobile-head { display: flex; }
+  .reg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reg-form-side { padding: 24px 22px 18px; }
+
+  .reg-half, .reg-third { grid-column: span 1; }
+  .reg-wide-sm { grid-column: 1 / -1; }   /* college, department, strength: full row */
+}
+
+/* ── Phones: 1 column ── */
+@media (max-width: 560px) {
+  .reg-grid { grid-template-columns: 1fr; }
+  .reg-half, .reg-third, .reg-wide-sm, .reg-span-3 { grid-column: 1 / -1; }
+}
