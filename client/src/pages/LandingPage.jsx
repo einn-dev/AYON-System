@@ -125,29 +125,49 @@ const Counter = ({ to }) => {
   return <span ref={ref}>{n}</span>;
 };
 
-/* ───────────── hero: photo slideshow ───────────── */
+/* ───────────── hero: photos that slide ───────────── */
 const HeroPhotos = () => {
-  const [i, setI] = useState(0);
-  const [cycle, setCycle] = useState(0);              // restarts the timer after a click
-  useEffect(() => {
-    if (prefersReducedMotion()) return undefined;
-    const id = setTimeout(() => setI((n) => (n + 1) % PHOTOS.length), 5200);
-    return () => clearTimeout(id);
-  }, [i, cycle]);
+  const n = PHOTOS.length;
+  const [i, setI]       = useState(0);        // where the strip is; i === n is a copy of the first photo
+  const [snap, setSnap] = useState(false);    // true while jumping back to the start with no animation
+  const [cycle, setCycle] = useState(0);      // restarts the timer after a click
+  const slides = [...PHOTOS, PHOTOS[0]];      // the copy lets the last photo slide into the first one
 
+  useEffect(() => {
+    if (prefersReducedMotion() || snap) return undefined;
+    const id = setTimeout(() => setI((x) => (x >= n ? x : x + 1)), 5600);
+    return () => clearTimeout(id);
+  }, [i, cycle, snap, n]);
+
+  useEffect(() => {
+    if (!snap) return undefined;
+    let r2;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setSnap(false)); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [snap]);
+
+  const onEnd = (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (i >= n) { setSnap(true); setI(0); }   // we are on the copy: quietly go back to the real first photo
+  };
+
+  const shown = i % n;
   return (
     <div className="lp-photos">
-      {PHOTOS.map(([src, alt, , pos], n) => (
-        <img key={src} src={src} alt={n === i ? alt : ''} aria-hidden={n === i ? undefined : 'true'}
-          className={n === i ? 'is-on' : ''} style={{ objectPosition: pos }} loading={n === 0 ? 'eager' : 'lazy'} />
-      ))}
+      <div className={`lp-slides${snap ? ' is-snap' : ''}`} style={{ transform: `translateX(-${i * 100}%)` }} onTransitionEnd={onEnd}>
+        {slides.map(([src, alt, , pos], k) => (
+          <div className="lp-slide" key={k} aria-hidden={k === shown ? undefined : 'true'}>
+            <img src={src} alt={k === shown ? alt : ''} style={{ objectPosition: pos }} loading={k === 0 ? 'eager' : 'lazy'} />
+          </div>
+        ))}
+      </div>
       <div className="lp-photos-shade" />
       <div className="lp-photos-top">
-        <span className="lp-photos-cap" key={i}>{PHOTOS[i][2]}</span>
+        <span className="lp-photos-cap" key={shown}>{PHOTOS[shown][2]}</span>
         <div className="lp-photos-dots">
-          {PHOTOS.map(([, , label], n) => (
-            <button key={label} type="button" aria-label={`Show photo: ${label}`} className={n === i ? 'is-on' : ''}
-              onClick={() => { setI(n); setCycle((c) => c + 1); }} />
+          {PHOTOS.map(([, , label], k) => (
+            <button key={label} type="button" aria-label={`Show photo: ${label}`} className={k === shown ? 'is-on' : ''}
+              onClick={() => { setSnap(false); setI(k); setCycle((c) => c + 1); }} />
           ))}
         </div>
       </div>
