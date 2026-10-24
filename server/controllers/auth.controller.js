@@ -272,7 +272,7 @@ const login = async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select(`
-        user_id, email, password, first_name, last_name, is_active, email_verified,
+        user_id, email, password, first_name, last_name, avatar_url, is_active, email_verified,
         user_roles!user_roles_user_id_fkey ( role_type )
       `)
       .eq('email', String(email).trim().toLowerCase())
@@ -325,6 +325,7 @@ const login = async (req, res) => {
         email:      user.email,
         first_name: user.first_name,
         last_name:  user.last_name,
+        avatar_url: user.avatar_url || null,
         role,
       },
     });
@@ -340,7 +341,7 @@ const getProfile = async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select(`
-        user_id, email, first_name, last_name,
+        user_id, email, first_name, last_name, avatar_url,
         employee_id, department, college,
         contact_number, created_at,
         user_roles!user_roles_user_id_fkey ( role_type )
@@ -394,7 +395,106 @@ const updateProfile = async (req, res) => {
   }
 };
 
+/* ── PROFILE PICTURE ──
+   The picture is saved in the same Supabase Storage bucket as the proposals,
+   inside the  avatars/  folder, and only its public link is kept in users.avatar_url. */
+const AVATAR_FOLDER = 'avatars/';
+
+/* Look at the first bytes of the file, so a renamed file can't sneak in as a picture. */
+const detectImageType = (buf) => {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return { mime: 'image/jpeg', ext: 'jpg' };
+  if (buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { mime: 'image/png', ext: 'png' };
+  if (buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP') return { mime: 'image/webp', ext: 'webp' };
+  return null;
+};
+
+/* public link  ->  path inside the bucket (only for pictures this feature saved) */
+const avatarPathFromUrl = (url) => {
+  if (!url) return null;
+  const marker = `/${process.env.SUPABASE_BUCKET}/`;
+  const i = String(url).indexOf(marker);
+  if (i === -1) return null;
+  const path = decodeURIComponent(String(url).slice(i + marker.length).split('?')[0]);
+  return path.startsWith(AVATAR_FOLDER) ? path : null;
+};
+
+/* deleting the old picture is housekeeping: if it fails, nothing is lost */
+const deleteStoredAvatar = async (url) => {
+  const path = avatarPathFromUrl(url);
+  if (!path) return;
+  try {
+    await supabase.storage.from(process.env.SUPABASE_BUCKET).remove([path]);
+  } catch (err) {
+    console.warn('Could not delete old avatar:', err.message);
+  }
+};
+
+/* ── UPLOAD / CHANGE PROFILE PICTURE ── */
+const uploadAvatar = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'Please choose a picture to upload.' });
+  }
+
+  const type = detectImageType(req.file.buffer);
+  if (!type) {
+    return res.status(400).json({ message: 'Please choose a JPG, PNG or WEBP picture.' });
+  }
+
+  const userId = req.user.user_id;
+  const bucket = process.env.SUPABASE_BUCKET;
+  const path   = `${AVATAR_FOLDER}${userId}-${Date.now()}.${type.ext}`;   // new name every time, so browsers never show an old copy
+
+  try {
+    const { data: current, error: findErr } = await supabase
+      .from('users').select('avatar_url').eq('user_id', userId).single();
+    if (findErr) throw findErr;
+
+    const { error: upErr } = await supabase.storage
+      .from(bucket)
+      .upload(path, req.file.buffer, { contentType: type.mime, upsert: false });
+    if (upErr) throw upErr;
+
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const avatar_url = urlData?.publicUrl;
+
+    const { error: dbErr } = await supabase
+      .from('users').update({ avatar_url }).eq('user_id', userId);
+    if (dbErr) {
+      await supabase.storage.from(bucket).remove([path]);   // don't leave an orphan file behind
+      throw dbErr;
+    }
+
+    await deleteStoredAvatar(current?.avatar_url);
+    return res.status(200).json({ message: 'Profile picture updated.', avatar_url });
+  } catch (err) {
+    console.error('Upload avatar error:', err);
+    return res.status(500).json({ message: 'Could not save your picture. Please try again.' });
+  }
+};
+
+/* ── REMOVE PROFILE PICTURE ── */
+const removeAvatar = async (req, res) => {
+  const userId = req.user.user_id;
+  try {
+    const { data: current, error: findErr } = await supabase
+      .from('users').select('avatar_url').eq('user_id', userId).single();
+    if (findErr) throw findErr;
+
+    const { error } = await supabase
+      .from('users').update({ avatar_url: null }).eq('user_id', userId);
+    if (error) throw error;
+
+    await deleteStoredAvatar(current?.avatar_url);
+    return res.status(200).json({ message: 'Profile picture removed.', avatar_url: null });
+  } catch (err) {
+    console.error('Remove avatar error:', err);
+    return res.status(500).json({ message: 'Could not remove your picture. Please try again.' });
+  }
+};
+
 module.exports = {
   register, login, getProfile, updateProfile,
   verifyEmail, resendVerification,
+  uploadAvatar, removeAvatar,
 };

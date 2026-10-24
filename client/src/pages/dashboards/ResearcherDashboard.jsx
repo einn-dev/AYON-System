@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
@@ -7,15 +7,13 @@ import '../../components/Layout.css';
 import GrantsPage from './GrantsPage';
 import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaUser } from 'react-icons/fa6';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
   { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
-  { path: '/researcher/submit',      label: 'Submit Proposal',   icon: <FaCirclePlus /> },
   { path: '/researcher/grants',      label: 'Grant & Incentives',icon: <FaHandHoldingDollar /> },
   { path: '/researcher/repository',  label: 'Repository',        icon: <FaBoxArchive /> },
-  { path: '/researcher/profile',     label: 'My Profile',        icon: <FaUser /> },  
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
   { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
   
@@ -48,6 +46,7 @@ const Overview = ({ proposals, user }) => {
     submitted:   proposals.filter(p => p.status === 'submitted').length,
     approved:    proposals.filter(p => p.status === 'approved').length,
     under_review:proposals.filter(p => p.status === 'under_review').length,
+    rejected:     proposals.filter(p => p.status === 'rejected').length,
   };
 
   return (
@@ -73,6 +72,10 @@ const Overview = ({ proposals, user }) => {
         <div className="stat-card green">
           <span className="stat-label">Approved</span>
           <span className="stat-value">{counts.approved}</span>
+        </div>
+        <div className="stat-card red">
+          <span className="stat-label">Rejected</span>
+          <span className="stat-value">{counts.rejected}</span>
         </div>
       </div>
 
@@ -111,7 +114,7 @@ const Overview = ({ proposals, user }) => {
             {proposals.length === 0 && (
               <tr><td colSpan={4}>
                 <div className="empty-state">
-                  <p>No proposals yet. Click "Submit Proposal" to get started.</p>
+                  <p>No proposals yet. Go to My Proposals and click "Submit Proposal" to get started.</p>
                 </div>
               </td></tr>
             )}
@@ -125,7 +128,7 @@ const Overview = ({ proposals, user }) => {
         <div className="panel-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
             {[
-              { step: '1', title: 'Fill the Form',    desc: 'Go to Submit Proposal and fill in all required fields.' },
+              { step: '1', title: 'Fill the Form',    desc: 'Open My Proposals, click Submit Proposal and fill in all required fields.' },
               { step: '2', title: 'Upload Documents', desc: 'Attach your proposal file and required documents.' },
               { step: '3', title: 'Track Status',     desc: 'Monitor your proposal status in My Proposals.' },
               { step: '4', title: 'Get Notified',     desc: 'Receive in-app notifications on every status update.' },
@@ -153,6 +156,12 @@ const Overview = ({ proposals, user }) => {
 
 /* ─────────── My Proposals ─────────── */
 const MyProposals = ({ proposals, onRefresh }) => {
+  const location = useLocation();
+  // show the "submitted" note once; clear it so a page refresh does not show it again
+  const [justSubmitted] = useState(!!location.state?.submitted);
+  useEffect(() => {
+    if (justSubmitted) window.history.replaceState({}, document.title);
+  }, [justSubmitted]);
   const [filter,  setFilter]  = useState('all');
   const [search,  setSearch]  = useState('');
   const [selected, setSelected] = useState(null);
@@ -165,10 +174,20 @@ const MyProposals = ({ proposals, onRefresh }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>My Proposals</h1>
-        <p>Track the status of all your submitted proposals.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h1>My Proposals</h1>
+          <p>Track the status of all your submitted proposals.</p>
+        </div>
+        <Link to="/researcher/proposals/new" className="btn btn-primary"
+          style={{ textDecoration: 'none', display: 'inline-block', padding: '10px 18px' }}>
+          <FaCirclePlus className="ic" />Submit Proposal
+        </Link>
       </div>
+
+      {justSubmitted && (
+        <div className="alert alert-success">Proposal submitted successfully!</div>
+      )}
 
       <div className="panel">
         <div className="panel-header">
@@ -274,6 +293,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
 
 /* ─────────── Submit Proposal ─────────── */
 const SubmitProposal = ({ onRefresh }) => {
+  const navigate = useNavigate();
   const [step,    setStep]    = useState(1);
   const [alert,   setAlert]   = useState(null);
   const [loading, setLoading] = useState(false);
@@ -303,11 +323,8 @@ const SubmitProposal = ({ onRefresh }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setAlert({ type: 'success', msg: 'Proposal submitted successfully!' });
-      setForm({ proposal_type: '', title: '', description: '' });
-      setFile(null);
-      setStep(1);
-      onRefresh();
+      await onRefresh();
+      navigate('/researcher/proposals', { state: { submitted: true } });
     } catch (err) {
       setAlert({ type: 'error', msg: err.response?.data?.message || 'Submission failed.' });
     } finally {
@@ -319,6 +336,10 @@ const SubmitProposal = ({ onRefresh }) => {
 
   return (
     <>
+      <Link to="/researcher/proposals" className="btn btn-outline btn-sm"
+        style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 14 }}>
+        <FaArrowLeft className="ic" />Back to My Proposals
+      </Link>
       <div className="page-header">
         <h1>Submit Proposal</h1>
         <p>Fill in the form below to submit your research proposal to MSIRC.</p>
@@ -538,99 +559,6 @@ const Repository = () => {
   );
 };
 
-/* ─────────── Profile ─────────── */
-const Profile = ({ user }) => {
-  const [form,    setForm]    = useState({ ...user, password: '', confirm_password: '' });
-  const [alert,   setAlert]   = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (form.password && form.password !== form.confirm_password) {
-      return setAlert({ type: 'error', msg: 'Passwords do not match.' });
-    }
-    setLoading(true);
-    try {
-      await API.patch('/auth/profile', form);
-      setAlert({ type: 'success', msg: 'Profile updated successfully!' });
-    } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Update failed.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>My Profile</h1>
-        <p>Update your personal information and password.</p>
-      </div>
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
-      <div className="panel" style={{ maxWidth: 560 }}>
-        <div className="panel-body">
-          <form onSubmit={handleSave}>
-            <div className="form-row">
-              <div className="form-group">
-                <label>First Name</label>
-                <input value={form.first_name || ''}
-                  onChange={e => setForm({ ...form, first_name: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Last Name</label>
-                <input value={form.last_name || ''}
-                  onChange={e => setForm({ ...form, last_name: e.target.value })} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input value={form.email || ''} disabled
-                style={{ background: '#f0f4f8', color: '#a0aec0' }} />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Department</label>
-                <input value={form.department || ''}
-                  onChange={e => setForm({ ...form, department: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>College</label>
-                <input value={form.college || ''}
-                  onChange={e => setForm({ ...form, college: e.target.value })} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Contact Number</label>
-              <input value={form.contact_number || ''}
-                onChange={e => setForm({ ...form, contact_number: e.target.value })} />
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid #e8edf2', margin: '16px 0' }} />
-            <p style={{ fontWeight: 600, color: '#4a5568', fontSize: '0.85rem', marginBottom: 12 }}>
-              Change Password (leave blank to keep current)
-            </p>
-            <div className="form-row">
-              <div className="form-group">
-                <label>New Password</label>
-                <input type="password" value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  placeholder="Min. 8 characters" />
-              </div>
-              <div className="form-group">
-                <label>Confirm Password</label>
-                <input type="password" value={form.confirm_password}
-                  onChange={e => setForm({ ...form, confirm_password: e.target.value })}
-                  placeholder="Repeat password" />
-              </div>
-            </div>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </form>
-        </div>
-      </div>
-    </>
-  );
-};
 
 /* ─────────── Main Researcher Dashboard ─────────── */
 const ResearcherDashboard = () => {
@@ -659,11 +587,11 @@ const ResearcherDashboard = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"  element={<Overview proposals={proposals} user={user} />} />
         <Route path="proposals"  element={<MyProposals proposals={proposals} onRefresh={fetchProposals} />} />
-        <Route path="submit"     element={<SubmitProposal onRefresh={fetchProposals} />} />
+        <Route path="proposals/new" element={<SubmitProposal onRefresh={fetchProposals} />} />
+        <Route path="submit"     element={<Navigate to="/researcher/proposals/new" replace />} />
         <Route path="grants"     element={<GrantsPage proposals={proposals} />} />
         <Route path="external"   element={<ExternalResearchPage />} />
         <Route path="repository" element={<Repository />} />
-        <Route path="profile"    element={<Profile user={user} />} />
         <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>

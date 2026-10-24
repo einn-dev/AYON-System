@@ -24,6 +24,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('ayon_user',  JSON.stringify(userData));
   };
 
+  // change a few fields of the signed-in user (name, profile picture) without logging in again
+  const updateUser = (changes) => {
+    setUser((prev) => {
+      const next = { ...prev, ...changes };
+      localStorage.setItem('ayon_user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -32,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

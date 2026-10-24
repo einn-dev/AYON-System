@@ -1,0 +1,119 @@
+/* ═══ AYON — profile picture, account box and My Profile pop-up ═══ */
+
+/* ── round profile picture (photo or initials) ── */
+.avatar {
+  border-radius: 50%;
+  background: #b09519;
+  color: #fff;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── account box in the sidebar (above Logout): a button that opens My Profile ── */
+.user-info-link {
+  width: 100%;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  width: calc(100% + 16px);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.user-info-link:hover,
+.user-info-link:focus-visible { background: rgba(255,255,255,0.12); outline: none; }
+.layout.collapsed .user-info-link { margin: 0; width: 100%; padding: 4px 0; justify-content: center; }
+
+/* long college / department names must not push the neighbouring box out of the card */
+.form-row .form-group { min-width: 0; }
+.form-row select,
+.form-row input { width: 100%; min-width: 0; text-overflow: ellipsis; }
+
+/* ── My Profile pop-up ── */
+.pm-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(40, 8, 14, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: pm-fade 0.18s ease;
+}
+.pm-dialog {
+  background: #fff;
+  width: 100%; max-width: 660px;
+  max-height: calc(100vh - 40px);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: pm-pop 0.22s ease;
+}
+.pm-dialog:focus { outline: none; }
+.pm-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0e6e8;
+}
+.pm-head h2 { margin: 0; font-size: 1.15rem; color: #5e1420; }
+.pm-head p  { margin: 4px 0 0; font-size: 0.82rem; color: #8a7a7d; }
+.pm-close {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: #f6eff0; color: #6f0b0d;
+  cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.pm-close:hover { background: #ecdadd; }
+.pm-body { padding: 20px 24px 22px; overflow-y: auto; }
+
+.pm-photo {
+  display: flex; align-items: center; gap: 18px;
+  padding-bottom: 18px; margin-bottom: 18px;
+  border-bottom: 1px solid #f0e6e8;
+}
+.pm-photo-btn {
+  position: relative;
+  border: none; background: none; padding: 0;
+  border-radius: 50%; cursor: pointer; flex-shrink: 0;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #e7d6d9;
+  transition: box-shadow 0.2s;
+}
+.pm-photo-btn:hover,
+.pm-photo-btn:focus-visible { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #8d1b2d; outline: none; }
+.pm-photo-cam {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #8d1b2d; color: #fff; font-size: 0.8rem;
+  border: 2px solid #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.pm-photo-info { min-width: 0; }
+.pm-photo-name { margin: 0 0 10px; font-size: 1.05rem; font-weight: 700; color: #3d1a20; }
+.pm-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pm-remove { color: #c53030; }
+.pm-photo-hint { margin: 8px 0 0; font-size: 0.76rem; color: #8a7a7d; }
+
+.pm-sep { border: none; border-top: 1px solid #e8edf2; margin: 16px 0; }
+.pm-sub { font-weight: 600; color: #4a5568; font-size: 0.85rem; margin: 0 0 12px; }
+.pm-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+@keyframes pm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pm-pop  { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 560px) {
+  .pm-overlay { padding: 0; align-items: flex-end; }
+  .pm-dialog  { max-height: 94vh; border-radius: 16px 16px 0 0; }
+  .pm-photo   { flex-direction: column; align-items: flex-start; }
+  .form-row   { grid-template-columns: 1fr; gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-overlay, .pm-dialog { animation: none; }
+}
