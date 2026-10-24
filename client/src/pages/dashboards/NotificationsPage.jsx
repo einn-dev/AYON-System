@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
 const TYPE_ICONS = {
-  submission:  '📤',
-  review:      '📋',
-  endorsement: '✍️',
-  approval:    '✅',
-  rejection:   '❌',
-  general:     '🔔',
+  submission:  <FaPaperPlane />,
+  review:      <FaClipboardList />,
+  endorsement: <FaSignature />,
+  approval:    <FaCircleCheck />,
+  rejection:   <FaCircleXmark />,
+  general:     <FaBell />,
 };
 
 const NotificationsPage = () => {
@@ -82,7 +83,7 @@ const NotificationsPage = () => {
           <div className="empty-state"><p>Loading notifications...</p></div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p style={{ fontSize: '2rem', margin: 0 }}>🔔</p>
+            <p style={{ fontSize: '2rem', margin: 0 }}><FaBell /></p>
             <p>No notifications {filter !== 'all' ? 'matching this filter' : 'yet'}.</p>
           </div>
         ) : (
@@ -97,8 +98,8 @@ const NotificationsPage = () => {
                 gap: 14, cursor: n.is_read ? 'default' : 'pointer',
                 transition: 'background 0.2s',
               }}>
-              <div style={{ fontSize: '1.3rem', flexShrink: 0, lineHeight: 1.2 }}>
-                {TYPE_ICONS[n.notif_type] || '🔔'}
+              <div style={{ fontSize: '1.3rem', flexShrink: 0, lineHeight: 1.2, color: '#8d1b2d', width: 28, textAlign: 'center' }}>
+                {TYPE_ICONS[n.notif_type] || <FaBell />}
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontWeight: 600, color: '#1a3a5c',

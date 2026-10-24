@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { FaFileLines } from 'react-icons/fa6';
 
 const PROPOSAL_TYPES = {
   research_spotlight:    'Research Spotlight',
@@ -219,7 +220,7 @@ const AllProposalsPage = () => {
                   href={selected.file_path}
                   target="_blank" rel="noreferrer"
                   style={{ textDecoration: 'none' }}>
-                  📄 View File
+                  <FaFileLines className="ic" />View File
                 </a>
               )}
             </div>

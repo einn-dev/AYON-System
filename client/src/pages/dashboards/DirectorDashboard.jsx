@@ -4,15 +4,16 @@ import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import GrantReviewPage from './GrantReviewPage';
+import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaHandHoldingDollar, FaPaperPlane, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/director/dashboard',    label: 'Dashboard',         icon: '⊞' },
-  { path: '/director/for-review',   label: 'For Review',        icon: '📋' },
-  { path: '/director/approved',     label: 'Approved',          icon: '✅' },
-  { path: '/director/rejected',     label: 'Rejected',          icon: '✗'  },
-  { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: '📤' },
-  { path: '/director/grants',       label: 'Grant Applications',icon: '🎓' },
-  { path: '/director/notifications',label: 'Notifications',     icon: '🔔' },
+  { path: '/director/dashboard',    label: 'Dashboard',         icon: <FaTableCellsLarge /> },
+  { path: '/director/for-review',   label: 'For Review',        icon: <FaClipboardList /> },
+  { path: '/director/approved',     label: 'Approved',          icon: <FaCircleCheck /> },
+  { path: '/director/rejected',     label: 'Rejected',          icon: <FaCircleXmark />  },
+  { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: <FaPaperPlane /> },
+  { path: '/director/grants',       label: 'Grant Applications',icon: <FaHandHoldingDollar /> },
+  { path: '/director/notifications',label: 'Notifications',     icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -256,7 +257,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -324,7 +325,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={`http://localhost:5000/${selected.file_path}`}
                     target="_blank" rel="noreferrer">
-                    📄 View Attached Document
+                    <FaFileLines className="ic" />View Attached Document
                   </a>
                 )}
               </div>
@@ -349,21 +350,21 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <button className="btn btn-success"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
-                        {saving ? 'Processing...' : '📤 Approve & Endorse to OVCRED'}
+                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Approve & Endorse to OVCRED</>}
                       </button>
 
                       {/* Approve only */}
                       <button className="btn btn-primary"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'approved')}>
-                        {saving ? 'Processing...' : '✓ Approve Only'}
+                        {saving ? 'Processing...' : <><FaCheck className="ic" />Approve Only</>}
                       </button>
 
                       {/* Reject */}
                       <button className="btn btn-danger"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'rejected')}>
-                        {saving ? 'Processing...' : '✗ Reject'}
+                        {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
                       </button>
                     </div>
 

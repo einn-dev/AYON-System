@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
+import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 
 const Layout = ({ children, navItems, role }) => {
   const { user, logout } = useAuth();
@@ -24,7 +25,7 @@ const Layout = ({ children, navItems, role }) => {
         <div className="sidebar-header">
           <span className="sidebar-logo">AYON</span>
           <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? '›' : '‹'}
+            {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
           </button>
         </div>
 
@@ -54,7 +55,7 @@ const Layout = ({ children, navItems, role }) => {
             </div>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
-            ⎋ Logout
+            <FaRightFromBracket className="ic" />Logout
           </button>
         </div>
       </aside>

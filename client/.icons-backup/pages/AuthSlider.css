@@ -1,0 +1,191 @@
+/* ═══ AYON — sliding Login / Register card ═══
+   Sits on top of RegisterPage.css (same size knobs: --reg-width, --reg-brand-width, ...).
+   The only new knobs are the two below. */
+
+.reg-card.as-card {
+  --as-speed: 0.75s;                           /* how long the slide takes */
+  --as-ease:  cubic-bezier(0.65, 0, 0.35, 1);  /* how it accelerates       */
+
+  display: block;
+  position: relative;
+  background: transparent;   /* the white lives on .as-clip */
+  overflow: visible;
+}
+
+/* The white part of the card, cut to the rounded shape. The maroon panel is NOT inside
+   it: it has its own slightly rounder outer corners, so it fully hides the white edge
+   underneath (this removes a thin light line on the corners). */
+.as-clip {
+  position: relative;
+  background: #fff;
+  overflow: hidden;            /* a form waiting off to the side never adds a scrollbar */
+  clip-path: inset(0 round 18px);
+}
+
+/* ── The sliding maroon panel ── */
+.as-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;                                  /* Register: left side  */
+  width: var(--reg-brand-width);
+  z-index: 3;
+  display: grid;                            /* the two faces sit on top of each other */
+  overflow: hidden;
+  background: linear-gradient(160deg, #4a0d16 0%, #6f0b0d 55%, #8d1b2d 100%);
+  border-radius: 16px 0 0 16px;
+  transition: left var(--as-speed) var(--as-ease), border-radius var(--as-speed) var(--as-ease);
+}
+.is-login .as-overlay {
+  left: calc(100% - var(--reg-brand-width));   /* Login: right side */
+  border-radius: 0 16px 16px 0;
+}
+
+/* decorative circles live on the sliding panel itself */
+.as-overlay::before,
+.as-overlay::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.as-overlay::before {
+  width: 260px; height: 260px;
+  right: -105px; bottom: -85px;
+  background: rgba(176, 149, 25, 0.16);
+}
+.as-overlay::after {
+  width: 130px; height: 130px;
+  left: -55px; top: 42%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* the two faces reuse the .reg-brand text styles; only the background is dropped */
+.as-face.reg-brand {
+  grid-area: 1 / 1;
+  background: none;
+  overflow: visible;
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+.as-face.reg-brand::before,
+.as-face.reg-brand::after { display: none; }
+
+.is-register .as-face-register,
+.is-login    .as-face-login {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s ease calc(var(--as-speed) * 0.35), visibility 0s;
+}
+
+/* outlined "Sign up" button on the login face */
+.as-ghost-btn {
+  display: inline-block;
+  margin-top: 26px;
+  padding: 11px 38px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.as-ghost-btn:hover { background: #fff; color: #6f0b0d; }
+
+/* ── The two form panels share one spot ── */
+.as-stage { display: grid; }
+
+.as-panel {
+  grid-area: 1 / 1;
+  display: flex;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform var(--as-speed) var(--as-ease), visibility 0s linear var(--as-speed);
+}
+.as-panel > .reg-form-side { flex: 1; }
+
+/* the maroon panel covers one side, so each form keeps clear of it */
+.as-panel-register { margin-left:  var(--reg-brand-width); transform: translateX(70px);  }
+.as-panel-login    { margin-right: var(--reg-brand-width); transform: translateX(-70px); }
+
+.is-register .as-panel-register,
+.is-login    .as-panel-login {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity 0.45s ease calc(var(--as-speed) * 0.4), transform var(--as-speed) var(--as-ease), visibility 0s;
+}
+
+/* ── Login form ── */
+.as-login-inner {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.as-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--reg-gap-y) + 2px);
+}
+.as-login-form .auth-btn { margin-top: 6px; }
+
+/* ── "Check your email" screen, shown inside the register panel ── */
+.as-register-side { position: relative; }
+.as-form-wrap.is-hidden { visibility: hidden; }
+
+.as-done {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #fff;
+  padding: 24px var(--reg-pad-x);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow-y: auto;
+}
+.as-done > * { max-width: 460px; }
+.as-done-icon { font-size: 2.6rem; margin-bottom: 6px; }
+.as-done h2   { margin-bottom: 10px; }
+.as-done-text { color: #6b5e61; font-size: 0.92rem; line-height: 1.7; }
+.as-done-text strong { color: #5e1420; }
+.as-done-hint { color: #a08a8e; font-size: 0.8rem; margin-top: 12px; }
+.as-link-btn {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: #8d1b2d;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ── Tablets and phones: no sliding, just show the form that belongs to the page ── */
+@media (max-width: 900px) {
+  .as-overlay { display: none; }
+  .as-panel,
+  .as-panel-register,
+  .as-panel-login {
+    margin: 0;
+    transform: none;
+    transition: none;
+  }
+  .is-login    .as-panel-register,
+  .is-register .as-panel-login { display: none; }
+  .as-login-inner { padding: 8px 0 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .as-overlay, .as-face.reg-brand, .as-panel { transition: none !important; }
+}

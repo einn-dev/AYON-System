@@ -5,6 +5,7 @@ import PasswordInput from './PasswordInput';
 import ResendVerification from './ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import { COLLEGES, getDepartments } from '../data/Colleges';
+import { FaEnvelopeCircleCheck } from 'react-icons/fa6';
 
 const EMPTY_FORM = {
   first_name: '', last_name: '', email: '',
@@ -302,7 +303,7 @@ const RegisterForm = () => {
       {/* after sign-up: "Check your email" */}
       {done && (
         <div className="as-done">
-          <div className="as-done-icon">📧</div>
+          <div className="as-done-icon"><FaEnvelopeCircleCheck /></div>
           <h2>Check your email</h2>
 
           {done.emailSent ? (

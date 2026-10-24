@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/ayon-logo.png';
 import './LandingPage.css';
+import { FaArrowRight } from 'react-icons/fa6';
 
 const LandingPage = () => {
   return (
@@ -33,7 +34,7 @@ const LandingPage = () => {
         </p>
         <div className="lp-cta">
           <Link to="/register" className="lp-btn lp-btn-lg">Create an account</Link>
-          <Link to="/login" className="lp-link lp-link-lg">Sign in →</Link>
+          <Link to="/login" className="lp-link lp-link-lg">Sign in <FaArrowRight className="ic-r" /></Link>
         </div>
         <p className="lp-flow">
           Submitted · Validated · Reviewed · Endorsed · Approved · Archived

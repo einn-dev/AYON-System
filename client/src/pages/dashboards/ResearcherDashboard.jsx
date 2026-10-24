@@ -7,16 +7,17 @@ import '../../components/Layout.css';
 import GrantsPage from './GrantsPage';
 import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaUser } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/researcher/dashboard',   label: 'Dashboard',         icon: '⊞' },
-  { path: '/researcher/proposals',   label: 'My Proposals',      icon: '📄' },
-  { path: '/researcher/submit',      label: 'Submit Proposal',   icon: '✚' },
-  { path: '/researcher/grants',      label: 'Grant & Incentives',icon: '🎓' },
-  { path: '/researcher/repository',  label: 'Repository',        icon: '🗄' },
-  { path: '/researcher/profile',     label: 'My Profile',        icon: '👤' },
-  { path: '/researcher/external',    label: 'External Research', icon: '🌐' },
-  { path: '/researcher/notifications', label: 'Notifications',   icon: '🔔' },
+  { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
+  { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
+  { path: '/researcher/submit',      label: 'Submit Proposal',   icon: <FaCirclePlus /> },
+  { path: '/researcher/grants',      label: 'Grant & Incentives',icon: <FaHandHoldingDollar /> },
+  { path: '/researcher/repository',  label: 'Repository',        icon: <FaBoxArchive /> },
+  { path: '/researcher/profile',     label: 'My Profile',        icon: <FaUser /> },  
+  { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
+  { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
   
 ];
 
@@ -52,7 +53,7 @@ const Overview = ({ proposals, user }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Welcome, {user?.first_name}! 👋</h1>
+        <h1>Welcome, {user?.first_name}!</h1>
         <p>Here's an overview of your research activities in AYON.</p>
       </div>
 
@@ -336,7 +337,7 @@ const SubmitProposal = ({ onRefresh }) => {
                 fontWeight: 700, fontSize: '0.82rem', flexShrink: 0,
                 transition: 'background 0.2s'
               }}>
-                {step > i + 1 ? '✓' : i + 1}
+                {step > i + 1 ? <FaCheck /> : i + 1}
               </div>
               <span style={{
                 fontSize: '0.82rem', fontWeight: step === i + 1 ? 600 : 400,
@@ -379,7 +380,7 @@ const SubmitProposal = ({ onRefresh }) => {
                 <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
                   <button type="button" className="btn btn-primary"
                     onClick={() => { if (!form.proposal_type) return setAlert({ type: 'error', msg: 'Please select a type.' }); setAlert(null); setStep(2); }}>
-                    Next →
+                    Next <FaArrowRight className="ic-r" />
                   </button>
                 </div>
               </>
@@ -400,10 +401,10 @@ const SubmitProposal = ({ onRefresh }) => {
                     style={{ resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn btn-outline" onClick={() => setStep(1)}>← Back</button>
+                  <button type="button" className="btn btn-outline" onClick={() => setStep(1)}><FaArrowLeft className="ic" />Back</button>
                   <button type="button" className="btn btn-primary"
                     onClick={() => { if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Title is required.' }); setAlert(null); setStep(3); }}>
-                    Next →
+                    Next <FaArrowRight className="ic-r" />
                   </button>
                 </div>
               </>
@@ -438,9 +439,9 @@ const SubmitProposal = ({ onRefresh }) => {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn btn-outline" onClick={() => setStep(2)}>← Back</button>
+                  <button type="button" className="btn btn-outline" onClick={() => setStep(2)}><FaArrowLeft className="ic" />Back</button>
                   <button type="submit" className="btn btn-success" disabled={loading}>
-                    {loading ? 'Submitting...' : '✓ Submit Proposal'}
+                    {loading ? 'Submitting...' : <><FaCheck className="ic" />Submit Proposal</>}
                   </button>
                 </div>
               </>

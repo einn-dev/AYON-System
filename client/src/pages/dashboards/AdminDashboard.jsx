@@ -6,13 +6,14 @@ import '../../components/Layout.css';
 import AllProposalsPage from './AllProposalsPage';
 import ReportsPage from './ReportsPage';
 import { COLLEGES, getDepartments } from '../../data/Colleges';
+import { FaChartColumn, FaFileLines, FaKey, FaTableCellsLarge, FaUsers } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/admin/dashboard', label: 'Dashboard',    icon: '⊞' },
-  { path: '/admin/users',     label: 'User Accounts', icon: '👥' },
-  { path: '/admin/roles',     label: 'Role Assignment', icon: '🔑' },
-  { path: '/admin/proposals', label: 'All Proposals', icon: '📄' },
-  { path: '/admin/reports',   label: 'Reports',       icon: '📊' },
+  { path: '/admin/dashboard', label: 'Dashboard',    icon: <FaTableCellsLarge /> },
+  { path: '/admin/users',     label: 'User Accounts', icon: <FaUsers /> },
+  { path: '/admin/roles',     label: 'Role Assignment', icon: <FaKey /> },
+  { path: '/admin/proposals', label: 'All Proposals', icon: <FaFileLines /> },
+  { path: '/admin/reports',   label: 'Reports',       icon: <FaChartColumn /> },
 ];
 
 const ROLES = [

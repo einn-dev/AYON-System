@@ -3,12 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaClipboardList, FaFileLines, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/college-dean/dashboard',       label: 'Dashboard',       icon: '⊞' },
-  { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: '📋' },
-  { path: '/college-dean/endorsed',        label: 'Endorsed',         icon: '✅' },
-  { path: '/college-dean/notifications',   label: 'Notifications',    icon: '🔔' },
+  { path: '/college-dean/dashboard',       label: 'Dashboard',       icon: <FaTableCellsLarge /> },
+  { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
+  { path: '/college-dean/endorsed',        label: 'Endorsed',         icon: <FaCircleCheck /> },
+  { path: '/college-dean/notifications',   label: 'Notifications',    icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -88,7 +89,7 @@ const EndorsementPanel = ({ proposals, onRefresh }) => {
       ) : (
         <div>
           <button className="btn btn-outline btn-sm" style={{ marginBottom: 16 }}
-            onClick={() => { setSelected(null); setAlert(null); }}>← Back</button>
+            onClick={() => { setSelected(null); setAlert(null); }}><FaArrowLeft className="ic" />Back</button>
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
             <div className="panel">
@@ -120,7 +121,7 @@ const EndorsementPanel = ({ proposals, onRefresh }) => {
                 {selected.file_path && (
                   <a className="btn btn-outline" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 14 }}
                     href={`http://localhost:5000/${selected.file_path}`} target="_blank" rel="noreferrer">
-                    📄 View Document
+                    <FaFileLines className="ic" />View Document
                   </a>
                 )}
               </div>
@@ -135,10 +136,10 @@ const EndorsementPanel = ({ proposals, onRefresh }) => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button className="btn btn-success" disabled={saving} onClick={() => handleEndorse('endorsed')}>
-                    {saving ? 'Processing...' : '✓ Endorse as Dean'}
+                    {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse as Dean</>}
                   </button>
                   <button className="btn btn-danger" disabled={saving} onClick={() => handleEndorse('rejected')}>
-                    {saving ? 'Processing...' : '✗ Reject'}
+                    {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
                   </button>
                 </div>
                 <div style={{ marginTop: 12, padding: 10, background: '#f0f6ff', borderRadius: 8, border: '1px solid #bee3f8', fontSize: '0.78rem', color: '#2c5282' }}>

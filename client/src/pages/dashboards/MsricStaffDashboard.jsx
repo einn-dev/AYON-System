@@ -3,12 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import { FaBell, FaBoxArchive, FaInbox, FaTableCellsLarge } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/msric-staff/dashboard',      label: 'Dashboard',       icon: '⊞' },
-  { path: '/msric-staff/submissions',    label: 'All Submissions',  icon: '📥' },
-  { path: '/msric-staff/repository',     label: 'Repository',       icon: '🗄' },
-  { path: '/msric-staff/notifications',  label: 'Notifications',    icon: '🔔' },
+  { path: '/msric-staff/dashboard',      label: 'Dashboard',       icon: <FaTableCellsLarge /> },
+  { path: '/msric-staff/submissions',    label: 'All Submissions',  icon: <FaInbox /> },
+  { path: '/msric-staff/repository',     label: 'Repository',       icon: <FaBoxArchive /> },
+  { path: '/msric-staff/notifications',  label: 'Notifications',    icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {

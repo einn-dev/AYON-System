@@ -3,13 +3,14 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: '⊞' },
-  { path: '/special-assistant/submissions', label: 'Submissions',         icon: '📥' },
-  { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: '✅' },
-  { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: '📤' },
-  { path: '/special-assistant/notifications',label: 'Notifications',      icon: '🔔' },
+  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: <FaTableCellsLarge /> },
+  { path: '/special-assistant/submissions', label: 'Submissions',         icon: <FaInbox /> },
+  { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: <FaClipboardCheck /> },
+  { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: <FaPaperPlane /> },
+  { path: '/special-assistant/notifications',label: 'Notifications',      icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -378,7 +379,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => setSelected(null)}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -427,7 +428,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                       color: '#fff', fontSize: '0.75rem', fontWeight: 700,
                       transition: 'all 0.15s',
                     }}>
-                      {checklist[req] === 'complete' ? '✓' : ''}
+                      {checklist[req] === 'complete' ? <FaCheck /> : ''}
                     </div>
                     <span style={{
                       fontSize: '0.875rem',
@@ -488,7 +489,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     onClick={handleForward}
                     disabled={saving || !allComplete}
                     style={{ opacity: allComplete ? 1 : 0.5 }}>
-                    {saving ? 'Forwarding...' : '📤 Forward to Director'}
+                    {saving ? 'Forwarding...' : <><FaPaperPlane className="ic" />Forward to Director</>}
                   </button>
                   {!allComplete && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
@@ -499,7 +500,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     className="btn btn-danger"
                     onClick={handleReturn}
                     disabled={saving}>
-                    ↩ Return to Researcher
+                    <FaRotateLeft className="ic" />Return to Researcher
                   </button>
                 </div>
               </div>

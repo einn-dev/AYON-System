@@ -3,12 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/chairperson/dashboard',       label: 'Dashboard',        icon: '⊞' },
-  { path: '/chairperson/for-endorsement', label: 'For Endorsement',  icon: '📋' },
-  { path: '/chairperson/endorsed',        label: 'Endorsed',          icon: '✅' },
-  { path: '/chairperson/notifications',   label: 'Notifications',     icon: '🔔' },
+  { path: '/chairperson/dashboard',       label: 'Dashboard',        icon: <FaTableCellsLarge /> },
+  { path: '/chairperson/for-endorsement', label: 'For Endorsement',  icon: <FaClipboardList /> },
+  { path: '/chairperson/endorsed',        label: 'Endorsed',          icon: <FaCircleCheck /> },
+  { path: '/chairperson/notifications',   label: 'Notifications',     icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -103,7 +104,7 @@ const EndorsementPanel = ({ proposals, endorserRole, onRefresh }) => {
       ) : (
         <div>
           <button className="btn btn-outline btn-sm" style={{ marginBottom: 16 }}
-            onClick={() => { setSelected(null); setAlert(null); }}>← Back</button>
+            onClick={() => { setSelected(null); setAlert(null); }}><FaArrowLeft className="ic" />Back</button>
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
             <div className="panel">
@@ -145,11 +146,11 @@ const EndorsementPanel = ({ proposals, endorserRole, onRefresh }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button className="btn btn-success" disabled={saving}
                     onClick={() => handleEndorse('endorsed')}>
-                    {saving ? 'Processing...' : '✓ Endorse'}
+                    {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse</>}
                   </button>
                   <button className="btn btn-danger" disabled={saving}
                     onClick={() => handleEndorse('rejected')}>
-                    {saving ? 'Processing...' : '✗ Reject'}
+                    {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
                   </button>
                 </div>
               </div>

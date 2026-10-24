@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar } from 'react-icons/fa6';
 
 const REPORT_TYPES = [
-  { key: 'proposals',  icon: '📄', label: 'Proposals Report',
+  { key: 'proposals',  icon: <FaFileLines />, label: 'Proposals Report',
     desc: 'All research proposals with researcher, type, and status.' },
-  { key: 'grants',     icon: '🎓', label: 'Grants Report',
+  { key: 'grants',     icon: <FaHandHoldingDollar />, label: 'Grants Report',
     desc: 'All grant and incentive applications with statuses.' },
-  { key: 'repository', icon: '🗄', label: 'Repository Report',
+  { key: 'repository', icon: <FaBoxArchive />, label: 'Repository Report',
     desc: 'All archived research outputs in the repository.' },
-  { key: 'activity',   icon: '📊', label: 'Activity Report',
+  { key: 'activity',   icon: <FaChartColumn />, label: 'Activity Report',
     desc: 'System-wide summary — users, proposals, grants, and archives.' },
 ];
 
@@ -74,7 +75,7 @@ const ReportsPage = () => {
               <button className="btn btn-primary btn-sm"
                 disabled={downloading === r.key}
                 onClick={() => downloadReport(r.key)}>
-                {downloading === r.key ? 'Generating...' : '⬇ Download PDF'}
+                {downloading === r.key ? 'Generating...' : <><FaDownload className="ic" />Download PDF</>}
               </button>
             </div>
           </div>

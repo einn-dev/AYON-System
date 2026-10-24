@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { FaUpload } from 'react-icons/fa6';
 
 const ExternalResearchPage = () => {
   const [items,  setItems]  = useState([]);
@@ -110,7 +111,7 @@ const ExternalResearchPage = () => {
                 no review workflow required.
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Uploading...' : '⬆ Upload & Archive'}
+                {saving ? 'Uploading...' : <><FaUpload className="ic" />Upload & Archive</>}
               </button>
             </form>
           </div>

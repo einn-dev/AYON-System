@@ -6,6 +6,8 @@ import ProtectedRoute   from './components/ProtectedRoute';
 import LandingPage      from './pages/LandingPage';
 import LoginPage        from './pages/LoginPage';
 import RegisterPage     from './pages/RegisterPage';
+import TermsPage        from './pages/TermsPage';
+import PrivacyPage      from './pages/PrivacyPage';
 import Unauthorized     from './pages/Unauthorized';
 import VerifyEmailPage  from './pages/VerifyEmailPage';
 
@@ -25,9 +27,11 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login"      element={<LoginPage />} />
-          <Route path="/register"   element={<RegisterPage />} />
+          <Route path="/"             element={<LandingPage />} />
+          <Route path="/login"        element={<LoginPage />} />
+          <Route path="/register"     element={<RegisterPage />} />
+          <Route path="/terms"        element={<TermsPage />} />
+          <Route path="/privacy"      element={<PrivacyPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
 

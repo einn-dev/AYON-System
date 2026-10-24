@@ -4,15 +4,16 @@ import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import GrantReviewPage from './GrantReviewPage';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaHandHoldingDollar, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: '⊞' },
-  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: '📋' },
-  { path: '/ovcred/approved',        label: 'Final Approved',      icon: '✅' },
-  { path: '/ovcred/rejected',        label: 'Rejected',            icon: '✗'  },
-  { path: '/ovcred/repository',      label: 'Store to Repository', icon: '🗄' },
-  { path: '/ovcred/grants',          label: 'Grant Applications',  icon: '🎓' },
-  { path: '/ovcred/notifications',   label: 'Notifications',       icon: '🔔' },
+  { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: <FaTableCellsLarge /> },
+  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
+  { path: '/ovcred/approved',        label: 'Final Approved',      icon: <FaCircleCheck /> },
+  { path: '/ovcred/rejected',        label: 'Rejected',            icon: <FaCircleXmark />  },
+  { path: '/ovcred/repository',      label: 'Store to Repository', icon: <FaBoxArchive /> },
+  { path: '/ovcred/grants',          label: 'Grant Applications',  icon: <FaHandHoldingDollar /> },
+  { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -259,7 +260,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -329,7 +330,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={`http://localhost:5000/${selected.file_path}`}
                     target="_blank" rel="noreferrer">
-                    📄 View Attached Document
+                    <FaFileLines className="ic" />View Attached Document
                   </a>
                 )}
               </div>
@@ -362,7 +363,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontSize: '0.72rem', fontWeight: 700,
                     }}>
-                      {storeToRepo ? '✓' : ''}
+                      {storeToRepo ? <FaCheck /> : ''}
                     </div>
                     <div>
                       <p style={{ fontWeight: 600, color: '#1a3a5c',
@@ -379,12 +380,12 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     <button className="btn btn-success"
                       disabled={saving}
                       onClick={() => handleDecision('approve')}>
-                      {saving ? 'Processing...' : '✓ Grant Final Approval'}
+                      {saving ? 'Processing...' : <><FaCheck className="ic" />Grant Final Approval</>}
                     </button>
                     <button className="btn btn-danger"
                       disabled={saving}
                       onClick={() => handleDecision('rejected')}>
-                      {saving ? 'Processing...' : '✗ Reject Endorsement'}
+                      {saving ? 'Processing...' : <><FaXmark className="ic" />Reject Endorsement</>}
                     </button>
                   </div>
 
@@ -612,7 +613,7 @@ const StoreToRepository = ({ proposals }) => {
                 </select>
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Storing...' : '🗄 Store to Repository'}
+                {saving ? 'Storing...' : <><FaBoxArchive className="ic" />Store to Repository</>}
               </button>
             </form>
           </div>

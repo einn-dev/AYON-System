@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { FaCheck, FaXmark } from 'react-icons/fa6';
 
 const GRANT_TYPES = {
   research_spotlight:    'Research Spotlight',
@@ -162,12 +163,12 @@ const GrantReviewPage = () => {
                         <button className="btn btn-success btn-sm"
                           disabled={actingOn === g.grant_id}
                           onClick={() => handleDecision(g.grant_id, 'approved', g.proposal_title)}>
-                          {actingOn === g.grant_id ? '...' : '✓ Approve'}
+                          {actingOn === g.grant_id ? '...' : <><FaCheck className="ic" />Approve</>}
                         </button>
                         <button className="btn btn-danger btn-sm"
                           disabled={actingOn === g.grant_id}
                           onClick={() => handleDecision(g.grant_id, 'rejected', g.proposal_title)}>
-                          ✗ Reject
+                          <FaXmark className="ic" />Reject
                         </button>
                       </div>
                     ) : (
