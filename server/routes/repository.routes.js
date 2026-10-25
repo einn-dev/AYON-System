@@ -2,6 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const supabase = require('../config/supabase');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
+const { logAudit } = require('../utils/audit');
 
 /* ── GET repository items ── */
 router.get('/', async (req, res) => {
@@ -52,7 +53,7 @@ router.post('/', verifyToken, authorizeRoles('ovcred', 'admin'),
         }
       }
 
-      const { error } = await supabase.from('repository').insert({
+      const { data: created, error } = await supabase.from('repository').insert({
         proposal_id:  proposal_id  || null,
         external_id:  external_id  || null,
         title,
@@ -64,9 +65,17 @@ router.post('/', verifyToken, authorizeRoles('ovcred', 'admin'),
         access_type:  access_type  || 'private',
         source_type:  source_type  || 'proposal',
         keywords:     keywords     || null,
-      });
+      }).select('repo_id').maybeSingle();
 
       if (error) throw error;
+
+      await logAudit(req, {
+        action:     'repository_created',
+        targetType: 'repository',
+        targetId:   created?.repo_id,
+        targetName: title,
+        details:    { access_type: access_type || 'private', source_type: source_type || 'proposal' },
+      });
 
       return res.status(201).json({ message: 'Research stored in repository.' });
     } catch (err) {
@@ -81,12 +90,27 @@ router.patch('/:id', verifyToken, authorizeRoles('ovcred', 'admin'),
   async (req, res) => {
     const { access_type } = req.body;
     try {
+      const { data: before } = await supabase
+        .from('repository')
+        .select('title, access_type')
+        .eq('repo_id', req.params.id)
+        .maybeSingle();
+
       const { error } = await supabase
         .from('repository')
         .update({ access_type })
         .eq('repo_id', req.params.id);
 
       if (error) throw error;
+
+      await logAudit(req, {
+        action:     'repository_updated',
+        targetType: 'repository',
+        targetId:   req.params.id,
+        targetName: before?.title || null,
+        details:    { access_type: { from: before?.access_type ?? null, to: access_type } },
+      });
+
       return res.status(200).json({ message: 'Repository item updated.' });
     } catch (err) {
       console.error('Repo update error:', err);

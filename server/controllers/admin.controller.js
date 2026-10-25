@@ -1,5 +1,93 @@
 const bcrypt   = require('bcryptjs');
+const crypto   = require('crypto');
 const supabase = require('../config/supabase');
+const { logAudit, fullName } = require('../utils/audit');
+const { sendEmail } = require('../utils/mailer');
+const {
+  TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
+} = require('../utils/verification');
+
+const VALID_ROLES = [
+  'researcher','msric_staff','research_coordinator',
+  'chairperson','college_dean','special_assistant',
+  'msric_director','ovcred','admin',
+];
+
+/* Same rule as the Add User form: these roles belong to a college / department */
+const ROLES_NEED_COLLEGE    = ['researcher', 'research_coordinator', 'chairperson', 'college_dean'];
+const ROLES_NEED_DEPARTMENT = ['researcher', 'chairperson'];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isId     = (v) => /^\d+$/.test(String(v));
+const sameId   = (a, b) => String(a) === String(b);
+
+/* 1 / true / "1" / "true"  -> true,  0 / false / "0" / "false" -> false, anything else -> undefined */
+const toBool = (v) => {
+  if (v === true  || v === 1 || v === '1' || v === 'true')  return true;
+  if (v === false || v === 0 || v === '0' || v === 'false') return false;
+  return undefined;
+};
+
+/* Keeps user-typed search text safe to put inside a Supabase .or() filter */
+const safeSearch = (s) => String(s || '').replace(/[%,()*\\"'`]/g, ' ').trim().slice(0, 60);
+
+/* ── Load one user together with their role ── */
+const loadUser = async (id) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      user_id, email, first_name, last_name, department, college,
+      is_active, email_verified,
+      user_roles!user_roles_user_id_fkey ( role_id, role_type )
+    `)
+    .eq('user_id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { ...data, role_type: data.user_roles?.[0]?.role_type || null };
+};
+
+/* How many OTHER admins are still active? (used by the last-admin guard) */
+const countOtherActiveAdmins = async (excludeId) => {
+  const { data: roles, error } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role_type', 'admin');
+  if (error) throw error;
+
+  const ids = [...new Set((roles || []).map(r => r.user_id))].filter(i => !sameId(i, excludeId));
+  if (ids.length === 0) return 0;
+
+  const { data: users, error: uErr } = await supabase
+    .from('users')
+    .select('user_id')
+    .in('user_id', ids)
+    .eq('is_active', true);
+  if (uErr) throw uErr;
+  return (users || []).length;
+};
+
+/* Safety rules. Returns an error message, or null when the change is allowed.
+   1) You can't change your own role or deactivate yourself.
+   2) The last active Admin can't be demoted or deactivated.              */
+const checkGuards = async (req, target, { newRole, newActive }) => {
+  const changingRole   = newRole   !== undefined && newRole !== target.role_type;
+  const deactivating   = newActive === false && target.is_active !== false;
+  const isSelf         = sameId(req.user.user_id, target.user_id);
+
+  if (isSelf && changingRole) return 'You cannot change your own role.';
+  if (isSelf && deactivating) return 'You cannot deactivate your own account.';
+
+  const removingAdmin = target.role_type === 'admin' && target.is_active !== false
+                        && (changingRole || deactivating);
+  if (removingAdmin) {
+    const others = await countOtherActiveAdmins(target.user_id);
+    if (others === 0) {
+      return 'This is the last active Admin account. Create or activate another Admin first.';
+    }
+  }
+  return null;
+};
 
 /* ── GET all users with roles ──
    Join disambiguated: user_roles has 2 FKs to users  */
@@ -10,7 +98,7 @@ const getAllUsers = async (req, res) => {
       .select(`
         user_id, email, first_name, last_name,
         employee_id, department, college,
-        contact_number, is_active, created_at,
+        contact_number, is_active, email_verified, created_at,
         user_roles!user_roles_user_id_fkey ( role_id, role_type )
       `)
       .order('created_at', { ascending: false });
@@ -37,24 +125,25 @@ const createUser = async (req, res) => {
     employee_id, department, college, contact_number, role,
   } = req.body;
 
-  const validRoles = [
-    'researcher','msric_staff','research_coordinator',
-    'chairperson','college_dean','special_assistant',
-    'msric_director','ovcred','admin',
-  ];
-
   if (!email || !password || !first_name || !last_name) {
     return res.status(400).json({ message: 'Please fill in all required fields.' });
   }
-  if (!validRoles.includes(role)) {
+  if (!VALID_ROLES.includes(role)) {
     return res.status(400).json({ message: 'Invalid role.' });
+  }
+  const emailLc = String(email).trim().toLowerCase();
+  if (!EMAIL_RE.test(emailLc)) {
+    return res.status(400).json({ message: 'Please enter a valid email address.' });
+  }
+  if (String(password).length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
   }
 
   try {
     const { data: existing } = await supabase
       .from('users')
       .select('user_id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailLc)
       .maybeSingle();
 
     if (existing) {
@@ -66,10 +155,10 @@ const createUser = async (req, res) => {
     const { data: newUser, error: userError } = await supabase
       .from('users')
       .insert({
-        email:          email.toLowerCase(),
+        email:          emailLc,
         password:       hashedPassword,
-        first_name,
-        last_name,
+        first_name:     String(first_name).trim(),
+        last_name:      String(last_name).trim(),
         employee_id:    employee_id    || null,
         department:     department     || null,
         college:        college        || null,
@@ -90,6 +179,14 @@ const createUser = async (req, res) => {
 
     if (roleError) throw roleError;
 
+    await logAudit(req, {
+      action:     'user_created',
+      targetType: 'user',
+      targetId:   newUser.user_id,
+      targetName: `${String(first_name).trim()} ${String(last_name).trim()}`,
+      details:    { role, email: emailLc },
+    });
+
     return res.status(201).json({
       message: `User created with role: ${role}.`,
       user_id: newUser.user_id,
@@ -100,64 +197,474 @@ const createUser = async (req, res) => {
   }
 };
 
-/* ── PATCH user active status ── */
-const updateUserStatus = async (req, res) => {
-  const { id }        = req.params;
-  const { is_active } = req.body;
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({ is_active })
-      .eq('user_id', id);
+/* ── The one place where an account is changed ──
+   Used by PATCH /users/:id (the Edit pop-up) and by the older
+   /status and /role routes, so every path has the same guards + logging. */
+const applyUserChanges = async (req, id, input) => {
+  const target = await loadUser(id);
+  if (!target) return { code: 404, body: { message: 'User not found.' } };
 
+  const userUpdates = {};
+  const fieldChanges = {};          // for the audit log: { field: { from, to } }
+
+  /* names */
+  for (const f of ['first_name', 'last_name']) {
+    if (input[f] === undefined) continue;
+    const v = String(input[f] || '').trim();
+    if (!v) return { code: 400, body: { message: 'First name and last name cannot be empty.' } };
+    if (v.length > 50) return { code: 400, body: { message: 'Names can be up to 50 characters.' } };
+    if (v !== target[f]) { userUpdates[f] = v; fieldChanges[f] = { from: target[f], to: v }; }
+  }
+
+  /* email */
+  if (input.email !== undefined) {
+    const v = String(input.email || '').trim().toLowerCase();
+    if (!EMAIL_RE.test(v)) return { code: 400, body: { message: 'Please enter a valid email address.' } };
+    if (v !== String(target.email).toLowerCase()) {
+      const { data: taken } = await supabase
+        .from('users').select('user_id').eq('email', v).maybeSingle();
+      if (taken && !sameId(taken.user_id, target.user_id)) {
+        return { code: 409, body: { message: 'That email is already used by another account.' } };
+      }
+      userUpdates.email = v;
+      fieldChanges.email = { from: target.email, to: v };
+    }
+  }
+
+  /* role + status */
+  const newRole = input.role_type;
+  if (newRole !== undefined && !VALID_ROLES.includes(newRole)) {
+    return { code: 400, body: { message: 'Invalid role.' } };
+  }
+  let newActive;
+  if (input.is_active !== undefined) {
+    newActive = toBool(input.is_active);
+    if (newActive === undefined) return { code: 400, body: { message: 'Invalid status.' } };
+  }
+
+  const roleChanging   = newRole !== undefined && newRole !== target.role_type;
+  const statusChanging = newActive !== undefined && newActive !== (target.is_active !== false);
+
+  const guardMsg = await checkGuards(req, target, {
+    newRole:   roleChanging   ? newRole   : undefined,
+    newActive: statusChanging ? newActive : undefined,
+  });
+  if (guardMsg) return { code: 400, body: { message: guardMsg } };
+
+  /* college / department (cleared when the role no longer needs them) */
+  let college    = input.college    !== undefined ? (String(input.college    || '').trim() || null) : (target.college    || null);
+  let department = input.department !== undefined ? (String(input.department || '').trim() || null) : (target.department || null);
+
+  const effectiveRole = roleChanging ? newRole : target.role_type;
+  if (roleChanging) {
+    if (!ROLES_NEED_COLLEGE.includes(effectiveRole))    college    = null;
+    if (!ROLES_NEED_DEPARTMENT.includes(effectiveRole)) department = null;
+    if (ROLES_NEED_COLLEGE.includes(effectiveRole) && !college) {
+      return { code: 400, body: { message: 'Please choose a college for this role.' } };
+    }
+    if (ROLES_NEED_DEPARTMENT.includes(effectiveRole) && !department) {
+      return { code: 400, body: { message: 'Please choose a department for this role.' } };
+    }
+  }
+  if (college !== (target.college || null)) {
+    userUpdates.college = college;
+    fieldChanges.college = { from: target.college || null, to: college };
+  }
+  if (department !== (target.department || null)) {
+    userUpdates.department = department;
+    fieldChanges.department = { from: target.department || null, to: department };
+  }
+
+  if (statusChanging) userUpdates.is_active = newActive;
+
+  if (Object.keys(userUpdates).length === 0 && !roleChanging) {
+    return { code: 200, body: { message: 'No changes to save.', changed: false } };
+  }
+
+  /* save */
+  if (Object.keys(userUpdates).length > 0) {
+    const { error } = await supabase.from('users').update(userUpdates).eq('user_id', target.user_id);
     if (error) throw error;
-    return res.status(200).json({ message: 'User status updated.' });
+  }
+
+  if (roleChanging) {
+    const { data: updated, error } = await supabase
+      .from('user_roles')
+      .update({ role_type: newRole, assigned_by: req.user.user_id })
+      .eq('user_id', target.user_id)
+      .select('role_id');
+    if (error) throw error;
+
+    if (!updated || updated.length === 0) {
+      const { error: insErr } = await supabase
+        .from('user_roles')
+        .insert({ user_id: target.user_id, role_type: newRole, assigned_by: req.user.user_id });
+      if (insErr) throw insErr;
+    }
+  }
+
+  /* audit trail: one entry per kind of change */
+  const targetName = fullName({
+    first_name: userUpdates.first_name || target.first_name,
+    last_name:  userUpdates.last_name  || target.last_name,
+  });
+  const base = { targetType: 'user', targetId: target.user_id, targetName };
+  const reason = String(input.reason || '').trim().slice(0, 200) || undefined;
+
+  if (Object.keys(fieldChanges).length > 0) {
+    await logAudit(req, { ...base, action: 'user_updated', details: { changes: fieldChanges } });
+  }
+  if (roleChanging) {
+    await logAudit(req, { ...base, action: 'role_changed', details: { from: target.role_type, to: newRole } });
+  }
+  if (statusChanging) {
+    await logAudit(req, {
+      ...base,
+      action:  newActive ? 'user_activated' : 'user_deactivated',
+      details: reason ? { reason } : null,
+    });
+  }
+
+  return { code: 200, body: { message: 'User updated.', changed: true } };
+};
+
+const runChange = (buildInput) => async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid user.' });
+  try {
+    const out = await applyUserChanges(req, id, buildInput(req.body || {}));
+    return res.status(out.code).json(out.body);
   } catch (err) {
-    console.error('updateUserStatus error:', err);
+    console.error('User update error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
 
-/* ── PATCH user role ── */
-const updateUserRole = async (req, res) => {
-  const { id }        = req.params;
-  const { role_type } = req.body;
+/* PATCH /admin/users/:id  — the Edit pop-up (name, email, role, status, college, department) */
+const updateUser = runChange((b) => ({
+  first_name: b.first_name, last_name: b.last_name, email: b.email,
+  role_type:  b.role_type,  is_active: b.is_active,
+  college:    b.college,    department: b.department,
+  reason:     b.reason,
+}));
 
-  const validRoles = [
-    'researcher','msric_staff','research_coordinator',
-    'chairperson','college_dean','special_assistant',
-    'msric_director','ovcred','admin',
-  ];
+/* PATCH /admin/users/:id/status  — kept for the Activate / Deactivate button */
+const updateUserStatus = runChange((b) => ({ is_active: b.is_active, reason: b.reason }));
 
-  if (!validRoles.includes(role_type)) {
-    return res.status(400).json({ message: 'Invalid role.' });
+/* PATCH /admin/users/:id/role  — kept for older screens */
+const updateUserRole = runChange((b) => ({ role_type: b.role_type }));
+
+/* ── POST reset a user's password (ADMIN ONLY) ──
+   Makes a random temporary password, saves only its hash, and shows it ONCE
+   to the admin, who hands it to the user. It is never emailed or logged.   */
+const makeTempPassword = () => {
+  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnpqrstuvwxyz';
+  const digit = '23456789';
+  const all   = upper + lower + digit;
+  const pick  = (set) => set[crypto.randomInt(set.length)];
+  const chars = [pick(upper), pick(lower), pick(digit)];
+  while (chars.length < 12) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i--) {          // shuffle
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
   }
+  return chars.join('');
+};
+
+const resetPassword = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid user.' });
 
   try {
-    const { data: existing } = await supabase
-      .from('user_roles')
-      .select('role_id')
-      .eq('user_id', id)
-      .maybeSingle();
+    const target = await loadUser(id);
+    if (!target) return res.status(404).json({ message: 'User not found.' });
 
-    if (existing) {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role_type })
-        .eq('user_id', id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: parseInt(id), role_type });
-      if (error) throw error;
+    const temp   = makeTempPassword();
+    const hashed = await bcrypt.hash(temp, 10);
+    const { error } = await supabase.from('users').update({ password: hashed }).eq('user_id', target.user_id);
+    if (error) throw error;
+
+    await logAudit(req, {
+      action:     'password_reset',
+      targetType: 'user',
+      targetId:   target.user_id,
+      targetName: fullName(target),
+    });
+
+    res.set('Cache-Control', 'no-store');
+    return res.status(200).json({
+      message: 'Temporary password created.',
+      temporary_password: temp,
+    });
+  } catch (err) {
+    console.error('resetPassword error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* ── POST mark a user's email as verified (ADMIN ONLY) ── */
+const verifyUserEmail = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid user.' });
+
+  try {
+    const target = await loadUser(id);
+    if (!target) return res.status(404).json({ message: 'User not found.' });
+    if (target.email_verified !== false) {
+      return res.status(400).json({ message: 'This email is already verified.' });
     }
 
-    return res.status(200).json({ message: 'Role updated successfully.' });
+    const { error } = await supabase
+      .from('users')
+      .update({ email_verified: true, verification_token_hash: null, verification_expires: null })
+      .eq('user_id', target.user_id);
+    if (error) throw error;
+
+    await logAudit(req, {
+      action:     'email_verified',
+      targetType: 'user',
+      targetId:   target.user_id,
+      targetName: fullName(target),
+      details:    { email: target.email, by: 'admin' },
+    });
+
+    return res.status(200).json({ message: 'Email marked as verified.' });
   } catch (err) {
-    console.error('updateUserRole error:', err);
+    console.error('verifyUserEmail error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { getAllUsers, createUser, updateUserStatus, updateUserRole };
+/* Makes a fresh verification link for an unverified user and emails it.
+   Returns true when the mail provider accepted the email. */
+const issueVerificationEmail = async (user) => {
+  const token = newToken();
+  const { error } = await supabase
+    .from('users')
+    .update({
+      verification_token_hash: hashToken(token),
+      verification_expires:    new Date(Date.now() + TOKEN_TTL_MS).toISOString(),
+    })
+    .eq('user_id', user.user_id);
+  if (error) throw error;
+
+  return sendVerificationEmail({ email: user.email, first_name: user.first_name }, token);
+};
+
+/* ── POST send a new verification email (ADMIN ONLY) ── */
+const resendVerification = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid user.' });
+
+  try {
+    const target = await loadUser(id);
+    if (!target) return res.status(404).json({ message: 'User not found.' });
+    if (target.email_verified !== false) {
+      return res.status(400).json({ message: 'This email is already verified.' });
+    }
+
+    const sent = await issueVerificationEmail(target);
+
+    await logAudit(req, {
+      action:     'verification_resent',
+      targetType: 'user',
+      targetId:   target.user_id,
+      targetName: fullName(target),
+      details:    { email: target.email, sent },
+    });
+
+    if (!sent) {
+      return res.status(502).json({
+        message: 'The email could not be sent. Open the Email Log to see why.',
+      });
+    }
+    return res.status(200).json({ message: 'Verification email sent.' });
+  } catch (err) {
+    console.error('resendVerification error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* ── pagination helpers for the two log pages ── */
+const pageParams = (q, defaultSize = 25, maxSize = 100) => {
+  const page = Math.max(1, parseInt(q.page, 10) || 1);
+  const size = Math.min(maxSize, Math.max(1, parseInt(q.page_size, 10) || defaultSize));
+  return { page, size, from: (page - 1) * size, to: (page - 1) * size + size - 1 };
+};
+
+const validDate = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const countOf = async (query) => {
+  const { count, error } = await query;
+  if (error) throw error;
+  return count || 0;
+};
+
+/* ── GET audit log (ADMIN ONLY) ──
+   Filters: action, q (person), from, to (ISO dates), page, page_size.
+   export=1 returns up to 5000 rows for the CSV download.               */
+const getAuditLogs = async (req, res) => {
+  try {
+    const { action, q, from, to, today_from } = req.query;
+    const exporting = req.query.export === '1';
+    const pg = exporting ? { from: 0, to: 4999, page: 1, size: 5000 } : pageParams(req.query);
+
+    let query = supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .order('audit_id',   { ascending: false });
+
+    if (action) query = query.eq('action', String(action).slice(0, 40));
+    const fromIso = validDate(from);
+    const toIso   = validDate(to);
+    if (fromIso) query = query.gte('created_at', fromIso);
+    if (toIso)   query = query.lt('created_at', toIso);
+
+    const term = safeSearch(q);
+    if (term) query = query.or(`actor_name.ilike.%${term}%,target_name.ilike.%${term}%`);
+
+    const { data, count, error } = await query.range(pg.from, pg.to);
+    if (error) throw error;
+
+    /* small summary cards */
+    const weekAgo   = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const dayStart  = validDate(today_from) || new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
+    const head = { count: 'exact', head: true };
+
+    const [today, roleChanges, failedLogins] = await Promise.all([
+      countOf(supabase.from('audit_logs').select('audit_id', head).gte('created_at', dayStart)),
+      countOf(supabase.from('audit_logs').select('audit_id', head).eq('action', 'role_changed').gte('created_at', weekAgo)),
+      countOf(supabase.from('audit_logs').select('audit_id', head).eq('action', 'login_failed').gte('created_at', weekAgo)),
+    ]);
+
+    return res.status(200).json({
+      logs:      data || [],
+      total:     count || 0,
+      page:      pg.page,
+      page_size: pg.size,
+      stats:     { today, role_changes_7d: roleChanges, failed_logins_7d: failedLogins },
+    });
+  } catch (err) {
+    console.error('getAuditLogs error:', err);
+    return res.status(500).json({ message: 'Could not load the audit log.' });
+  }
+};
+
+/* ── GET email log (ADMIN ONLY) ── the email body is never sent to the browser */
+const getEmailLogs = async (req, res) => {
+  try {
+    const { status, type, q } = req.query;
+    const pg = pageParams(req.query);
+
+    let query = supabase
+      .from('email_logs')
+      .select('email_id, recipient_email, subject, status, sent_at, created_at, error_message, email_type', { count: 'exact' })
+      .order('email_id', { ascending: false });
+
+    if (['sent', 'failed', 'pending'].includes(status)) query = query.eq('status', status);
+    if (type) query = query.eq('email_type', String(type).slice(0, 30));
+
+    const term = safeSearch(q);
+    if (term) query = query.or(`recipient_email.ilike.%${term}%,subject.ilike.%${term}%`);
+
+    const { data, count, error } = await query.range(pg.from, pg.to);
+    if (error) throw error;
+
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const head = { count: 'exact', head: true };
+    const [sent, failed] = await Promise.all([
+      countOf(supabase.from('email_logs').select('email_id', head).eq('status', 'sent').gte('created_at', weekAgo)),
+      countOf(supabase.from('email_logs').select('email_id', head).eq('status', 'failed').gte('created_at', weekAgo)),
+    ]);
+
+    return res.status(200).json({
+      logs:      data || [],
+      total:     count || 0,
+      page:      pg.page,
+      page_size: pg.size,
+      stats:     { sent_7d: sent, failed_7d: failed },
+    });
+  } catch (err) {
+    console.error('getEmailLogs error:', err);
+    return res.status(500).json({ message: 'Could not load the email log.' });
+  }
+};
+
+/* ── POST try a failed email again (ADMIN ONLY) ── */
+const resendEmail = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid email.' });
+
+  try {
+    const { data: row, error } = await supabase
+      .from('email_logs')
+      .select('email_id, notif_id, recipient_email, subject, body, status, email_type')
+      .eq('email_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) return res.status(404).json({ message: 'Email not found.' });
+    if (row.status !== 'failed') {
+      return res.status(400).json({ message: 'Only failed emails can be sent again.' });
+    }
+
+    let sent = false;
+
+    if (row.email_type === 'verification') {
+      /* the old link is not stored, so make a fresh one for that person */
+      const { data: u, error: uErr } = await supabase
+        .from('users')
+        .select('user_id, email, first_name, email_verified')
+        .eq('email', String(row.recipient_email).toLowerCase())
+        .maybeSingle();
+      if (uErr) throw uErr;
+      if (!u) return res.status(404).json({ message: 'No account uses this email address anymore.' });
+      if (u.email_verified !== false) {
+        return res.status(400).json({ message: 'This person has already verified their email.' });
+      }
+      sent = await issueVerificationEmail(u);
+    } else {
+      if (!row.body || String(row.body).startsWith('[hidden')) {
+        return res.status(400).json({
+          message: 'This email contained a private link, so it cannot be sent again from the log.',
+        });
+      }
+      sent = await sendEmail({
+        to:       row.recipient_email,
+        subject:  row.subject,
+        html:     row.body,
+        notif_id: row.notif_id,
+        type:     row.email_type || 'notification',
+      });
+    }
+
+    await logAudit(req, {
+      action:     'email_resent',
+      targetType: 'email',
+      targetId:   row.email_id,
+      targetName: row.recipient_email,
+      details:    { type: row.email_type || 'notification', sent },
+    });
+
+    if (!sent) {
+      return res.status(502).json({
+        message: 'The email could not be sent again. A new entry with the error was added to the log.',
+      });
+    }
+    return res.status(200).json({ message: 'Email sent again.' });
+  } catch (err) {
+    console.error('resendEmail error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = {
+  getAllUsers, createUser, updateUser, updateUserStatus, updateUserRole,
+  resetPassword, verifyUserEmail, resendVerification,
+  getAuditLogs, getEmailLogs, resendEmail,
+};

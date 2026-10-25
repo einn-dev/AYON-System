@@ -52,13 +52,28 @@ const sendViaBrevo = async ({ to, subject, html }) => {
   }
 };
 
+/* Writes one row to email_logs. If the newer columns (error_message, email_type)
+   are not in the database yet, it retries without them so logging never breaks. */
+const writeEmailLog = async (row) => {
+  try {
+    const { error } = await supabase.from('email_logs').insert(row);
+    if (error) {
+      const { error_message, email_type, ...basic } = row; // eslint-disable-line no-unused-vars
+      await supabase.from('email_logs').insert(basic);
+    }
+  } catch (err) {
+    console.error('Email log write failed:', err.message);
+  }
+};
+
 /**
  * Send an email and log it in email_logs.
  * Never throws — an email failure must not break the main flow.
  * Returns true if sent, false if not.
  * sensitive = true keeps the email body (e.g. a private link) out of the log.
+ * type      = 'verification' | 'notification' | ... (shown in the Admin Email Log)
  */
-const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false }) => {
+const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false, type = 'notification' }) => {
   const logBody = sensitive ? '[hidden: contains a private link]' : html;
 
   try {
@@ -71,16 +86,17 @@ const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false
       });
     }
 
-    await supabase.from('email_logs').insert({
-      notif_id, recipient_email: to, subject,
+    await writeEmailLog({
+      notif_id, recipient_email: to, subject, email_type: type,
       body: logBody, status: 'sent', sent_at: new Date().toISOString(),
     });
     return true;
   } catch (err) {
     console.error('Email send failed:', err.message);
-    await supabase.from('email_logs').insert({
-      notif_id, recipient_email: to, subject,
+    await writeEmailLog({
+      notif_id, recipient_email: to, subject, email_type: type,
       body: logBody, status: 'failed',
+      error_message: String(err.message || 'Unknown error').slice(0, 500),
     });
     return false;
   }

@@ -1,30 +1,12 @@
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
-const crypto   = require('crypto');
 const supabase = require('../config/supabase');
-const { sendEmail, emailTemplate } = require('../utils/mailer');
+const { logAudit, fullName } = require('../utils/audit');
+const {
+  TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
+} = require('../utils/verification');
 
-const TOKEN_TTL_MS   = 24 * 60 * 60 * 1000;  // verification link is valid for 24 hours
 const RESEND_WAIT_MS = 60 * 1000;            // at least 1 minute between emails to the same address
-
-/* ── Token helpers ──
-   The raw token only ever lives in the email link.
-   The database stores a SHA-256 hash of it, so a leaked database
-   can't be used to verify accounts.                                  */
-const newToken  = () => crypto.randomBytes(32).toString('hex');
-const hashToken = (t) => crypto.createHash('sha256').update(t).digest('hex');
-
-const escapeHtml = (s = '') => String(s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-/* Public address of the website, used to build the link in the email.
-   Set APP_URL on Render, e.g. https://ayon-system.vercel.app            */
-const appUrl = () => {
-  const raw = process.env.APP_URL
-    || (process.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0];
-  return raw.trim().replace(/\/+$/, '');
-};
 
 /* verification_expires = (time the email was sent) + TTL,
    so we can work backwards to know when it was last sent.               */
@@ -32,28 +14,6 @@ const sentTooRecently = (expires) => {
   if (!expires) return false;
   const sentAt = new Date(expires).getTime() - TOKEN_TTL_MS;
   return Date.now() - sentAt < RESEND_WAIT_MS;
-};
-
-const sendVerificationEmail = (user, token) => {
-  const link = `${appUrl()}/verify-email?token=${token}`;
-  const message = `
-    Hi ${escapeHtml(user.first_name)},<br><br>
-    Thank you for registering with AYON. Please confirm that this is your
-    email address by clicking the button below:<br><br>
-    <a href="${link}" style="display:inline-block;background:#8d1b2d;color:#ffffff;
-       padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:600">
-       Verify my email</a><br><br>
-    If the button does not work, copy and paste this link into your browser:<br>
-    <span style="word-break:break-all;color:#1a3a5c">${link}</span><br><br>
-    This link expires in 24 hours. If you did not create an AYON account,
-    you can safely ignore this email.`;
-
-  return sendEmail({
-    to:        user.email,
-    subject:   'AYON: Please verify your email address',
-    html:      emailTemplate('Verify your email address', message),
-    sensitive: true,   // keep the private link out of email_logs
-  });
 };
 
 /* ── PUBLIC REGISTER — always creates a RESEARCHER account ──
@@ -283,21 +243,40 @@ const login = async (req, res) => {
       return res.status(500).json({ message: 'Server error. Please try again.' });
     }
 
+    // Who is trying to sign in (used for the Audit Log; never includes the password)
+    const who = user ? {
+      user_id: user.user_id,
+      name:    fullName(user),
+      role:    user.user_roles?.[0]?.role_type || 'researcher',
+    } : null;
+    const failedLogin = (reason) => logAudit(req, {
+      action:     'login_failed',
+      actor:      who,
+      targetType: 'user',
+      targetId:   user?.user_id,
+      targetName: user ? fullName(user) : String(email).trim().toLowerCase().slice(0, 200),
+      details:    { reason },
+    });
+
     if (!user) {
+      failedLogin('unknown_email');
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
     if (!user.is_active) {
+      failedLogin('account_deactivated');
       return res.status(403).json({ message: 'Your account has been deactivated.' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      failedLogin('wrong_password');
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
     // Checked AFTER the password, so strangers can't probe which emails exist
     if (user.email_verified === false) {
+      failedLogin('email_not_verified');
       return res.status(403).json({
         message: 'Please verify your email address first. We sent a link to your inbox when you registered.',
         code: 'EMAIL_NOT_VERIFIED',
@@ -305,6 +284,13 @@ const login = async (req, res) => {
     }
 
     const role  = user.user_roles?.[0]?.role_type || 'researcher';
+    logAudit(req, {
+      action:     'login_success',
+      actor:      { user_id: user.user_id, name: fullName(user), role },
+      targetType: 'user',
+      targetId:   user.user_id,
+      targetName: fullName(user),
+    });
     const token = jwt.sign(
       {
         user_id:    user.user_id,
@@ -375,7 +361,8 @@ const updateProfile = async (req, res) => {
     if (last_name)      updates.last_name      = last_name;
     if (department)     updates.department     = department;
     if (college)        updates.college        = college;
-    if (contact_number) updates.contact_number = contact_number;
+    // sent as empty / null = the person cleared the field, so the saved number is removed
+    if (contact_number !== undefined) updates.contact_number = String(contact_number || '').trim() || null;
 
     if (password && password.trim().length >= 8) {
       updates.password = await bcrypt.hash(password, 10);

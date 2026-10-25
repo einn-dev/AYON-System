@@ -1,0 +1,133 @@
+/* ─────────────────────────────────────────────────────────────
+   Admin module extras (User Accounts, Audit Log, Email Log).
+   The base look (panels, tables, buttons, badges, modal) comes from
+   components/Layout.css; this file only adds what is new.
+   ───────────────────────────────────────────────────────────── */
+
+/* inputs inside the two-column rows must shrink with their column */
+.modal .form-row > .form-group { min-width: 0; }
+.modal .form-group input,
+.modal .form-group select { width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* tables scroll sideways on small screens instead of breaking the page */
+.am-scroll { overflow-x: auto; }
+.am-scroll .data-table { min-width: 720px; }
+.am-scroll .badge { white-space: nowrap; }
+
+.am-you {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #cf9f4d;
+  color: #3b0d14;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  vertical-align: middle;
+}
+
+.am-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.btn:disabled,
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.am-muted { color: #8a7a7d; font-size: 0.8rem; }
+.am-sub   { display: block; color: #8a7a7d; font-size: 0.76rem; margin-top: 2px; }
+
+.am-legend {
+  padding: 10px 20px;
+  border-top: 1px solid #efe5e6;
+  background: #faf7f7;
+  color: #6b5e61;
+  font-size: 0.78rem;
+}
+
+/* little notes inside the pop-up */
+.am-note {
+  background: #fff5f5;
+  border: 1px solid #f3c7c7;
+  color: #a02a2a;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+}
+.am-note.info {
+  background: #faf3d9;
+  border-color: #e9d98a;
+  color: #6e5c0e;
+}
+.modal.am-wide { max-width: 580px; }
+.am-modal-sub  { margin: -12px 0 16px; font-size: 0.8rem; color: #8a7a7d; }
+
+.am-tools {
+  border-top: 1px solid #efe5e6;
+  margin-top: 6px;
+  padding-top: 14px;
+}
+.am-tools h4 {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #8a7a7d;
+}
+
+.am-confirm {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e9d98a;
+  background: #faf3d9;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #6e5c0e;
+}
+.am-confirm .am-actions { margin-top: 8px; }
+
+.am-temp {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #c3e6cf;
+  background: #f0fff4;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #276749;
+}
+.am-temp-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.am-temp code {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+  background: #fff;
+  border: 1px dashed #9ae6b4;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #1c4532;
+  user-select: all;
+}
+
+/* audit-log "what changed" text */
+.am-chg { font-size: 0.8rem; color: #3d3235; }
+.am-chg s { color: #a02a2a; }
+.am-chg b { color: #276749; }
+.am-ip   { color: #a89b9e; font-size: 0.72rem; }
+
+/* paging bar under a table */
+.am-pager {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid #efe5e6;
+  font-size: 0.8rem;
+  color: #6b5e61;
+}
+.am-pager-btns { display: flex; align-items: center; gap: 10px; }
+.am-pager-page { color: #8a7a7d; }
+
+.am-err { color: #c53030; font-size: 0.78rem; }
+
+@media (max-width: 640px) {
+  .am-pager { justify-content: center; text-align: center; }
+  .modal.am-wide { padding: 20px; }
+}
