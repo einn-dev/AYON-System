@@ -16,6 +16,14 @@ const sentTooRecently = (expires) => {
   return Date.now() - sentAt < RESEND_WAIT_MS;
 };
 
+/* Sends the verification email without making the caller wait.
+   (sendEmail never throws and logs the result; the catch is only a safety net.) */
+const sendInBackground = (user, token) => {
+  Promise.resolve()
+    .then(() => sendVerificationEmail(user, token))
+    .catch((err) => console.error('Background verification email failed:', err.message || err));
+};
+
 /* ── PUBLIC REGISTER — always creates a RESEARCHER account ──
    The account stays locked until the emailed link is clicked.          */
 const register = async (req, res) => {
@@ -103,13 +111,14 @@ const register = async (req, res) => {
       if (roleError) throw roleError;
     }
 
-    const emailSent = await sendVerificationEmail({ email: emailLc, first_name }, token);
+    // The email is sent AFTER we answer, so the person never waits for the email
+    // provider. If it fails, it shows as "failed" in the Admin Email Log and the
+    // person can press "Resend" on the Check-your-email screen.
+    sendInBackground({ email: emailLc, first_name }, token);
 
     return res.status(201).json({
-      message: emailSent
-        ? 'Account created. Please check your email to verify it.'
-        : 'Account created, but the verification email could not be sent. Please use the resend button.',
-      emailSent,
+      message: 'Account created. We are sending a verification email. Please check your inbox.',
+      emailSent: true,
       email: emailLc,
     });
   } catch (err) {
@@ -208,7 +217,7 @@ const resendVerification = async (req, res) => {
 
       if (updErr) throw updErr;
 
-      await sendVerificationEmail({ email: emailLc, first_name: user.first_name }, token);
+      sendInBackground({ email: emailLc, first_name: user.first_name }, token);
     }
 
     return res.status(200).json(generic);

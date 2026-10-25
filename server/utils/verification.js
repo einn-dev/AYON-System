@@ -35,7 +35,7 @@ const sendVerificationEmail = (user, token) => {
        padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:600">
        Verify my email</a><br><br>
     If the button does not work, copy and paste this link into your browser:<br>
-    <span style="word-break:break-all;color:#1a3a5c">${link}</span><br><br>
+    <span style="word-break:break-all;color:#8d1b2d">${link}</span><br><br>
     This link expires in 24 hours. If you did not create an AYON account,
     you can safely ignore this email.`;
 

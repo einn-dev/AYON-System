@@ -7,12 +7,30 @@ const supabase   = require('../config/supabase');
    2) Otherwise                -> Gmail SMTP via Nodemailer. Fine for local
       development on your own computer.                                    */
 
+/* Without these limits Nodemailer waits about 2 minutes before giving up
+   when the SMTP port is blocked (this is what happens on Render's free plan).
+   Now it gives up after 10-15 seconds and the failure is written to the Email Log. */
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,   // connecting to Gmail
+  greetingTimeout:   10000,   // waiting for Gmail's hello
+  socketTimeout:     15000,   // silence while sending
+});
+
+const SEND_LIMIT_MS = 20000;  // hard limit for ANY way of sending
+
+const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
+  const timer = setTimeout(
+    () => reject(new Error(`Email sending timed out after ${ms / 1000} seconds.`)), ms
+  );
+  promise.then(
+    (v) => { clearTimeout(timer); resolve(v); },
+    (e) => { clearTimeout(timer); reject(e); }
+  );
 });
 
 const sendViaBrevo = async ({ to, subject, html }) => {
@@ -78,12 +96,12 @@ const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false
 
   try {
     if (process.env.BREVO_API_KEY) {
-      await sendViaBrevo({ to, subject, html });
+      await withTimeout(sendViaBrevo({ to, subject, html }), SEND_LIMIT_MS);
     } else {
-      await transporter.sendMail({
+      await withTimeout(transporter.sendMail({
         from: `"AYON - MSIRC" <${process.env.EMAIL_USER}>`,
         to, subject, html,
-      });
+      }), SEND_LIMIT_MS);
     }
 
     await writeEmailLog({
@@ -105,14 +123,14 @@ const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false
 const emailTemplate = (title, message) => `
   <div style="font-family:Segoe UI,sans-serif;max-width:560px;margin:0 auto;
     border:1px solid #e8edf2;border-radius:12px;overflow:hidden">
-    <div style="background:#1a3a5c;padding:24px;text-align:center">
+    <div style="background:#8d1b2d;padding:24px;text-align:center">
       <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:2px">AYON</h1>
-      <p style="color:#9db4cc;margin:4px 0 0;font-size:12px">
+      <p style="color:#f0cdd2;margin:4px 0 0;font-size:12px">
         MSIRC – Mindanao State University Main Campus
       </p>
     </div>
     <div style="padding:28px">
-      <h2 style="color:#1a3a5c;font-size:17px;margin:0 0 12px">${title}</h2>
+      <h2 style="color:#8d1b2d;font-size:17px;margin:0 0 12px">${title}</h2>
       <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:0">${message}</p>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e8edf2">
         <p style="color:#a0aec0;font-size:12px;margin:0">
