@@ -5,6 +5,14 @@ import { loginUser } from '../services/authService';
 import PasswordInput from './PasswordInput';
 import ResendVerification from './ResendVerification';
 import logo from '../assets/ayon-logo.png';
+import { LOGOUT_REASON_KEY } from '../services/sessionGuard';
+
+/* shown once when the person was signed out by the server (deactivated, role changed, session ended) */
+const NOTICE_STYLE = {
+  background: '#faf3d9', border: '1px solid #e9d98a', color: '#6e5c0e',
+  borderRadius: 8, padding: '10px 12px', fontSize: '0.85rem',
+  margin: '0 0 16px', lineHeight: 1.5,
+};
 
 const ROLE_REDIRECTS = {
   researcher:           '/researcher',
@@ -27,6 +35,14 @@ const LoginForm = () => {
   const [error, setError]           = useState('');
   const [unverified, setUnverified] = useState(false);
   const [loading, setLoading]       = useState(false);
+  const [notice]                    = useState(() => {
+    try { return sessionStorage.getItem(LOGOUT_REASON_KEY) || ''; } catch { return ''; }
+  });
+
+  // show the notice only once: forget it as soon as the page has opened
+  useEffect(() => {
+    try { sessionStorage.removeItem(LOGOUT_REASON_KEY); } catch { /* ignore */ }
+  }, []);
 
   const formRef  = useRef(null);
   const typedRef = useRef(false);   // turns true once the person really types
@@ -109,6 +125,8 @@ const LoginForm = () => {
       <div className="as-login-inner">
         <h2>Sign In</h2>
         <p className="reg-sub">Welcome back! Enter your details to continue.</p>
+
+        {notice && <p role="status" style={NOTICE_STYLE}>{notice}</p>}
 
         <form
           ref={formRef}

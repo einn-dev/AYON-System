@@ -3,6 +3,7 @@ const crypto   = require('crypto');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { sendEmail } = require('../utils/mailer');
+const { forgetUser } = require('../middleware/authMiddleware');
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
 } = require('../utils/verification');
@@ -30,6 +31,22 @@ const toBool = (v) => {
 
 /* Keeps user-typed search text safe to put inside a Supabase .or() filter */
 const safeSearch = (s) => String(s || '').replace(/[%,()*\\"'`]/g, ' ').trim().slice(0, 60);
+
+/* Ends every login that was issued before now (used when someone is deactivated,
+   demoted, or has their password reset). It never blocks the Admin's action:
+   if the column isn't in the database yet, the other checks still apply.      */
+const revokeSessions = async (userId) => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ sessions_revoked_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    if (error) console.error('revokeSessions:', error.message || error);
+  } catch (err) {
+    console.error('revokeSessions:', err.message || err);
+  }
+  forgetUser(userId);
+};
 
 /* ── Load one user together with their role ── */
 const loadUser = async (id) => {
@@ -303,6 +320,13 @@ const applyUserChanges = async (req, id, input) => {
     }
   }
 
+  /* make the change count right away */
+  if (roleChanging || (statusChanging && !newActive)) {
+    await revokeSessions(target.user_id);
+  } else {
+    forgetUser(target.user_id);
+  }
+
   /* audit trail: one entry per kind of change */
   const targetName = fullName({
     first_name: userUpdates.first_name || target.first_name,
@@ -384,6 +408,11 @@ const resetPassword = async (req, res) => {
     const hashed = await bcrypt.hash(temp, 10);
     const { error } = await supabase.from('users').update({ password: hashed }).eq('user_id', target.user_id);
     if (error) throw error;
+
+    // the old password's logins stop working (not for the Admin's own session,
+    // or they would be signed out before they could copy the new password)
+    if (sameId(req.user.user_id, target.user_id)) forgetUser(target.user_id);
+    else await revokeSessions(target.user_id);
 
     await logAudit(req, {
       action:     'password_reset',

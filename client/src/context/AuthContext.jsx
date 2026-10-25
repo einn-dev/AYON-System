@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import '../services/sessionGuard';   // signs the person out when the server says their login is no longer valid
 
 const AuthContext = createContext();
 
