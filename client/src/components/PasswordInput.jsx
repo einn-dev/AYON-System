@@ -27,18 +27,18 @@ const PasswordInput = ({ name, value, onChange, placeholder, autoComplete }) => 
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          border: '1px solid #d1d9e0',
+          border: '1px solid #e0d3d5',
           borderRadius: 8,
           padding: '10px 44px 10px 14px',   /* extra right padding for the button */
           fontSize: '0.95rem',
-          color: '#2d3748',
-          background: '#f8fafc',
+          color: '#3d3235',
+          background: '#faf7f7',
           outline: 'none',
           transition: 'border-color 0.2s',
           fontFamily: 'inherit',
         }}
-        onFocus={e => { e.target.style.borderColor = '#2e6da4'; e.target.style.background = '#fff'; }}
-        onBlur={e =>  { e.target.style.borderColor = '#d1d9e0'; e.target.style.background = '#f8fafc'; }}
+        onFocus={e => { e.target.style.borderColor = '#8d1b2d'; e.target.style.background = '#fff'; }}
+        onBlur={e =>  { e.target.style.borderColor = '#e0d3d5'; e.target.style.background = '#faf7f7'; }}
       />
       <button
         type="button"
@@ -57,7 +57,7 @@ const PasswordInput = ({ name, value, onChange, placeholder, autoComplete }) => 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#718096',
+          color: '#8a7a7d',
         }}
       >
         {visible ? (

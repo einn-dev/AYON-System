@@ -2,23 +2,26 @@ const jwt      = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
 /* ─────────────────────────────────────────────────────────────
-   verifyToken now checks the DATABASE too, not just the token.
+   verifyToken checks the DATABASE too, not just the token.
 
    A login token is valid for hours, so without this a person who was
    deactivated (or demoted, or whose password was reset) could keep using
-   the system until the token ran out. Now, on every request we confirm:
+   the system until the token ran out. On every request we confirm:
      1) the account still exists and is active,
      2) the role in the token is still the person's role,
-     3) the token was not issued before an Admin revoked sessions.
+     3) the token was not issued before an Admin revoked sessions,
+     4) the person is not in the middle of a REQUIRED password change
+        (after an Admin reset). Until they choose a new password, the only
+        thing they may do is change their password.
 
    To keep the server fast, the answer is remembered for a few seconds.
-   When an Admin changes an account, forgetUser() clears that memory, so
-   the change takes effect on the very next click.
+   When an account changes, forgetUser() clears that memory, so the change
+   takes effect on the very next click.
    ───────────────────────────────────────────────────────────── */
 
 const CACHE_MS = 10 * 1000;
 const cache = new Map();             // user_id -> { at, row }
-let revokeColumnMissing = false;     // true if add_session_revocation.sql was not run yet
+let newColumnsMissing = false;       // true if the password SQL file was not run yet
 
 const forgetUser = (userId) => { cache.delete(String(userId)); };
 
@@ -30,11 +33,11 @@ const loadAccount = async (userId) => {
   const base = 'user_id, first_name, last_name, is_active, user_roles!user_roles_user_id_fkey ( role_type )';
   const run  = (cols) => supabase.from('users').select(cols).eq('user_id', userId).maybeSingle();
 
-  let { data, error } = await run(revokeColumnMissing ? base : `${base}, sessions_revoked_at`);
+  let { data, error } = await run(newColumnsMissing ? base : `${base}, sessions_revoked_at, must_change_password`);
 
-  // the new column isn't in the database yet: carry on without it
-  if (error && !revokeColumnMissing && /sessions_revoked_at/.test(error.message || '')) {
-    revokeColumnMissing = true;
+  // the new columns aren't in the database yet: carry on without them
+  if (error && !newColumnsMissing && /sessions_revoked_at|must_change_password/.test(error.message || '')) {
+    newColumnsMissing = true;
     ({ data, error } = await run(base));
   }
   if (error) throw error;
@@ -46,6 +49,7 @@ const loadAccount = async (userId) => {
     is_active:  data.is_active !== false,
     role:       data.user_roles?.[0]?.role_type || 'researcher',
     revokedAt:  data.sessions_revoked_at ? new Date(data.sessions_revoked_at).getTime() : null,
+    mustChange: data.must_change_password === true,
   };
 
   if (cache.size > 5000) cache.clear();
@@ -54,6 +58,11 @@ const loadAccount = async (userId) => {
 };
 
 const deny = (res, status, message, code) => res.status(status).json({ message, code });
+
+/* While a password change is required, only this request is allowed through. */
+const isChangePasswordRequest = (req) =>
+  req.method === 'POST' &&
+  String(req.originalUrl || '').split('?')[0].replace(/\/+$/, '').endsWith('/auth/change-password');
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -85,6 +94,9 @@ const verifyToken = async (req, res, next) => {
     if (account.role !== decoded.role) {
       return deny(res, 401, 'Your role was changed. Please sign in again.', 'ROLE_CHANGED');
     }
+    if (account.mustChange && !isChangePasswordRequest(req)) {
+      return deny(res, 403, 'You must choose a new password before you continue.', 'PASSWORD_CHANGE_REQUIRED');
+    }
 
     // the database is the source of truth for who this is
     req.user = {
@@ -92,6 +104,7 @@ const verifyToken = async (req, res, next) => {
       role:       account.role,
       first_name: account.first_name,
       last_name:  account.last_name,
+      must_change_password: account.mustChange,
     };
     return next();
   } catch (err) {

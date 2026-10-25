@@ -406,12 +406,24 @@ const resetPassword = async (req, res) => {
 
     const temp   = makeTempPassword();
     const hashed = await bcrypt.hash(temp, 10);
-    const { error } = await supabase.from('users').update({ password: hashed }).eq('user_id', target.user_id);
+    const isSelf = sameId(req.user.user_id, target.user_id);
+
+    // The person must choose their own password at the next sign-in, and any
+    // "forgot password" link they requested earlier stops working.
+    // (Not for the Admin resetting THEIR OWN password: they would be thrown to the
+    // change-password page before they could copy the new one.)
+    const changes = {
+      password:               hashed,
+      password_reset_hash:    null,
+      password_reset_expires: null,
+      ...(isSelf ? {} : { must_change_password: true }),
+    };
+    const { error } = await supabase.from('users').update(changes).eq('user_id', target.user_id);
     if (error) throw error;
 
     // the old password's logins stop working (not for the Admin's own session,
     // or they would be signed out before they could copy the new password)
-    if (sameId(req.user.user_id, target.user_id)) forgetUser(target.user_id);
+    if (isSelf) forgetUser(target.user_id);
     else await revokeSessions(target.user_id);
 
     await logAudit(req, {

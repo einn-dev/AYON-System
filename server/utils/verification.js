@@ -48,4 +48,34 @@ const sendVerificationEmail = (user, token) => {
   });
 };
 
-module.exports = { TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail };
+/* ── "Forgot password" link ──
+   Same idea as the verification link, but valid for only 1 hour. */
+const RESET_TTL_MS = 60 * 60 * 1000;
+
+const sendPasswordResetEmail = (user, token) => {
+  const link = `${appUrl()}/reset-password?token=${token}`;
+  const message = `
+    Hi ${escapeHtml(user.first_name)},<br><br>
+    We received a request to reset the password of your AYON account.
+    Click the button below to choose a new password:<br><br>
+    <a href="${link}" style="display:inline-block;background:#8d1b2d;color:#ffffff;
+       padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:600">
+       Choose a new password</a><br><br>
+    If the button does not work, copy and paste this link into your browser:<br>
+    <span style="word-break:break-all;color:#8d1b2d">${link}</span><br><br>
+    This link expires in 1 hour and can be used once. If you did not ask for
+    this, you can safely ignore this email. Your password will not change.`;
+
+  return sendEmail({
+    to:        user.email,
+    subject:   'AYON: Reset your password',
+    html:      emailTemplate('Reset your password', message),
+    sensitive: true,        // keep the private link out of email_logs
+    type:      'password_reset',
+  });
+};
+
+module.exports = {
+  TOKEN_TTL_MS, RESET_TTL_MS, newToken, hashToken,
+  sendVerificationEmail, sendPasswordResetEmail,
+};

@@ -9,6 +9,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  // an Admin reset their password: nothing else works until they choose a new one
+  if (user.must_change_password) return <Navigate to="/change-password" replace />;
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }

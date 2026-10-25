@@ -6,6 +6,9 @@ const {
   verifyEmail, resendVerification,
   uploadAvatar, removeAvatar,
 } = require('../controllers/auth.controller');
+const {
+  changePassword, forgotPassword, resetPassword,
+} = require('../controllers/password.controller');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 /* Profile pictures: kept in memory (they go to Supabase, not to disk), 2MB max. */
@@ -34,6 +37,10 @@ router.post('/register',            register);
 router.post('/login',               login);
 router.post('/verify-email',        verifyEmail);
 router.post('/resend-verification', resendVerification);
+
+router.post('/forgot-password',     forgotPassword);
+router.post('/reset-password',      resetPassword);
+router.post('/change-password',     verifyToken, changePassword);
 
 router.get('/profile',   verifyToken, getProfile);
 router.patch('/profile', verifyToken, updateProfile);

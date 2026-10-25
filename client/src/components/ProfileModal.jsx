@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { COLLEGES, getDepartments } from '../data/Colleges';
-import { checkAvatarFile, prepareAvatar, AVATAR_MAX_MB } from '../utils/Avatar';
+import { checkAvatarFile, prepareAvatar, AVATAR_MAX_MB } from '../utils/avatar';
 import Avatar from './Avatar';
+import ChangePasswordBox from './ChangePasswordBox';
 import { FaCamera, FaTrashCan, FaXmark } from 'react-icons/fa6';
 import './Account.css';
 
@@ -18,7 +19,7 @@ const cleanPhone = (raw) => {
 
 const ProfileModal = ({ onClose }) => {
   const { user, updateUser } = useAuth();
-  const [form,     setForm]     = useState({ ...user, password: '', confirm_password: '' });
+  const [form,     setForm]     = useState({ ...user });
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -34,7 +35,7 @@ const ProfileModal = ({ onClose }) => {
     let alive = true;
     API.get('/auth/profile')
       .then((res) => {
-        if (alive) setForm((f) => ({ ...f, ...res.data.user, password: '', confirm_password: '' }));
+        if (alive) setForm((f) => ({ ...f, ...res.data.user }));
       })
       .catch(() => {
         if (alive) setAlert({ type: 'error', msg: 'Could not load your profile details. Please try again.' });
@@ -90,10 +91,6 @@ const ProfileModal = ({ onClose }) => {
       return setAlert({ type: 'error', msg: 'Please select your department.' });
     if (form.contact_number && !/^09\d{9}$/.test(form.contact_number))
       return setAlert({ type: 'error', msg: 'Contact number must be exactly 11 digits, numbers only, starting with 09.' });
-    if (form.password && form.password.length < 8)
-      return setAlert({ type: 'error', msg: 'New password must be at least 8 characters.' });
-    if (form.password && form.password !== form.confirm_password)
-      return setAlert({ type: 'error', msg: 'Passwords do not match.' });
 
     setSaving(true);
     try {
@@ -115,12 +112,11 @@ const ProfileModal = ({ onClose }) => {
         college:        form.college,
         department:     form.department,
         contact_number: form.contact_number || null,
-        ...(form.password ? { password: form.password } : {}),
       });
 
       // the sidebar picks these up right away
       updateUser({ first_name: form.first_name.trim(), last_name: form.last_name.trim(), avatar_url });
-      setForm((f) => ({ ...f, avatar_url, password: '', confirm_password: '' }));
+      setForm((f) => ({ ...f, avatar_url }));
       setPhoto(null);
       setRemovePhoto(false);
       setAlert({ type: 'success', msg: 'Profile updated successfully!' });
@@ -237,21 +233,7 @@ const ProfileModal = ({ onClose }) => {
               </div>
 
               <hr className="pm-sep" />
-              <p className="pm-sub">Change Password (leave blank to keep current)</p>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>New Password</label>
-                  <input type="password" value={form.password} autoComplete="new-password"
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    placeholder="Min. 8 characters" />
-                </div>
-                <div className="form-group">
-                  <label>Confirm Password</label>
-                  <input type="password" value={form.confirm_password} autoComplete="new-password"
-                    onChange={e => setForm({ ...form, confirm_password: e.target.value })}
-                    placeholder="Repeat password" />
-                </div>
-              </div>
+              <ChangePasswordBox />
 
               <div className="pm-foot">
                 <button type="button" className="btn btn-outline" onClick={onClose}>Close</button>

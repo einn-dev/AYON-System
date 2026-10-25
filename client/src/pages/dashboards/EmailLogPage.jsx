@@ -7,8 +7,9 @@ import { errText, fmtWhen, Pager } from './adminShared';
 const PAGE_SIZE = 25;
 
 const TYPE_LABELS = {
-  verification: 'Verification',
-  notification: 'Notification',
+  verification:   'Verification',
+  password_reset: 'Password reset',
+  notification:   'Notification',
 };
 
 const EmailLogPage = () => {
@@ -109,6 +110,7 @@ const EmailLogPage = () => {
               value={type} onChange={e => { setType(e.target.value); setPage(1); }}>
               <option value="">All types</option>
               <option value="verification">Verification</option>
+              <option value="password_reset">Password reset</option>
               <option value="notification">Notification</option>
             </select>
             {filtersOn && (

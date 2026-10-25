@@ -433,7 +433,8 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
             {confirmReset && (
               <div className="am-confirm">
                 Create a new temporary password for <strong>{user.first_name} {user.last_name}</strong>?
-                Their current password will stop working right away.
+                Their current password will stop working right away
+                {isSelf ? '.' : ', and they will be asked to choose a new one the next time they sign in.'}
                 <div className="am-actions">
                   <button type="button" className="btn btn-primary btn-sm"
                     disabled={!!busy} onClick={resetPassword}>Yes, reset it</button>

@@ -14,6 +14,9 @@ const ACTIONS = {
   user_activated:     { label: 'Account activated',   badge: 'badge-green'  },
   user_deactivated:   { label: 'Account deactivated', badge: 'badge-red'    },
   password_reset:     { label: 'Password reset',      badge: 'badge-gray'   },
+  password_changed:   { label: 'Password changed',    badge: 'badge-gray'   },
+  password_reset_requested: { label: 'Reset link requested', badge: 'badge-amber' },
+  password_reset_completed: { label: 'Password reset by link', badge: 'badge-green' },
   email_verified:     { label: 'Email verified',      badge: 'badge-green'  },
   verification_resent:{ label: 'Verification resent', badge: 'badge-amber'  },
   email_resent:       { label: 'Email resent',        badge: 'badge-amber'  },
@@ -52,6 +55,14 @@ const detailsText = (log) => {
       return `Role: ${roleName(d.role)}${d.email ? ` · ${d.email}` : ''}`;
     case 'user_deactivated':
       return d.reason ? `Reason: ${d.reason}` : '';
+    case 'password_reset':
+      return 'Temporary password created; must be changed at next sign-in';
+    case 'password_changed':
+      return d.forced ? 'Required change after an Admin reset' : 'Changed by the account owner';
+    case 'password_reset_requested':
+      return 'Asked for a reset link ("Forgot password")';
+    case 'password_reset_completed':
+      return 'Chose a new password through the emailed link';
     case 'email_verified':
       return d.by === 'admin' ? 'Marked as verified by an Admin' : '';
     case 'verification_resent':

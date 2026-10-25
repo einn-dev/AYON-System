@@ -238,14 +238,21 @@ const login = async (req, res) => {
   }
 
   try {
-    const { data: user, error } = await supabase
+    const findUser = (extra) => supabase
       .from('users')
       .select(`
         user_id, email, password, first_name, last_name, avatar_url, is_active, email_verified,
-        user_roles!user_roles_user_id_fkey ( role_type )
+        user_roles!user_roles_user_id_fkey ( role_type )${extra}
       `)
       .eq('email', String(email).trim().toLowerCase())
       .maybeSingle();
+
+    let { data: user, error } = await findUser(', must_change_password');
+
+    // the password SQL file was not run yet: sign-in must still work
+    if (error && /must_change_password/.test(error.message || '')) {
+      ({ data: user, error } = await findUser(''));
+    }
 
     if (error) {
       console.error('Login query error:', error);
@@ -322,6 +329,7 @@ const login = async (req, res) => {
         last_name:  user.last_name,
         avatar_url: user.avatar_url || null,
         role,
+        must_change_password: user.must_change_password === true,
       },
     });
   } catch (err) {
@@ -364,6 +372,14 @@ const updateProfile = async (req, res) => {
     college, contact_number, password,
   } = req.body;
 
+  // Passwords are changed ONLY through POST /auth/change-password, which asks for the
+  // current password. Refusing it here closes the old way around that check.
+  if (password) {
+    return res.status(400).json({
+      message: 'To change your password, use the Change password section and enter your current password.',
+    });
+  }
+
   try {
     const updates = {};
     if (first_name)     updates.first_name     = first_name;
@@ -372,10 +388,6 @@ const updateProfile = async (req, res) => {
     if (college)        updates.college        = college;
     // sent as empty / null = the person cleared the field, so the saved number is removed
     if (contact_number !== undefined) updates.contact_number = String(contact_number || '').trim() || null;
-
-    if (password && password.trim().length >= 8) {
-      updates.password = await bcrypt.hash(password, 10);
-    }
 
     const { error } = await supabase
       .from('users')

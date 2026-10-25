@@ -10,6 +10,9 @@ import TermsPage        from './pages/TermsPage';
 import PrivacyPage      from './pages/PrivacyPage';
 import Unauthorized     from './pages/Unauthorized';
 import VerifyEmailPage  from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage  from './pages/ResetPasswordPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 import ResearcherDashboard      from './pages/dashboards/ResearcherDashboard';
 import MsricStaffDashboard      from './pages/dashboards/MsricStaffDashboard';
@@ -34,6 +37,9 @@ function App() {
           <Route path="/privacy"      element={<PrivacyPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password"  element={<ResetPasswordPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
 
           {/* Researcher */}
           <Route path="/researcher/*" element={

@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/authService';
 import PasswordInput from './PasswordInput';
 import ResendVerification from './ResendVerification';
+import { ROLE_REDIRECTS } from '../utils/roleRoutes';
+import './PasswordPages.css';
 import logo from '../assets/ayon-logo.png';
 import { LOGOUT_REASON_KEY } from '../services/sessionGuard';
 
@@ -12,18 +14,6 @@ const NOTICE_STYLE = {
   background: '#faf3d9', border: '1px solid #e9d98a', color: '#6e5c0e',
   borderRadius: 8, padding: '10px 12px', fontSize: '0.85rem',
   margin: '0 0 16px', lineHeight: 1.5,
-};
-
-const ROLE_REDIRECTS = {
-  researcher:           '/researcher',
-  msric_staff:          '/msric-staff',
-  research_coordinator: '/coordinator',
-  chairperson:          '/chairperson',
-  college_dean:         '/college-dean',
-  special_assistant:    '/special-assistant',
-  msric_director:       '/director',
-  ovcred:               '/ovcred',
-  admin:                '/admin',
 };
 
 const EMPTY_FORM = { email: '', password: '' };
@@ -99,7 +89,10 @@ const LoginForm = () => {
     try {
       const res = await loginUser(form);
       login(res.data.user, res.data.token);
-      const redirect = ROLE_REDIRECTS[res.data.user.role] || '/login';
+      // signed in with a temporary password from an Admin: must choose a new one first
+      const redirect = res.data.user.must_change_password
+        ? '/change-password'
+        : (ROLE_REDIRECTS[res.data.user.role] || '/login');
       navigate(redirect, { replace: true });
     } catch (err) {
       const data = err.response?.data;
@@ -157,6 +150,10 @@ const LoginForm = () => {
               onChange={handleChange}
               autoComplete="new-password"
             />
+          </div>
+
+          <div className="as-forgot">
+            <Link to="/forgot-password">Forgot password?</Link>
           </div>
 
           {error && <p className="auth-error">{error}</p>}
