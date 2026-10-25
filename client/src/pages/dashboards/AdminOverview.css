@@ -1,0 +1,117 @@
+/* ─────────────────────────────────────────────────────────────
+   Admin Dashboard (AdminOverview.jsx).
+   The base look (panels, tables, badges, buttons) comes from
+   components/Layout.css; this file adds the charts and tiles.
+   Bars use one maroon so the numbers, not the colors, do the talking.
+   ───────────────────────────────────────────────────────────── */
+
+.ao-top {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.ao-top .page-header { margin-bottom: 0; }
+.ao-field { font-size: 0.8rem; color: #6b5e61; display: flex; align-items: center; gap: 8px; }
+.ao-field select {
+  padding: 8px 12px; border: 1px solid #e0d3d5; border-radius: 8px;
+  font-size: 0.85rem; background: #fff; color: #3d3235; font-family: inherit;
+}
+
+/* headline numbers */
+.ao-kpis {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px; margin-bottom: 20px;
+}
+.ao-tile {
+  background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 18px;
+}
+.ao-tile-label {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px;
+  color: #8a7a7d; font-weight: 600;
+}
+.ao-tile-value { font-size: 2rem; font-weight: 700; color: #5e1420; line-height: 1.1; margin: 6px 0 2px; }
+.ao-tile-sub   { font-size: 0.78rem; color: #6b5e61; }
+
+/* chart cards */
+.ao-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.ao-card {
+  background: #fff; border: 1px solid #efe5e6; border-radius: 12px;
+  padding: 18px 20px; min-width: 0;
+}
+.ao-card h2 { font-size: 1rem; color: #5e1420; margin: 0 0 2px; font-weight: 600; }
+.ao-card-sub { font-size: 0.78rem; color: #8a7a7d; margin-bottom: 14px; }
+.ao-empty { color: #8a7a7d; font-size: 0.85rem; padding: 20px 0; }
+
+/* horizontal bars */
+.ao-hbars { list-style: none; margin: 0; padding: 0; }
+.ao-hbar {
+  display: grid; grid-template-columns: minmax(90px, 38%) 1fr; align-items: center;
+  gap: 10px; padding: 5px 0; font-size: 0.82rem;
+}
+.ao-hbar-name { color: #6b5e61; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ao-hbar-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ao-hbar-bar { height: 16px; background: #8d1b2d; border-radius: 0 4px 4px 0; min-width: 2px; transition: background 0.15s; }
+.ao-hbar:hover .ao-hbar-bar { background: #5e1420; }
+.ao-hbar:hover .ao-hbar-name { color: #3d3235; }
+.ao-hbar-val { font-weight: 600; color: #3d3235; font-size: 0.8rem; }
+
+/* columns */
+.ao-cols {
+  position: relative; display: flex; align-items: flex-end; gap: 14px;
+  height: 170px; border-bottom: 1px solid #e8dcde; padding: 0 4px;
+}
+.ao-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; height: 100%; max-width: 56px; margin: 0 auto;
+}
+.ao-col-cap { font-size: 0.78rem; font-weight: 600; color: #3d3235; margin-bottom: 4px; }
+.ao-col-bar { width: 24px; background: #8d1b2d; border-radius: 4px 4px 0 0; transition: background 0.15s; min-height: 2px; }
+.ao-col:hover .ao-col-bar { background: #5e1420; }
+.ao-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid #efe5e6; pointer-events: none; }
+.ao-xlabels { display: flex; gap: 14px; padding: 6px 4px 0; }
+.ao-xlabels span { flex: 1; text-align: center; font-size: 0.74rem; color: #8a7a7d; max-width: 56px; margin: 0 auto; }
+
+/* hover tip */
+.ao-tip {
+  position: fixed; z-index: 2000; pointer-events: none;
+  background: #2e0d14; color: #fff; font-size: 0.78rem;
+  padding: 7px 10px; border-radius: 8px; max-width: 260px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.ao-tip b { display: block; font-size: 0.86rem; }
+
+/* needs attention */
+.ao-scroll { overflow-x: auto; }
+.ao-scroll .data-table { min-width: 640px; }
+.ao-scroll .badge { white-space: nowrap; }
+.ao-type { display: block; font-size: 0.74rem; color: #8a7a7d; margin-top: 2px; }
+.ao-wait { font-weight: 600; white-space: nowrap; }
+.ao-wait.warm { color: #8a7413; }
+.ao-wait.hot  { color: #c53030; }
+.ao-note {
+  padding: 10px 20px; border-top: 1px solid #efe5e6; background: #faf7f7;
+  font-size: 0.78rem; color: #6b5e61;
+}
+.ao-sub { font-size: 0.78rem; color: #8a7a7d; font-weight: 400; margin-top: 2px; }
+
+/* health tiles */
+.ao-health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.ao-h {
+  background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ao-h-value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; color: #3d3235; }
+.ao-h-value.bad  { color: #c53030; }
+.ao-h-value.warn { color: #8a7413; }
+.ao-h-value.ok   { color: #276749; }
+.ao-h a { font-size: 0.78rem; color: #8d1b2d; font-weight: 600; text-decoration: none; margin-top: 2px; }
+.ao-h a:hover { text-decoration: underline; }
+
+.ao-loading { opacity: 0.55; transition: opacity 0.2s; }
+
+@media (max-width: 980px) {
+  .ao-kpis, .ao-health { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ao-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .ao-kpis, .ao-health { grid-template-columns: 1fr; }
+}

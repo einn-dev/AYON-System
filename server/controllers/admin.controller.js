@@ -663,8 +663,206 @@ const resendEmail = async (req, res) => {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   DASHBOARD NUMBERS (ADMIN ONLY)
+   GET /admin/dashboard?range=all|year|90|30
+   One call gives the Admin Dashboard everything it draws.
+   ───────────────────────────────────────────────────────────── */
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PH_OFFSET_MS = 8 * 60 * 60 * 1000;      // months are counted in Philippine time (UTC+8)
+
+const OPEN_STATUSES    = ['submitted', 'under_review', 'endorsed'];
+const DECIDED_STATUSES = ['approved', 'rejected'];
+const PROPOSAL_TYPES   = [
+  'research_spotlight', 'internally_funded', 'publication_incentive',
+  'travel_oral', 'externally_funded',
+];
+
+/* Supabase returns at most 1000 rows per request, so read big tables page by page */
+const fetchAll = async (table, columns, orderCol) => {
+  const out = [];
+  const size = 1000;
+  for (let from = 0; ; from += size) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .order(orderCol, { ascending: true })
+      .range(from, from + size - 1);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < size) break;
+  }
+  return out;
+};
+
+const ts = (v) => {
+  if (!v) return null;
+  const t = new Date(v).getTime();
+  return Number.isNaN(t) ? null : t;
+};
+
+/* "2026-10" for a moment in time, counted in Philippine time */
+const monthKey = (ms) => {
+  const d = new Date(ms + PH_OFFSET_MS);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
+/* a count that must never break the dashboard if its table isn't ready yet */
+const safeCount = async (query) => {
+  try {
+    const { count, error } = await query;
+    if (error) return null;
+    return count || 0;
+  } catch {
+    return null;
+  }
+};
+
+const getDashboard = async (req, res) => {
+  try {
+    const range = ['all', 'year', '90', '30'].includes(String(req.query.range)) ? String(req.query.range) : 'all';
+    const now   = Date.now();
+
+    let since = 0;
+    if (range === 'year') {
+      const ph = new Date(now + PH_OFFSET_MS);
+      since = Date.UTC(ph.getUTCFullYear(), 0, 1) - PH_OFFSET_MS;     // Jan 1, 00:00 Philippine time
+    } else if (range === '90' || range === '30') {
+      since = now - Number(range) * DAY_MS;
+    }
+
+    const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
+      fetchAll('research_proposals',
+        'proposal_id, title, proposal_type, status, submitted_at, created_at, updated_at, users ( first_name, last_name, college )',
+        'proposal_id'),
+      fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
+      fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
+      fetchAll('review_documents', 'review_id, proposal_id, review_date', 'review_id'),
+      fetchAll('check_doc_req', 'check_id, submission_id, checked_at', 'check_id'),
+    ]);
+
+    /* the last thing that happened to each proposal, and the recorded decision date */
+    const lastAction = new Map();
+    const bump = (proposalId, value) => {
+      const t = ts(value);
+      if (t !== null && t > (lastAction.get(proposalId) || 0)) lastAction.set(proposalId, t);
+    };
+
+    const proposalOfSubmission = new Map();
+    const decisionDate = new Map();
+    for (const s of submissions) {
+      proposalOfSubmission.set(s.submission_id, s.proposal_id);
+      bump(s.proposal_id, s.date_submitted);
+      const decided = ts(s.approved_date) || ts(s.rejected_date);
+      if (decided) decisionDate.set(s.proposal_id, decided);
+    }
+    for (const e of endorsements) { bump(e.proposal_id, e.date_endorsed); bump(e.proposal_id, e.date_rejected); }
+    for (const r of reviews)      bump(r.proposal_id, r.review_date);
+    for (const c of checks)       bump(proposalOfSubmission.get(c.submission_id), c.checked_at);
+
+    /* drafts were never submitted, so they are left out of every number */
+    const sent = proposals
+      .filter(p => p.status !== 'draft')
+      .map(p => {
+        const submittedAt = ts(p.submitted_at) || ts(p.created_at);
+        bump(p.proposal_id, p.updated_at);
+        bump(p.proposal_id, p.submitted_at || p.created_at);
+        return { ...p, submittedAt, last: lastAction.get(p.proposal_id) || submittedAt };
+      })
+      .filter(p => p.submittedAt !== null);
+
+    const inRange = sent.filter(p => p.submittedAt >= since);
+
+    /* ── headline numbers ── */
+    const inProgress = inRange.filter(p => OPEN_STATUSES.includes(p.status)).length;
+    const approved   = inRange.filter(p => p.status === 'approved').length;
+    const decided    = inRange.filter(p => DECIDED_STATUSES.includes(p.status));
+
+    const decisionDays = decided
+      .map(p => ((decisionDate.get(p.proposal_id) || p.last) - p.submittedAt) / DAY_MS)
+      .filter(d => d >= 0);
+
+    /* ── by status / college / type ── */
+    const byStatus = {};
+    const byCollege = {};
+    const byType = Object.fromEntries(PROPOSAL_TYPES.map(t => [t, 0]));
+    for (const p of inRange) {
+      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+      const college = p.users?.college || 'Not specified';
+      byCollege[college] = (byCollege[college] || 0) + 1;
+      if (p.proposal_type in byType) byType[p.proposal_type] += 1;
+    }
+
+    /* ── submissions per month: the last 6 months, in the chosen period ── */
+    const months = [];
+    const nowPh = new Date(now + PH_OFFSET_MS);
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(Date.UTC(nowPh.getUTCFullYear(), nowPh.getUTCMonth() - i, 1));
+      months.push({ month: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`, count: 0 });
+    }
+    for (const p of inRange) {
+      const m = months.find(x => x.month === monthKey(p.submittedAt));
+      if (m) m.count += 1;
+    }
+
+    /* ── needs attention: every open proposal (any period), longest wait first ── */
+    const needsAttention = sent
+      .filter(p => OPEN_STATUSES.includes(p.status))
+      .map(p => ({
+        proposal_id:  p.proposal_id,
+        title:        p.title,
+        proposal_type: p.proposal_type,
+        status:       p.status,
+        researcher:   [p.users?.first_name, p.users?.last_name].filter(Boolean).join(' ') || '—',
+        college:      p.users?.college || null,
+        waiting_days: Math.max(0, Math.floor((now - p.last) / DAY_MS)),
+      }))
+      .sort((a, b) => b.waiting_days - a.waiting_days)
+      .slice(0, 300);
+
+    /* ── system health (each one is optional, so a missing table never breaks the page) ── */
+    const weekAgo = new Date(now - 7 * DAY_MS).toISOString();
+    const head = { count: 'exact', head: true };
+    const [failedEmails, failedLogins, activeAccounts, pendingAccounts] = await Promise.all([
+      safeCount(supabase.from('email_logs').select('email_id', head).eq('status', 'failed').gte('created_at', weekAgo)),
+      safeCount(supabase.from('audit_logs').select('audit_id', head).eq('action', 'login_failed').gte('created_at', weekAgo)),
+      safeCount(supabase.from('users').select('user_id', head).eq('is_active', true).eq('email_verified', true)),
+      safeCount(supabase.from('users').select('user_id', head).eq('is_active', true).eq('email_verified', false)),
+    ]);
+
+    return res.status(200).json({
+      range,
+      kpis: {
+        total:             inRange.length,
+        in_progress:       inProgress,
+        approved,
+        decided:           decided.length,
+        approval_rate:     decided.length ? Math.round((approved / decided.length) * 100) : null,
+        avg_decision_days: decisionDays.length
+          ? Math.round(decisionDays.reduce((a, b) => a + b, 0) / decisionDays.length)
+          : null,
+      },
+      by_status:  byStatus,
+      by_college: Object.entries(byCollege).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      by_type:    byType,
+      months,
+      needs_attention: needsAttention,
+      health: {
+        failed_emails_7d:     failedEmails,
+        failed_logins_7d:     failedLogins,
+        active_accounts:      activeAccounts,
+        pending_verification: pendingAccounts,
+      },
+    });
+  } catch (err) {
+    console.error('getDashboard error:', err);
+    return res.status(500).json({ message: 'Could not load the dashboard numbers.' });
+  }
+};
+
 module.exports = {
   getAllUsers, createUser, updateUser, updateUserStatus, updateUserRole,
   resetPassword, verifyUserEmail, resendVerification,
   getAuditLogs, getEmailLogs, resendEmail,
+  getDashboard,
 };

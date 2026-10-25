@@ -3,11 +3,14 @@ const router  = express.Router();
 const {
   getAllUsers, createUser, updateUser, updateUserStatus, updateUserRole,
   resetPassword, verifyUserEmail, resendVerification,
-  getAuditLogs, getEmailLogs, resendEmail,
+  getAuditLogs, getEmailLogs, resendEmail, getDashboard,
 } = require('../controllers/admin.controller');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 const adminOnly = [verifyToken, authorizeRoles('admin')];
+
+/* ── Dashboard numbers ── */
+router.get('/dashboard',                      ...adminOnly, getDashboard);
 
 /* ── Users ── */
 router.get('/users',                          ...adminOnly, getAllUsers);
