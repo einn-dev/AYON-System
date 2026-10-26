@@ -14,6 +14,8 @@ const ACTIONS = {
   user_activated:     { label: 'Account activated',   badge: 'badge-green'  },
   user_deactivated:   { label: 'Account deactivated', badge: 'badge-red'    },
   password_reset:     { label: 'Password reset',      badge: 'badge-gray'   },
+  proposal_moved:     { label: 'Proposal moved',      badge: 'badge-purple' },
+  proposal_reminder_sent: { label: 'Reminder sent',   badge: 'badge-amber'  },
   password_changed:   { label: 'Password changed',    badge: 'badge-gray'   },
   password_reset_requested: { label: 'Reset link requested', badge: 'badge-amber' },
   password_reset_completed: { label: 'Password reset by link', badge: 'badge-green' },
@@ -38,6 +40,12 @@ const LOGIN_REASONS = {
   email_not_verified:  'Email not verified yet',
 };
 
+const STAGE_LABELS = {
+  submitted: 'Submitted', under_review: 'Under review', returned: 'Returned',
+  endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
+};
+const OFFICE_LABELS = { special_assistant: 'Special Assistant', msric_director: 'MSRIC Director', ovcred: 'OVCRED' };
+
 const roleName = (r) => ROLE_LABELS[r] || r || '—';
 const show     = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
 
@@ -55,6 +63,10 @@ const detailsText = (log) => {
       return `Role: ${roleName(d.role)}${d.email ? ` · ${d.email}` : ''}`;
     case 'user_deactivated':
       return d.reason ? `Reason: ${d.reason}` : '';
+    case 'proposal_moved':
+      return `${show(STAGE_LABELS[d.from] || d.from)} → ${show(STAGE_LABELS[d.to] || d.to)}${d.reopened ? ' (reopened)' : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'proposal_reminder_sent':
+      return `Reminded ${show(OFFICE_LABELS[d.to_role] || d.to_role)} (${show(d.count)})${d.days != null ? ` · waiting ${d.days} day${d.days === 1 ? '' : 's'}` : ''}`;
     case 'password_reset':
       return 'Temporary password created; must be changed at next sign-in';
     case 'password_changed':

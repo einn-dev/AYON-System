@@ -4,6 +4,7 @@ const {
   getAllUsers, createUser, updateUser, updateUserStatus, updateUserRole,
   resetPassword, verifyUserEmail, resendVerification,
   getAuditLogs, getEmailLogs, resendEmail, getDashboard,
+  listProposals, getProposalTimeline, moveProposal, remindOffice,
 } = require('../controllers/admin.controller');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
@@ -21,6 +22,12 @@ router.patch('/users/:id/role',               ...adminOnly, updateUserRole);
 router.post('/users/:id/reset-password',      ...adminOnly, resetPassword);
 router.post('/users/:id/verify-email',        ...adminOnly, verifyUserEmail);
 router.post('/users/:id/resend-verification', ...adminOnly, resendVerification);
+
+/* ── Proposal oversight ── */
+router.get('/proposals',                      ...adminOnly, listProposals);
+router.get('/proposals/:id/timeline',         ...adminOnly, getProposalTimeline);
+router.post('/proposals/:id/move',            ...adminOnly, moveProposal);
+router.post('/proposals/:id/remind',          ...adminOnly, remindOffice);
 
 /* ── Logs ── */
 router.get('/audit-logs',                     ...adminOnly, getAuditLogs);

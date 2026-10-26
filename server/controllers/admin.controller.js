@@ -759,6 +759,32 @@ const safeCount = async (query) => {
   }
 };
 
+/* The last thing that happened to each proposal (submission, checklist, review,
+   endorsement) and the date of its final decision. Used by the Dashboard and by
+   the Proposal oversight list, so both always agree.                          */
+const buildActivity = ({ submissions, endorsements, reviews, checks }) => {
+  const lastAction = new Map();
+  const decisionDate = new Map();
+  const proposalOfSubmission = new Map();
+
+  const bump = (proposalId, value) => {
+    const t = ts(value);
+    if (t !== null && t > (lastAction.get(proposalId) || 0)) lastAction.set(proposalId, t);
+  };
+
+  for (const s of submissions) {
+    proposalOfSubmission.set(s.submission_id, s.proposal_id);
+    bump(s.proposal_id, s.date_submitted);
+    const decided = ts(s.approved_date) || ts(s.rejected_date);
+    if (decided) decisionDate.set(s.proposal_id, decided);
+  }
+  for (const e of endorsements) { bump(e.proposal_id, e.date_endorsed); bump(e.proposal_id, e.date_rejected); }
+  for (const r of reviews)      bump(r.proposal_id, r.review_date);
+  for (const c of checks)       bump(proposalOfSubmission.get(c.submission_id), c.checked_at);
+
+  return { lastAction, decisionDate, bump };
+};
+
 const getDashboard = async (req, res) => {
   try {
     const range = ['all', 'year', '90', '30'].includes(String(req.query.range)) ? String(req.query.range) : 'all';
@@ -783,23 +809,7 @@ const getDashboard = async (req, res) => {
     ]);
 
     /* the last thing that happened to each proposal, and the recorded decision date */
-    const lastAction = new Map();
-    const bump = (proposalId, value) => {
-      const t = ts(value);
-      if (t !== null && t > (lastAction.get(proposalId) || 0)) lastAction.set(proposalId, t);
-    };
-
-    const proposalOfSubmission = new Map();
-    const decisionDate = new Map();
-    for (const s of submissions) {
-      proposalOfSubmission.set(s.submission_id, s.proposal_id);
-      bump(s.proposal_id, s.date_submitted);
-      const decided = ts(s.approved_date) || ts(s.rejected_date);
-      if (decided) decisionDate.set(s.proposal_id, decided);
-    }
-    for (const e of endorsements) { bump(e.proposal_id, e.date_endorsed); bump(e.proposal_id, e.date_rejected); }
-    for (const r of reviews)      bump(r.proposal_id, r.review_date);
-    for (const c of checks)       bump(proposalOfSubmission.get(c.submission_id), c.checked_at);
+    const { lastAction, decisionDate, bump } = buildActivity({ submissions, endorsements, reviews, checks });
 
     /* drafts were never submitted, so they are left out of every number */
     const sent = proposals
@@ -901,9 +911,388 @@ const getDashboard = async (req, res) => {
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+   PROPOSAL OVERSIGHT (ADMIN ONLY)
+   GET  /admin/proposals               every submitted proposal + who it waits on
+   GET  /admin/proposals/:id/timeline  what happened to one proposal
+   POST /admin/proposals/:id/move      send it back to an earlier stage (with a reason)
+   POST /admin/proposals/:id/remind    nudge the office it is waiting on
+
+   The Admin can send a proposal BACK or remind people. The Admin can never
+   approve, reject or endorse: those decisions stay with the reviewers.
+   ───────────────────────────────────────────────────────────── */
+const STAGE_LABELS = {
+  draft: 'Draft', submitted: 'Submitted', under_review: 'Under review',
+  returned: 'Returned', endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
+};
+
+/* Which office a proposal is waiting on, by status (proposals wait in a role's queue) */
+const HOLDER_ROLE = {
+  submitted:    'special_assistant',
+  under_review: 'msric_director',
+  endorsed:     'ovcred',
+};
+const HOLDER_LABEL = {
+  special_assistant: 'Special Assistant',
+  msric_director:    'MSRIC Director',
+  ovcred:            'OVCRED',
+};
+
+const MOVE_TARGETS   = ['returned', 'submitted', 'under_review'];
+const REASON_MIN     = 10;
+const REASON_MAX     = 500;
+const REMIND_WAIT_MS = 24 * 60 * 60 * 1000;     // one reminder per proposal per day
+
+/* ids of ACTIVE accounts that hold a role */
+const activeHolders = async (roleType) => {
+  const { data: roles, error } = await supabase
+    .from('user_roles').select('user_id, role_type').eq('role_type', roleType);
+  if (error) throw error;
+
+  const ids = [...new Set((roles || []).map(r => r.user_id))];
+  if (!ids.length) return [];
+
+  const { data: users, error: uErr } = await supabase
+    .from('users').select('user_id, is_active').in('user_id', ids);
+  if (uErr) throw uErr;
+
+  return (users || []).filter(u => u.is_active !== false).map(u => u.user_id);
+};
+
+/* everything we know about one proposal's history */
+const loadHistory = async (proposalId) => {
+  const [subRes, revRes, endRes] = await Promise.all([
+    supabase.from('submissions').select('submission_id, proposal_id, date_submitted, approved_date, rejected_date').eq('proposal_id', proposalId),
+    supabase.from('review_documents').select('review_id, proposal_id, reviewer_id, decision, remarks, review_date').eq('proposal_id', proposalId),
+    supabase.from('endorsements').select('endorsement_id, proposal_id, endorser_id, endorser_role, endorse_status, remarks, date_endorsed, date_rejected').eq('proposal_id', proposalId),
+  ]);
+  if (subRes.error) throw subRes.error;
+  if (revRes.error) throw revRes.error;
+  if (endRes.error) throw endRes.error;
+
+  const submissions  = subRes.data || [];
+  const reviews      = revRes.data || [];
+  const endorsements = endRes.data || [];
+
+  let checks = [];
+  const subIds = submissions.map(x => x.submission_id);
+  if (subIds.length) {
+    const { data, error } = await supabase
+      .from('check_doc_req').select('check_id, submission_id, checked_by, checked_at').in('submission_id', subIds);
+    if (error) throw error;
+    checks = data || [];
+  }
+  return { submissions, reviews, endorsements, checks };
+};
+
+const whole = (ms, now) => Math.max(0, Math.floor((now - ms) / DAY_MS));
+
+/* ── GET all submitted proposals, with waiting time ── */
+const listProposals = async (req, res) => {
+  try {
+    const now = Date.now();
+
+    const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
+      fetchAll('research_proposals',
+        'proposal_id, title, description, file_path, proposal_type, status, submitted_at, created_at, updated_at, users ( first_name, last_name, email, college, department )',
+        'proposal_id'),
+      fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
+      fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
+      fetchAll('review_documents', 'review_id, proposal_id, review_date', 'review_id'),
+      fetchAll('check_doc_req', 'check_id, submission_id, checked_at', 'check_id'),
+    ]);
+
+    const { lastAction, bump } = buildActivity({ submissions, endorsements, reviews, checks });
+
+    const rows = proposals
+      .filter(p => p.status !== 'draft')
+      .map(p => {
+        bump(p.proposal_id, p.updated_at);
+        bump(p.proposal_id, p.submitted_at || p.created_at);
+        const submittedAt = ts(p.submitted_at) || ts(p.created_at);
+        const last = lastAction.get(p.proposal_id) || submittedAt || now;
+        return {
+          proposal_id:    p.proposal_id,
+          title:          p.title,
+          description:    p.description || null,
+          file_path:      p.file_path || null,
+          proposal_type:  p.proposal_type,
+          status:         p.status,
+          submitted_at:   p.submitted_at || p.created_at,
+          researcher:     [p.users?.first_name, p.users?.last_name].filter(Boolean).join(' ') || '—',
+          email:          p.users?.email || null,
+          college:        p.users?.college || null,
+          department:     p.users?.department || null,
+          last_action_at: new Date(last).toISOString(),
+          days_waiting:   whole(last, now),
+          with_role:      HOLDER_ROLE[p.status] || null,
+        };
+      })
+      .sort((a, b) => b.days_waiting - a.days_waiting);
+
+    /* how many people each office has (shown on the Remind button) */
+    const office_counts = {};
+    for (const role of Object.values(HOLDER_ROLE)) {
+      try { office_counts[role] = (await activeHolders(role)).length; }
+      catch { office_counts[role] = null; }
+    }
+
+    return res.status(200).json({ proposals: rows, office_counts });
+  } catch (err) {
+    console.error('listProposals error:', err);
+    return res.status(500).json({ message: 'Could not load the proposals.' });
+  }
+};
+
+/* ── GET the story of one proposal ── */
+const getProposalTimeline = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid proposal.' });
+
+  try {
+    const { data: proposal, error } = await supabase
+      .from('research_proposals')
+      .select('proposal_id, title, status, user_id, submitted_at, created_at')
+      .eq('proposal_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
+
+    const { submissions, reviews, endorsements, checks } = await loadHistory(proposal.proposal_id);
+
+    const { data: audits, error: aErr } = await supabase
+      .from('audit_logs')
+      .select('audit_id, action, actor_name, details, created_at')
+      .eq('target_type', 'proposal')
+      .eq('target_id', String(proposal.proposal_id))
+      .order('created_at', { ascending: true });
+    if (aErr) console.error('timeline audit read failed:', aErr.message || aErr);
+
+    /* names of everyone mentioned */
+    const ids = new Set([proposal.user_id]);
+    reviews.forEach(r => ids.add(r.reviewer_id));
+    endorsements.forEach(e => ids.add(e.endorser_id));
+    checks.forEach(c => c.checked_by && ids.add(c.checked_by));
+    const names = new Map();
+    if (ids.size) {
+      const { data: people } = await supabase
+        .from('users').select('user_id, first_name, last_name').in('user_id', [...ids]);
+      (people || []).forEach(u => names.set(String(u.user_id), fullName(u)));
+    }
+    const who = (uid) => names.get(String(uid)) || 'Someone';
+    const niceRole = (r) => String(r || '').replace(/_/g, ' ');
+
+    const events = [];
+    events.push({
+      at: proposal.submitted_at || proposal.created_at,
+      text: `Submitted by ${who(proposal.user_id)}`,
+    });
+
+    const lastCheck = checks.filter(c => c.checked_at).sort((a, b) => ts(b.checked_at) - ts(a.checked_at))[0];
+    if (lastCheck) {
+      events.push({ at: lastCheck.checked_at, text: `Document checklist saved by ${who(lastCheck.checked_by)}` });
+    }
+
+    for (const r of reviews) {
+      const d = String(r.decision || '').toLowerCase();
+      const label = { approve: 'Approved', approved: 'Approved', reject: 'Rejected', rejected: 'Rejected',
+                      return: 'Returned', returned: 'Returned', endorsed: 'Endorsed' }[d]
+                    || (d ? d.charAt(0).toUpperCase() + d.slice(1) : 'Reviewed');
+      events.push({ at: r.review_date, text: `${label} by ${who(r.reviewer_id)}`, reason: r.remarks || null });
+    }
+
+    for (const e of endorsements) {
+      const at = e.endorse_status === 'rejected' ? e.date_rejected : e.date_endorsed;
+      if (!at) continue;
+      events.push({
+        at,
+        text: `${e.endorse_status === 'rejected' ? 'Rejected' : 'Endorsed'} by ${who(e.endorser_id)} (${niceRole(e.endorser_role)})`,
+        reason: e.remarks || null,
+      });
+    }
+
+    for (const a of (audits || [])) {
+      const d = a.details || {};
+      if (a.action === 'proposal_moved') {
+        events.push({
+          at: a.created_at, admin: true,
+          text: `Moved from "${STAGE_LABELS[d.from] || d.from}" to "${STAGE_LABELS[d.to] || d.to}"`,
+          reason: d.reason || null, by: a.actor_name || null,
+        });
+      } else if (a.action === 'proposal_reminder_sent') {
+        events.push({
+          at: a.created_at, admin: true, by: a.actor_name || null,
+          text: `Reminder sent to ${HOLDER_LABEL[d.to_role] || niceRole(d.to_role)} (${d.count || 0})`,
+        });
+      }
+    }
+
+    events.sort((a, b) => (ts(a.at) || 0) - (ts(b.at) || 0));
+    return res.status(200).json({ events });
+  } catch (err) {
+    console.error('getProposalTimeline error:', err);
+    return res.status(500).json({ message: 'Could not load the history.' });
+  }
+};
+
+/* ── POST send a proposal back to an earlier stage ── */
+const moveProposal = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid proposal.' });
+
+  const { status, reason, confirm_reopen } = req.body || {};
+  const why = String(reason || '').trim();
+
+  if (!MOVE_TARGETS.includes(status)) {
+    return res.status(400).json({
+      message: 'An Admin can only send a proposal back (to the researcher, the Special Assistant or the Director). Approving, rejecting or endorsing is done by the reviewers.',
+    });
+  }
+  if (why.length < REASON_MIN) {
+    return res.status(400).json({ message: `Please give a reason of at least ${REASON_MIN} characters.` });
+  }
+  if (why.length > REASON_MAX) {
+    return res.status(400).json({ message: `The reason must be ${REASON_MAX} characters or fewer.` });
+  }
+
+  try {
+    const { data: proposal, error } = await supabase
+      .from('research_proposals')
+      .select('proposal_id, title, status, user_id')
+      .eq('proposal_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
+
+    if (proposal.status === 'draft') {
+      return res.status(400).json({ message: 'This proposal is still a draft. The researcher has not submitted it yet.' });
+    }
+    if (proposal.status === status) {
+      return res.status(400).json({ message: `This proposal is already "${STAGE_LABELS[status]}".` });
+    }
+
+    const reopening = DECIDED_STATUSES.includes(proposal.status);
+    if (reopening && confirm_reopen !== true) {
+      return res.status(400).json({
+        message: 'This proposal was already decided. Please confirm that you want to reopen it.',
+        code: 'REOPEN_CONFIRM_REQUIRED',
+      });
+    }
+
+    /* only change it if nobody moved it in the meantime */
+    const { data: changed, error: updErr } = await supabase
+      .from('research_proposals')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('proposal_id', proposal.proposal_id)
+      .eq('status', proposal.status)
+      .select('proposal_id');
+    if (updErr) throw updErr;
+    if (!changed || !changed.length) {
+      return res.status(409).json({ message: 'This proposal was just changed by someone else. Please reload and try again.' });
+    }
+
+    /* tell the researcher (a failed notification never undoes the move) */
+    const { error: nErr } = await supabase.from('notifications').insert({
+      user_id:     proposal.user_id,
+      proposal_id: proposal.proposal_id,
+      notif_type:  'review',
+      title:       'Your proposal was moved by the Admin',
+      message:     `Your proposal "${proposal.title}" was moved from "${STAGE_LABELS[proposal.status]}" to "${STAGE_LABELS[status]}" by the MSRIC administrator. Reason: ${why}`,
+    });
+    if (nErr) console.error('moveProposal notification failed:', nErr.message || nErr);
+
+    await logAudit(req, {
+      action:     'proposal_moved',
+      targetType: 'proposal',
+      targetId:   proposal.proposal_id,
+      targetName: proposal.title,
+      details:    { from: proposal.status, to: status, reason: why, reopened: reopening },
+    });
+
+    return res.status(200).json({ message: 'Proposal moved.', status });
+  } catch (err) {
+    console.error('moveProposal error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* ── POST remind the office a proposal is waiting on ── */
+const remindOffice = async (req, res) => {
+  const { id } = req.params;
+  if (!isId(id)) return res.status(400).json({ message: 'Invalid proposal.' });
+
+  try {
+    const { data: proposal, error } = await supabase
+      .from('research_proposals')
+      .select('proposal_id, title, status, updated_at, submitted_at, created_at')
+      .eq('proposal_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
+
+    const role = HOLDER_ROLE[proposal.status];
+    if (!role) {
+      return res.status(400).json({ message: 'This proposal is not waiting on an office, so there is nobody to remind.' });
+    }
+
+    /* one reminder a day per proposal (best effort: if the log can't be read, carry on) */
+    const since = new Date(Date.now() - REMIND_WAIT_MS).toISOString();
+    const { data: recent } = await supabase
+      .from('audit_logs')
+      .select('audit_id')
+      .eq('action', 'proposal_reminder_sent')
+      .eq('target_id', String(proposal.proposal_id))
+      .gte('created_at', since);
+    if (recent && recent.length) {
+      return res.status(429).json({ message: 'A reminder for this proposal was already sent in the last 24 hours.' });
+    }
+
+    const recipients = await activeHolders(role);
+    if (!recipients.length) {
+      return res.status(400).json({
+        message: `No active account has the ${HOLDER_LABEL[role]} role, so there is nobody to remind.`,
+      });
+    }
+
+    const history = await loadHistory(proposal.proposal_id);
+    const { lastAction, bump } = buildActivity(history);
+    bump(proposal.proposal_id, proposal.updated_at);
+    bump(proposal.proposal_id, proposal.submitted_at || proposal.created_at);
+    const days = whole(lastAction.get(proposal.proposal_id) || Date.now(), Date.now());
+
+    const { error: nErr } = await supabase.from('notifications').insert(
+      recipients.map(uid => ({
+        user_id:     uid,
+        proposal_id: proposal.proposal_id,
+        notif_type:  'general',
+        title:       'Reminder: a proposal is waiting for you',
+        message:     `"${proposal.title}" has been waiting at your stage for ${days} day${days === 1 ? '' : 's'}. Please review it when you can.`,
+      }))
+    );
+    if (nErr) throw nErr;
+
+    await logAudit(req, {
+      action:     'proposal_reminder_sent',
+      targetType: 'proposal',
+      targetId:   proposal.proposal_id,
+      targetName: proposal.title,
+      details:    { to_role: role, count: recipients.length, days },
+    });
+
+    return res.status(200).json({
+      message: `Reminder sent to ${recipients.length} ${HOLDER_LABEL[role]}${recipients.length === 1 ? '' : 's'}.`,
+      sent: recipients.length,
+    });
+  } catch (err) {
+    console.error('remindOffice error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   getAllUsers, createUser, updateUser, updateUserStatus, updateUserRole,
   resetPassword, verifyUserEmail, resendVerification,
   getAuditLogs, getEmailLogs, resendEmail,
   getDashboard,
+  listProposals, getProposalTimeline, moveProposal, remindOffice,
 };

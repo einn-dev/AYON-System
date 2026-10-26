@@ -256,6 +256,7 @@ const AdminOverview = ({ users }) => {
                   <th>College</th>
                   <th>Stage</th>
                   <th>Waiting</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -277,15 +278,19 @@ const AdminOverview = ({ users }) => {
                         {p.waiting_days >= 30 ? '⚠ ' : ''}{p.waiting_days} day{p.waiting_days === 1 ? '' : 's'}
                       </span>
                     </td>
+                    <td>
+                      <Link className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}
+                        to={`/admin/proposals?open=${p.proposal_id}`}>Open</Link>
+                    </td>
                   </tr>
                 ))}
                 {data && waiting.length === 0 && (
-                  <tr><td colSpan={5}>
+                  <tr><td colSpan={6}>
                     <div className="empty-state"><p>Nothing is waiting longer than {waitMin} days. 🎉</p></div>
                   </td></tr>
                 )}
                 {!data && (
-                  <tr><td colSpan={5}><div className="empty-state"><p>Loading…</p></div></td></tr>
+                  <tr><td colSpan={6}><div className="empty-state"><p>Loading…</p></div></td></tr>
                 )}
               </tbody>
             </table>
