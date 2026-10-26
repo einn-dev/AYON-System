@@ -7,6 +7,8 @@ import '../../components/Layout.css';
 import GrantsPage from './GrantsPage';
 import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
+import ResubmitModal from '../../components/ResubmitModal';
+import '../../components/Resubmit.css';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
@@ -165,12 +167,23 @@ const MyProposals = ({ proposals, onRefresh }) => {
   const [filter,  setFilter]  = useState('all');
   const [search,  setSearch]  = useState('');
   const [selected, setSelected] = useState(null);
+  const [editing,  setEditing]  = useState(null);   // the returned proposal being edited
+  const [notice,   setNotice]   = useState(null);   // { type, msg } after a resubmit
 
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
+
+  const returnedCount = proposals.filter(p => p.status === 'returned').length;
+
+  const handleResubmitted = async ({ ok, message }) => {
+    setEditing(null);
+    setSelected(null);
+    setNotice({ type: ok ? 'success' : 'error', msg: message });
+    if (onRefresh) await onRefresh();
+  };
 
   return (
     <>
@@ -187,6 +200,25 @@ const MyProposals = ({ proposals, onRefresh }) => {
 
       {justSubmitted && (
         <div className="alert alert-success">Proposal submitted successfully!</div>
+      )}
+
+      {notice && (
+        <div className={`alert alert-${notice.type}`} role="status">{notice.msg}</div>
+      )}
+
+      {returnedCount > 0 && (
+        <div className="rs-banner">
+          <span>
+            ⚠ {returnedCount} proposal{returnedCount === 1 ? ' was' : 's were'} returned and
+            {returnedCount === 1 ? ' needs' : ' need'} your changes.
+          </span>
+          {filter !== 'returned' && (
+            <button type="button" className="btn btn-primary btn-sm"
+              onClick={() => setFilter('returned')}>
+              Show {returnedCount === 1 ? 'it' : 'them'}
+            </button>
+          )}
+        </div>
       )}
 
       <div className="panel">
@@ -223,7 +255,14 @@ const MyProposals = ({ proposals, onRefresh }) => {
             {filtered.map((p, i) => (
               <tr key={p.proposal_id}>
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
-                <td><strong>{p.title}</strong></td>
+                <td>
+                  <strong>{p.title}</strong>
+                  {Number(p.revision_count) > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                      Revision {Number(p.revision_count) + 1}
+                    </div>
+                  )}
+                </td>
                 <td style={{ color: '#718096', fontSize: '0.82rem' }}>
                   {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
                 </td>
@@ -236,9 +275,10 @@ const MyProposals = ({ proposals, onRefresh }) => {
                   {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                 </td>
                 <td>
-                  <button className="btn btn-outline btn-sm"
+                  <button
+                    className={`btn btn-sm ${p.status === 'returned' ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => setSelected(p)}>
-                    View Details
+                    {p.status === 'returned' ? 'Edit and resubmit' : 'View Details'}
                   </button>
                 </td>
               </tr>
@@ -263,6 +303,9 @@ const MyProposals = ({ proposals, onRefresh }) => {
                 { label: 'Status',      value: statusLabel(selected.status) },
                 { label: 'Submitted',   value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
+                ...(Number(selected.revision_count) > 0
+                  ? [{ label: 'Revisions sent', value: String(selected.revision_count) }]
+                  : []),
               ].map(item => (
                 <div key={item.label}>
                   <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{item.label}</p>
@@ -270,6 +313,15 @@ const MyProposals = ({ proposals, onRefresh }) => {
                 </div>
               ))}
             </div>
+            {selected.status === 'returned' && (
+              <div className="rs-returned">
+                <strong>Returned: changes needed</strong>
+                {selected.returned_at && (
+                  <small>{new Date(selected.returned_at).toLocaleString()}</small>
+                )}
+                <p>{selected.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
+              </div>
+            )}
             {selected.description && (
               <div style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Description</p>
@@ -283,9 +335,21 @@ const MyProposals = ({ proposals, onRefresh }) => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setSelected(null)}>Close</button>
+              {selected.status === 'returned' && (
+                <button className="btn btn-primary"
+                  onClick={() => { setEditing(selected); setSelected(null); }}>
+                  Edit and resubmit
+                </button>
+              )}
             </div>
           </div>
         </div>
+      )}
+
+      {editing && (
+        <ResubmitModal proposal={editing}
+          onClose={() => setEditing(null)}
+          onDone={handleResubmitted} />
       )}
     </>
   );

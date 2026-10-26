@@ -1,0 +1,93 @@
+/* ═══ AYON — Edit and resubmit, and the "reason for returning" box ═══ */
+
+.rs-returned {
+  background: #fdecea;
+  border: 1px solid #f3c6c2;
+  border-radius: 12px;
+  padding: 13px 15px;
+  margin-bottom: 16px;
+}
+.rs-returned strong { color: #b3261e; }
+.rs-returned small  { display: block; color: #8a5a56; margin-top: 2px; font-size: 0.78rem; }
+.rs-returned p {
+  margin: 8px 0 0;
+  background: #fff;
+  border-left: 3px solid #b3261e;
+  padding: 8px 11px;
+  border-radius: 0 8px 8px 0;
+  color: #3d3235;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rs-banner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #fbf3dc;
+  border: 1px solid #e6c98a;
+  color: #8a6410;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.rs-banner .btn { margin-left: auto; }
+
+.rs-modal { max-width: 620px; }
+.rs-head  { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.rs-head h3 { margin: 0 0 3px; }
+.rs-head p  { margin: 0; color: #8a7a7d; font-size: 0.84rem; }
+.rs-x {
+  border: 0; background: #f6eff0; color: #8d1b2d;
+  width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer; font-size: 1rem; flex-shrink: 0;
+}
+.rs-x:hover { background: #efdfe1; }
+
+.rs-label {
+  display: block;
+  font-size: 0.74rem; font-weight: 700;
+  color: #6b5e61; text-transform: uppercase; letter-spacing: 0.4px;
+  margin: 0 0 6px;
+}
+.rs-field { margin-bottom: 14px; }
+.rs-field input[type="text"],
+.rs-field textarea {
+  width: 100%;
+  border: 1px solid #eadfe0; background: #faf7f7;
+  border-radius: 8px; padding: 9px 12px;
+  font: inherit; outline: none;
+}
+.rs-field input[type="text"]:focus,
+.rs-field textarea:focus { border-color: #8d1b2d; background: #fff; }
+.rs-field textarea { min-height: 120px; resize: vertical; }
+.rs-hint { font-size: 0.78rem; color: #8a7a7d; margin-top: 5px; }
+.rs-hint.err { color: #b3261e; }
+.rs-count { float: right; }
+
+.rs-file {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid #eadfe0; border-radius: 10px;
+  padding: 10px 12px; background: #fffdfd;
+}
+.rs-file-main { flex: 1; min-width: 0; }
+.rs-file-main b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; }
+.rs-file-main small { color: #8a7a7d; font-size: 0.78rem; }
+.rs-file-main a { color: #8d1b2d; font-weight: 600; }
+
+.rs-changes {
+  background: #f7f3f3; border-radius: 10px;
+  padding: 10px 14px; font-size: 0.84rem; margin-bottom: 4px; color: #3d3235;
+}
+.rs-changes ul { margin: 4px 0 0; padding-left: 18px; }
+
+.rs-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 16px; }
+.rs-meta small { display: block; font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.rs-meta b { font-size: 0.9rem; color: #5e1420; }
+
+@media (max-width: 560px) {
+  .rs-meta { grid-template-columns: 1fr; }
+  .rs-banner .btn { margin-left: 0; }
+}

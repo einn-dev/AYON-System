@@ -2,6 +2,7 @@ const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
+const { withOptionalColumns } = require('../utils/optionalColumns');
 const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
@@ -1180,12 +1181,19 @@ const moveProposal = async (req, res) => {
     }
 
     /* only change it if nobody moved it in the meantime */
-    const { data: changed, error: updErr } = await supabase
-      .from('research_proposals')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('proposal_id', proposal.proposal_id)
-      .eq('status', proposal.status)
-      .select('proposal_id');
+    const nowIso = new Date().toISOString();
+    const { data: changed, error: updErr } = await withOptionalColumns(
+      (payload) => supabase
+        .from('research_proposals')
+        .update(payload)
+        .eq('proposal_id', proposal.proposal_id)
+        .eq('status', proposal.status)
+        .select('proposal_id'),
+      { status, updated_at: nowIso },
+      status === 'returned'
+        ? { return_reason: why, returned_at: nowIso, returned_by: req.user.user_id }
+        : {},
+    );
     if (updErr) throw updErr;
     if (!changed || !changed.length) {
       return res.status(409).json({ message: 'This proposal was just changed by someone else. Please reload and try again.' });

@@ -5,7 +5,7 @@ const supabase = require('../config/supabase');
 
 const {
   getMyProposals, submitProposal, getAllProposals,
-  getProposalById, updateProposalStatus,
+  getProposalById, updateProposalStatus, resubmitProposal,
 } = require('../controllers/proposal.controller');
 
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
@@ -52,6 +52,17 @@ const uploadToSupabase = async (req, res, next) => {
   }
 };
 
+/* Runs multer, but answers file problems (wrong type, too big) as clear JSON errors */
+const uploadOne = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (!err) return next();
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'The file is too large. The limit is 10 MB.'
+      : (err.message || 'The file could not be uploaded.');
+    return res.status(400).json({ message });
+  });
+};
+
 const SA_ROLES    = ['special_assistant', 'admin'];
 const REVIEW_ROLES = ['special_assistant','msric_director','ovcred','admin'];
 const VIEW_ROLES   = ['admin','msric_staff','special_assistant','msric_director',
@@ -59,8 +70,9 @@ const VIEW_ROLES   = ['admin','msric_staff','special_assistant','msric_director'
 
 /* ── Routes ── */
 router.get('/my',           verifyToken, authorizeRoles('researcher'),  getMyProposals);
-router.post('/',            verifyToken, authorizeRoles('researcher'),  upload.single('file'), uploadToSupabase, submitProposal);
+router.post('/',            verifyToken, authorizeRoles('researcher'),  uploadOne, uploadToSupabase, submitProposal);
 router.get('/',             verifyToken, authorizeRoles(...VIEW_ROLES), getAllProposals);
+router.post('/:id/resubmit', verifyToken, authorizeRoles('researcher'), uploadOne, uploadToSupabase, resubmitProposal);
 router.get('/:id',          verifyToken, getProposalById);
 router.patch('/:id/status', verifyToken, authorizeRoles(...REVIEW_ROLES), updateProposalStatus);
 

@@ -3,14 +3,17 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
+import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModal';
+
+/* Files are stored as full web addresses; older records may hold a server path */
+const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
-  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: <FaTableCellsLarge /> },
-  { path: '/special-assistant/submissions', label: 'Submissions',         icon: <FaInbox /> },
-  { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: <FaClipboardCheck /> },
-  { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: <FaPaperPlane /> },
-  { path: '/special-assistant/notifications',label: 'Notifications',      icon: <FaBell /> },
+  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: '⊞' },
+  { path: '/special-assistant/submissions', label: 'Submissions',         icon: '📥' },
+  { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: '✅' },
+  { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: '📤' },
+  { path: '/special-assistant/notifications',label: 'Notifications',      icon: '🔔' },
 ];
 
 const PROPOSAL_TYPES = {
@@ -132,6 +135,7 @@ const Submissions = ({ proposals, onRefresh }) => {
   const [search,  setSearch]  = useState('');
   const [filter,  setFilter]  = useState('submitted');
   const [alert,   setAlert]   = useState(null);
+  const [returning, setReturning] = useState(null);   // { id, title, name } while the reason box is open
 
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
@@ -141,15 +145,12 @@ const Submissions = ({ proposals, onRefresh }) => {
     return matchStatus && matchSearch;
   });
 
-  const handleReturn = async (proposalId, title, researcherName) => {
-    if (!window.confirm(`Return this submission to ${researcherName}?`)) return;
-    try {
-      await API.patch(`/proposals/${proposalId}/status`, { status: 'returned' });
-      setAlert({ type: 'success', msg: 'Submission returned to researcher.' });
-      onRefresh();
-    } catch {
-      setAlert({ type: 'error', msg: 'Failed to return submission.' });
-    }
+  /* the reason box calls this; it throws on failure so the box stays open with the message */
+  const confirmReturn = async (reason) => {
+    await API.patch(`/proposals/${returning.id}/status`, { status: 'returned', reason });
+    setReturning(null);
+    setAlert({ type: 'success', msg: 'Submission returned to the researcher, with your reason.' });
+    onRefresh();
   };
 
   return (
@@ -216,14 +217,16 @@ const Submissions = ({ proposals, onRefresh }) => {
                   <div style={{ display: 'flex', gap: 6 }}>
                     {p.status === 'submitted' && (
                       <button className="btn btn-danger btn-sm"
-                        onClick={() => handleReturn(p.proposal_id, p.title,
-                          `${p.first_name} ${p.last_name}`)}>
+                        onClick={() => setReturning({
+                          id: p.proposal_id, title: p.title,
+                          name: `${p.first_name} ${p.last_name}`,
+                        })}>
                         Return
                       </button>
                     )}
                     {p.file_path && (
                       <a className="btn btn-outline btn-sm"
-                        href={`http://localhost:5000/${p.file_path}`}
+                        href={fileHref(p.file_path)}
                         target="_blank" rel="noreferrer">
                         File
                       </a>
@@ -240,6 +243,11 @@ const Submissions = ({ proposals, onRefresh }) => {
           </tbody>
         </table>
       </div>
+
+      {returning && (
+        <ReturnReasonModal title={returning.title} researcher={returning.name}
+          onConfirm={confirmReturn} onClose={() => setReturning(null)} />
+      )}
     </>
   );
 };
@@ -296,17 +304,23 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   };
 
   const handleReturn = async () => {
-    if (!remarks.trim()) {
-      return setAlert({ type: 'error', msg: 'Please provide remarks before returning.' });
+    if (remarks.trim().length < REASON_MIN) {
+      return setAlert({
+        type: 'error',
+        msg: `Write what the researcher must fix in the Remarks box first (at least ${REASON_MIN} characters). They will read it word for word.`,
+      });
     }
     setSaving(true);
     try {
-      await API.patch(`/proposals/${selected.proposal_id}/status`, { status: 'returned' });
-      setAlert({ type: 'success', msg: 'Submission returned to researcher.' });
+      await API.patch(`/proposals/${selected.proposal_id}/status`, {
+        status: 'returned',
+        reason: remarks.trim(),
+      });
+      setAlert({ type: 'success', msg: 'Submission returned to the researcher, with your remarks as the reason.' });
       setSelected(null);
       onRefresh();
-    } catch {
-      setAlert({ type: 'error', msg: 'Failed to return submission.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'Failed to return submission.' });
     } finally {
       setSaving(false);
     }
@@ -379,7 +393,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => setSelected(null)}>
-            <FaArrowLeft className="ic" />Back to list
+            ← Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -428,7 +442,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                       color: '#fff', fontSize: '0.75rem', fontWeight: 700,
                       transition: 'all 0.15s',
                     }}>
-                      {checklist[req] === 'complete' ? <FaCheck /> : ''}
+                      {checklist[req] === 'complete' ? '✓' : ''}
                     </div>
                     <span style={{
                       fontSize: '0.875rem',
@@ -444,6 +458,9 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     onChange={e => setRemarks(e.target.value)}
                     placeholder="Add remarks or notes for this submission..."
                     style={{ resize: 'vertical' }} />
+                  <span style={{ fontSize: '0.78rem', color: '#8a7a7d' }}>
+                    If you return this submission, these remarks are sent to the researcher as the reason.
+                  </span>
                 </div>
               </div>
             </div>
@@ -473,7 +490,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   {selected.file_path && (
                     <a className="btn btn-outline btn-sm"
                       style={{ display: 'block', textAlign: 'center', marginTop: 14, textDecoration: 'none' }}
-                      href={`http://localhost:5000/${selected.file_path}`}
+                      href={fileHref(selected.file_path)}
                       target="_blank" rel="noreferrer">
                       View Attached File
                     </a>
@@ -489,7 +506,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     onClick={handleForward}
                     disabled={saving || !allComplete}
                     style={{ opacity: allComplete ? 1 : 0.5 }}>
-                    {saving ? 'Forwarding...' : <><FaPaperPlane className="ic" />Forward to Director</>}
+                    {saving ? 'Forwarding...' : '📤 Forward to Director'}
                   </button>
                   {!allComplete && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
@@ -500,7 +517,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     className="btn btn-danger"
                     onClick={handleReturn}
                     disabled={saving}>
-                    <FaRotateLeft className="ic" />Return to Researcher
+                    ↩ Return to Researcher
                   </button>
                 </div>
               </div>

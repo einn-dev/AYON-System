@@ -16,6 +16,8 @@ const ACTIONS = {
   password_reset:     { label: 'Password reset',      badge: 'badge-gray'   },
   proposal_moved:     { label: 'Proposal moved',      badge: 'badge-purple' },
   proposal_reminder_sent: { label: 'Reminder sent',   badge: 'badge-amber'  },
+  proposal_returned:  { label: 'Proposal returned',   badge: 'badge-red'    },
+  proposal_resubmitted: { label: 'Proposal resubmitted', badge: 'badge-blue' },
   password_changed:   { label: 'Password changed',    badge: 'badge-gray'   },
   password_reset_requested: { label: 'Reset link requested', badge: 'badge-amber' },
   password_reset_completed: { label: 'Password reset by link', badge: 'badge-green' },
@@ -65,6 +67,12 @@ const detailsText = (log) => {
       return d.reason ? `Reason: ${d.reason}` : '';
     case 'proposal_moved':
       return `${show(STAGE_LABELS[d.from] || d.from)} → ${show(STAGE_LABELS[d.to] || d.to)}${d.reopened ? ' (reopened)' : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'proposal_returned':
+      return `Returned to the researcher${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'proposal_resubmitted': {
+      const did = [d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'file'].filter(Boolean);
+      return `Revision ${show(d.revision)}${did.length ? ` · changed: ${did.join(', ')}` : ''}`;
+    }
     case 'proposal_reminder_sent':
       return `Reminded ${show(OFFICE_LABELS[d.to_role] || d.to_role)} (${show(d.count)})${d.days != null ? ` · waiting ${d.days} day${d.days === 1 ? '' : 's'}` : ''}`;
     case 'password_reset':
