@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
+const { notifyRole, fullName } = require('../utils/roleNotify');
 
 const REASON_MIN = 10;
 const REASON_MAX = 500;
@@ -62,6 +63,14 @@ const submitProposal = async (req, res) => {
       title:       'Proposal Submitted',
       message:     `Your proposal "${title}" has been submitted successfully.`,
     });
+
+    /* the Special Assistants have a new proposal to validate */
+    await notifyRole('special_assistant', {
+      proposal_id: proposal.proposal_id,
+      notif_type:  'submission',
+      title:       'New submission to validate',
+      message:     `"${title}" was submitted by ${fullName(req.user) || 'a researcher'}.`,
+    }, { exclude: [req.user.user_id] });
 
     return res.status(201).json({
       message:     'Proposal submitted successfully.',
@@ -275,6 +284,24 @@ const updateProposalStatus = async (req, res) => {
       message:     `Your proposal "${proposal.title}" status has been updated to: ${status}.`,
     });
 
+    /* tell the office that now has it on its desk (only when the stage really changed) */
+    if (proposal.status !== status && ['submitted', 'under_review', 'endorsed'].includes(status)) {
+      const { data: owner } = await supabase
+        .from('users').select('first_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
+      const by   = fullName(owner) || 'the researcher';
+      const next = {
+        submitted:    ['special_assistant', 'submission',  'New submission to validate',
+                       `"${proposal.title}" by ${by} is back in the Special Assistant queue.`],
+        under_review: ['msric_director',    'review',      'Proposal ready for your review',
+                       `"${proposal.title}" by ${by} was validated and forwarded for your review.`],
+        endorsed:     ['ovcred',            'endorsement', 'Proposal awaiting your decision',
+                       `"${proposal.title}" by ${by} was endorsed and is waiting for your decision.`],
+      }[status];
+      await notifyRole(next[0], {
+        proposal_id: parseInt(id), notif_type: next[1], title: next[2], message: next[3],
+      }, { exclude: [req.user.user_id] });
+    }
+
     return res.status(200).json({ message: 'Status updated.' });
   } catch (err) {
     console.error('updateProposalStatus error:', err);
@@ -285,16 +312,6 @@ const updateProposalStatus = async (req, res) => {
 /* ── POST edit and resubmit a returned proposal (owner only) ──
    Title / description / file are optional, but something has to change.
    Without a new file the old one is kept.                                  */
-const activeHolders = async (roleType) => {
-  const { data: roles } = await supabase
-    .from('user_roles').select('user_id, role_type').eq('role_type', roleType);
-  const ids = [...new Set((roles || []).map(r => r.user_id))];
-  if (!ids.length) return [];
-  const { data: users } = await supabase
-    .from('users').select('user_id, is_active').in('user_id', ids);
-  return (users || []).filter(u => u.is_active !== false).map(u => u.user_id);
-};
-
 const resubmitProposal = async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(String(id))) return res.status(400).json({ message: 'Invalid proposal.' });
@@ -383,20 +400,14 @@ const resubmitProposal = async (req, res) => {
       title:       'Proposal Resubmitted',
       message:     `Your revised proposal "${finalTitle}" is back with MSIRC for validation.`,
     }];
-    try {
-      const sas = await activeHolders('special_assistant');
-      sas.forEach(uid => rows.push({
-        user_id:     uid,
-        proposal_id: proposal.proposal_id,
-        notif_type:  'submission',
-        title:       'Returned proposal resubmitted',
-        message:     `"${finalTitle}" was edited and resubmitted by the researcher (revision ${revision}). It is in your queue again.`,
-      }));
-    } catch (e) {
-      console.error('resubmit: could not look up Special Assistants:', e.message || e);
-    }
     const { error: nErr } = await supabase.from('notifications').insert(rows);
     if (nErr) console.error('resubmit notification failed:', nErr.message || nErr);
+    await notifyRole('special_assistant', {
+      proposal_id: proposal.proposal_id,
+      notif_type:  'submission',
+      title:       'Returned proposal resubmitted',
+      message:     `"${finalTitle}" was edited and resubmitted by the researcher (revision ${revision}). It is in your queue again.`,
+    });
 
     await logAudit(req, {
       action:     'proposal_resubmitted',

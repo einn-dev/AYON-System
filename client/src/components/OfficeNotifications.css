@@ -1,0 +1,58 @@
+/* ═══ AYON — office notifications page, sidebar unread count, "open from notification" highlight ═══ */
+
+/* unread count on the Notifications item in the sidebar */
+.sidebar-nav .nav-item { position: relative; }
+.nav-badge {
+  margin-left: auto;
+  background: #e0a526;
+  color: #3d2a00;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 3px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+.layout.collapsed .nav-badge {
+  position: absolute;
+  top: 4px; right: 6px;
+  margin: 0;
+  padding: 2px 5px;
+  min-width: 16px;
+  font-size: 0.62rem;
+}
+
+/* the notification list */
+.on-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; width: 100%; }
+.on-toolbar select {
+  border: 1px solid #eadfe0; background: #faf7f7;
+  border-radius: 8px; padding: 8px 12px; font: inherit; min-width: 190px;
+}
+.on-spacer { margin-left: auto; }
+
+.on-item {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f3ecec;
+  background: #fff;
+  cursor: default;
+}
+.on-item.unread { background: #f3f7fc; cursor: pointer; }
+.on-item:last-child { border-bottom: 0; }
+.on-ico  { font-size: 1.25rem; line-height: 1.2; flex-shrink: 0; }
+.on-body { flex: 1; min-width: 0; }
+.on-body strong { display: block; color: #5e1420; font-size: 0.9rem; margin-bottom: 2px; }
+.on-body p { margin: 0 0 4px; color: #6b5e61; font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; }
+.on-body small { color: #8a7a7d; font-size: 0.75rem; }
+.on-act { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.on-note { font-size: 0.78rem; color: #8a7a7d; padding: 10px 20px; border-top: 1px solid #f3ecec; background: #fbf8f8; }
+
+/* row the person came to from a notification */
+tr.row-hl > td { background: #fbf3dc !important; transition: background 0.4s; }
+tr.row-hl > td:first-child { box-shadow: inset 4px 0 0 #e0a526; }
+
+@media (max-width: 560px) {
+  .on-item { flex-wrap: wrap; padding: 12px 14px; }
+  .on-act { flex-direction: row; width: 100%; justify-content: flex-end; }
+}

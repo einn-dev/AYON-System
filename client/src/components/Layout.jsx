@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 import './Account.css';
+import './OfficeNotifications.css';
 import API from '../services/authService';
 import Avatar from './Avatar';
 import ProfileModal from './ProfileModal';
@@ -11,8 +12,31 @@ import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/f
 const Layout = ({ children, navItems, role }) => {
   const { user, logout, updateUser } = useAuth();
   const navigate          = useNavigate();
+  const location          = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  /* unread count for the Notifications item: on each page change, every minute,
+     and right away when the Notifications page marks something as read */
+  const hasNotifs = navItems.some((i) => /\/notifications$/.test(i.path));
+  useEffect(() => {
+    if (!hasNotifs) return undefined;
+    let alive = true;
+    const refresh = () => {
+      API.get('/notifications/unread-count')
+        .then((res) => { if (alive) setUnread(Number(res.data.count) || 0); })
+        .catch(() => {});
+    };
+    refresh();
+    const timer = setInterval(() => { if (!document.hidden) refresh(); }, 60000);
+    window.addEventListener('ayon:notifs-changed', refresh);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener('ayon:notifs-changed', refresh);
+    };
+  }, [hasNotifs, location.pathname]);
 
   // refresh the profile picture / name once, in case they were changed on another device
   useEffect(() => {
@@ -54,6 +78,9 @@ const Layout = ({ children, navItems, role }) => {
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{item.label}</span>
+              {/\/notifications$/.test(item.path) && unread > 0 && (
+                <span className="nav-badge" aria-label={`${unread} unread`}>{unread > 99 ? '99+' : unread}</span>
+              )}
             </NavLink>
           ))}
         </nav>

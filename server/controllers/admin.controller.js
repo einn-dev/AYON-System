@@ -3,6 +3,7 @@ const crypto   = require('crypto');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
+const { notifyRole } = require('../utils/roleNotify');
 const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
@@ -1208,6 +1209,19 @@ const moveProposal = async (req, res) => {
       message:     `Your proposal "${proposal.title}" was moved from "${STAGE_LABELS[proposal.status]}" to "${STAGE_LABELS[status]}" by the MSRIC administrator. Reason: ${why}`,
     });
     if (nErr) console.error('moveProposal notification failed:', nErr.message || nErr);
+
+    /* when it lands on an office's desk, tell that office too */
+    const desk = { submitted: 'special_assistant', under_review: 'msric_director' }[status];
+    if (desk) {
+      const { data: owner } = await supabase
+        .from('users').select('first_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
+      await notifyRole(desk, {
+        proposal_id: proposal.proposal_id,
+        notif_type:  desk === 'special_assistant' ? 'submission' : 'review',
+        title:       'A proposal was moved to your queue',
+        message:     `"${proposal.title}" by ${fullName(owner) || 'the researcher'} was moved to your stage by the MSRIC administrator. Reason: ${why}`,
+      }, { exclude: [req.user.user_id] });
+    }
 
     await logAudit(req, {
       action:     'proposal_moved',

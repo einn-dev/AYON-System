@@ -11,12 +11,29 @@ router.get('/', verifyToken, async (req, res) => {
       .select('*')
       .eq('user_id', req.user.user_id)
       .order('date_sent', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error) throw error;
     return res.status(200).json({ notifications: data });
   } catch (err) {
     console.error('Notifications error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+/* ── PATCH mark ALL my notifications as read (one call, not one per notification) ── */
+router.patch('/read-all', verifyToken, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', req.user.user_id)
+      .eq('is_read', false);
+
+    if (error) throw error;
+    return res.status(200).json({ message: 'All marked as read.' });
+  } catch (err) {
+    console.error('Mark all read error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -48,7 +65,7 @@ router.get('/unread-count', verifyToken, async (req, res) => {
       .eq('is_read',  false);
 
     if (error) throw error;
-    return res.status(200).json({ count });
+    return res.status(200).json({ count: count || 0 });
   } catch (err) {
     return res.status(500).json({ message: 'Server error.' });
   }

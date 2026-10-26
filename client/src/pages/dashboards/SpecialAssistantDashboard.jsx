@@ -4,16 +4,18 @@ import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModal';
+import OfficeNotifications from '../../components/OfficeNotifications';
+import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
-  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: '⊞' },
+  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: <FaTableCellsLarge /> },
   { path: '/special-assistant/submissions', label: 'Submissions',         icon: '📥' },
   { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: '✅' },
   { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: '📤' },
-  { path: '/special-assistant/notifications',label: 'Notifications',      icon: '🔔' },
+  { path: '/special-assistant/notifications',label: 'Notifications',      icon: <FaBell /> },
 ];
 
 const PROPOSAL_TYPES = {
@@ -261,6 +263,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [saving,     setSaving]     = useState(false);
 
   const pending = proposals.filter(p => p.status === 'submitted');
+  const hl = useOpenHighlight(proposals.length > 0 && !selected);
 
   const openValidation = (proposal) => {
     setSelected(proposal);
@@ -337,6 +340,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
         <p>Check document completeness before forwarding to the MSRIC Director.</p>
       </div>
 
+      {!selected && <OpenNotice state={hl} where="the validation queue" />}
+
       {alert && !selected && (
         <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
       )}
@@ -359,7 +364,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             </thead>
             <tbody>
               {pending.map(p => (
-                <tr key={p.proposal_id}>
+                <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td>
                     <strong>{p.first_name} {p.last_name}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
@@ -586,80 +591,6 @@ const Forwarded = ({ proposals }) => {
   );
 };
 
-/* ─────────── Notifications ─────────── */
-const Notifications = () => {
-  const [notifs,  setNotifs]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await API.get('/notifications');
-        setNotifs(res.data.notifications || []);
-      } catch {
-        setNotifs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
-
-  const markRead = async (id) => {
-    try {
-      await API.patch(`/notifications/${id}/read`);
-      setNotifs(prev => prev.map(n =>
-        n.notif_id === id ? { ...n, is_read: 1 } : n
-      ));
-    } catch {}
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Notifications</h1>
-        <p>Stay updated on proposal submissions and system alerts.</p>
-      </div>
-      <div className="panel">
-        {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
-        ) : notifs.length === 0 ? (
-          <div className="empty-state"><p>No notifications yet.</p></div>
-        ) : (
-          <div>
-            {notifs.map(n => (
-              <div key={n.notif_id}
-                style={{
-                  padding: '14px 20px',
-                  borderBottom: '1px solid #f0f4f8',
-                  background: n.is_read ? '#fff' : '#f0f6ff',
-                  display: 'flex', alignItems: 'flex-start',
-                  gap: 14, cursor: 'pointer',
-                }}
-                onClick={() => !n.is_read && markRead(n.notif_id)}>
-                <div style={{
-                  width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 5,
-                  background: n.is_read ? '#e8edf2' : '#2e6da4',
-                }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 3px', fontSize: '0.9rem' }}>{n.title}</p>
-                  <p style={{ color: '#718096', margin: '0 0 4px', fontSize: '0.85rem' }}>{n.message}</p>
-                  <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }}>
-                    {new Date(n.date_sent).toLocaleString()}
-                  </p>
-                </div>
-                {!n.is_read && (
-                  <span className="badge badge-blue" style={{ flexShrink: 0 }}>New</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </>
-  );
-};
-
 /* ─────────── Main Special Assistant Dashboard ─────────── */
 const SpecialAssistantDashboard = () => {
   const [proposals, setProposals] = useState([]);
@@ -688,7 +619,9 @@ const SpecialAssistantDashboard = () => {
         <Route path="submissions"  element={<Submissions proposals={proposals} onRefresh={fetchProposals} />} />
         <Route path="validate"     element={<ValidateDocuments proposals={proposals} onRefresh={fetchProposals} />} />
         <Route path="forwarded"    element={<Forwarded proposals={proposals} />} />
-        <Route path="notifications" element={<Notifications />} />
+        <Route path="notifications" element={
+          <OfficeNotifications queuePath="/special-assistant/validate"
+            intro="New and resubmitted proposals waiting for you to validate, and reminders from the MSRIC administrator." />} />
       </Routes>
     </Layout>
   );

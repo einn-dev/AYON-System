@@ -3,17 +3,16 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import GrantReviewPage from './GrantReviewPage';
-import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaHandHoldingDollar, FaPaperPlane, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import OfficeNotifications from '../../components/OfficeNotifications';
+import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 
 const NAV_ITEMS = [
-  { path: '/director/dashboard',    label: 'Dashboard',         icon: <FaTableCellsLarge /> },
-  { path: '/director/for-review',   label: 'For Review',        icon: <FaClipboardList /> },
-  { path: '/director/approved',     label: 'Approved',          icon: <FaCircleCheck /> },
-  { path: '/director/rejected',     label: 'Rejected',          icon: <FaCircleXmark />  },
-  { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: <FaPaperPlane /> },
-  { path: '/director/grants',       label: 'Grant Applications',icon: <FaHandHoldingDollar /> },
-  { path: '/director/notifications',label: 'Notifications',     icon: <FaBell /> },
+  { path: '/director/dashboard',    label: 'Dashboard',         icon: '⊞' },
+  { path: '/director/for-review',   label: 'For Review',        icon: '📋' },
+  { path: '/director/approved',     label: 'Approved',          icon: '✅' },
+  { path: '/director/rejected',     label: 'Rejected',          icon: '✗'  },
+  { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: '📤' },
+  { path: '/director/notifications',label: 'Notifications',     icon: '🔔' },
 ];
 
 const PROPOSAL_TYPES = {
@@ -147,6 +146,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [remarks,  setRemarks]  = useState('');
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
+  const hl = useOpenHighlight(proposals.length > 0);
 
   const filtered = proposals.filter(p => p.status === statusFilter);
 
@@ -190,6 +190,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
 
   return (
     <>
+      <OpenNotice state={hl} where="your review queue" />
       <div className="page-header">
         <h1>{pageTitle}</h1>
         <p>
@@ -222,7 +223,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             </thead>
             <tbody>
               {filtered.map((p, i) => (
-                <tr key={p.proposal_id}>
+                <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                   <td>
                     <strong>{p.first_name} {p.last_name}</strong>
@@ -257,7 +258,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            <FaArrowLeft className="ic" />Back to list
+            ← Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -325,7 +326,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={`http://localhost:5000/${selected.file_path}`}
                     target="_blank" rel="noreferrer">
-                    <FaFileLines className="ic" />View Attached Document
+                    📄 View Attached Document
                   </a>
                 )}
               </div>
@@ -350,21 +351,21 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <button className="btn btn-success"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
-                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Approve & Endorse to OVCRED</>}
+                        {saving ? 'Processing...' : '📤 Approve & Endorse to OVCRED'}
                       </button>
 
                       {/* Approve only */}
                       <button className="btn btn-primary"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'approved')}>
-                        {saving ? 'Processing...' : <><FaCheck className="ic" />Approve Only</>}
+                        {saving ? 'Processing...' : '✓ Approve Only'}
                       </button>
 
                       {/* Reject */}
                       <button className="btn btn-danger"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'rejected')}>
-                        {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
+                        {saving ? 'Processing...' : '✗ Reject'}
                       </button>
                     </div>
 
@@ -404,69 +405,6 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   );
 };
 
-/* ─────────── Notifications ─────────── */
-const Notifications = () => {
-  const [notifs,  setNotifs]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await API.get('/notifications');
-        setNotifs(res.data.notifications || []);
-      } catch { setNotifs([]); }
-      finally  { setLoading(false); }
-    };
-    fetch();
-  }, []);
-
-  const markRead = async (id) => {
-    try {
-      await API.patch(`/notifications/${id}/read`);
-      setNotifs(prev => prev.map(n => n.notif_id === id ? { ...n, is_read: 1 } : n));
-    } catch {}
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Notifications</h1>
-        <p>Stay updated on forwarded proposals and system alerts.</p>
-      </div>
-      <div className="panel">
-        {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
-        ) : notifs.length === 0 ? (
-          <div className="empty-state"><p>No notifications yet.</p></div>
-        ) : (
-          notifs.map(n => (
-            <div key={n.notif_id}
-              onClick={() => !n.is_read && markRead(n.notif_id)}
-              style={{
-                padding: '14px 20px', borderBottom: '1px solid #f0f4f8',
-                background: n.is_read ? '#fff' : '#f0f6ff',
-                display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer',
-              }}>
-              <div style={{
-                width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 5,
-                background: n.is_read ? '#e8edf2' : '#2e6da4',
-              }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 3px', fontSize: '0.9rem' }}>{n.title}</p>
-                <p style={{ color: '#718096', margin: '0 0 4px', fontSize: '0.85rem' }}>{n.message}</p>
-                <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }}>
-                  {new Date(n.date_sent).toLocaleString()}
-                </p>
-              </div>
-              {!n.is_read && <span className="badge badge-blue" style={{ flexShrink: 0 }}>New</span>}
-            </div>
-          ))
-        )}
-      </div>
-    </>
-  );
-};
-
 /* ─────────── Main Director Dashboard ─────────── */
 const DirectorDashboard = () => {
   const [proposals, setProposals] = useState([]);
@@ -501,10 +439,9 @@ const DirectorDashboard = () => {
           element={<ProposalTable proposals={proposals} statusFilter="rejected" onRefresh={fetchProposals} />} />
         <Route path="endorsed"
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
-        <Route path="grants" 
-          element={<GrantReviewPage />} />
         <Route path="notifications"
-          element={<Notifications />} />
+          element={<OfficeNotifications queuePath="/director/for-review"
+            intro="Proposals the Special Assistant forwarded to you, and reminders from the MSRIC administrator." />} />
       </Routes>
     </Layout>
   );

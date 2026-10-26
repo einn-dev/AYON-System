@@ -3,17 +3,16 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import GrantReviewPage from './GrantReviewPage';
-import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaHandHoldingDollar, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import OfficeNotifications from '../../components/OfficeNotifications';
+import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 
 const NAV_ITEMS = [
-  { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: <FaTableCellsLarge /> },
-  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
-  { path: '/ovcred/approved',        label: 'Final Approved',      icon: <FaCircleCheck /> },
-  { path: '/ovcred/rejected',        label: 'Rejected',            icon: <FaCircleXmark />  },
-  { path: '/ovcred/repository',      label: 'Store to Repository', icon: <FaBoxArchive /> },
-  { path: '/ovcred/grants',          label: 'Grant Applications',  icon: <FaHandHoldingDollar /> },
-  { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
+  { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: '⊞' },
+  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: '📋' },
+  { path: '/ovcred/approved',        label: 'Final Approved',      icon: '✅' },
+  { path: '/ovcred/rejected',        label: 'Rejected',            icon: '✗'  },
+  { path: '/ovcred/repository',      label: 'Store to Repository', icon: '🗄' },
+  { path: '/ovcred/notifications',   label: 'Notifications',       icon: '🔔' },
 ];
 
 const PROPOSAL_TYPES = {
@@ -151,6 +150,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
   const [storeToRepo, setStoreToRepo] = useState(true);
+  const hl = useOpenHighlight(proposals.length > 0);
 
   const endorsed = proposals.filter(p => p.status === 'endorsed');
 
@@ -198,6 +198,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
   return (
     <>
+      <OpenNotice state={hl} where="your endorsement queue" />
       <div className="page-header">
         <h1>For Final Approval</h1>
         <p>Review proposals endorsed by the MSRIC Director and give final OVCRED approval.</p>
@@ -226,7 +227,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
             </thead>
             <tbody>
               {endorsed.map((p, i) => (
-                <tr key={p.proposal_id}>
+                <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                   <td>
                     <strong>{p.first_name} {p.last_name}</strong>
@@ -260,7 +261,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            <FaArrowLeft className="ic" />Back to list
+            ← Back to list
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -330,7 +331,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={`http://localhost:5000/${selected.file_path}`}
                     target="_blank" rel="noreferrer">
-                    <FaFileLines className="ic" />View Attached Document
+                    📄 View Attached Document
                   </a>
                 )}
               </div>
@@ -363,7 +364,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontSize: '0.72rem', fontWeight: 700,
                     }}>
-                      {storeToRepo ? <FaCheck /> : ''}
+                      {storeToRepo ? '✓' : ''}
                     </div>
                     <div>
                       <p style={{ fontWeight: 600, color: '#1a3a5c',
@@ -380,12 +381,12 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     <button className="btn btn-success"
                       disabled={saving}
                       onClick={() => handleDecision('approve')}>
-                      {saving ? 'Processing...' : <><FaCheck className="ic" />Grant Final Approval</>}
+                      {saving ? 'Processing...' : '✓ Grant Final Approval'}
                     </button>
                     <button className="btn btn-danger"
                       disabled={saving}
                       onClick={() => handleDecision('rejected')}>
-                      {saving ? 'Processing...' : <><FaXmark className="ic" />Reject Endorsement</>}
+                      {saving ? 'Processing...' : '✗ Reject Endorsement'}
                     </button>
                   </div>
 
@@ -613,7 +614,7 @@ const StoreToRepository = ({ proposals }) => {
                 </select>
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Storing...' : <><FaBoxArchive className="ic" />Store to Repository</>}
+                {saving ? 'Storing...' : '🗄 Store to Repository'}
               </button>
             </form>
           </div>
@@ -710,68 +711,6 @@ const StoreToRepository = ({ proposals }) => {
   );
 };
 
-/* ─────────── Notifications ─────────── */
-const Notifications = () => {
-  const [notifs,  setNotifs]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await API.get('/notifications');
-        setNotifs(res.data.notifications || []);
-      } catch { setNotifs([]); }
-      finally  { setLoading(false); }
-    };
-    fetch();
-  }, []);
-
-  const markRead = async (id) => {
-    try {
-      await API.patch(`/notifications/${id}/read`);
-      setNotifs(prev => prev.map(n => n.notif_id === id ? { ...n, is_read: 1 } : n));
-    } catch {}
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Notifications</h1>
-        <p>Stay updated on endorsed proposals and system alerts.</p>
-      </div>
-      <div className="panel">
-        {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
-        ) : notifs.length === 0 ? (
-          <div className="empty-state"><p>No notifications yet.</p></div>
-        ) : notifs.map(n => (
-          <div key={n.notif_id}
-            onClick={() => !n.is_read && markRead(n.notif_id)}
-            style={{
-              padding: '14px 20px', borderBottom: '1px solid #f0f4f8',
-              background: n.is_read ? '#fff' : '#f0f6ff',
-              display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer',
-            }}>
-            <div style={{
-              width: 10, height: 10, borderRadius: '50%',
-              flexShrink: 0, marginTop: 5,
-              background: n.is_read ? '#e8edf2' : '#2e6da4',
-            }} />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 3px', fontSize: '0.9rem' }}>{n.title}</p>
-              <p style={{ color: '#718096', margin: '0 0 4px', fontSize: '0.85rem' }}>{n.message}</p>
-              <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }}>
-                {new Date(n.date_sent).toLocaleString()}
-              </p>
-            </div>
-            {!n.is_read && <span className="badge badge-blue" style={{ flexShrink: 0 }}>New</span>}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-};
-
 /* ─────────── Main OVCRED Dashboard ─────────── */
 const OvcredDashboard = () => {
   const [proposals, setProposals] = useState([]);
@@ -806,10 +745,9 @@ const OvcredDashboard = () => {
           element={<FilteredList proposals={proposals} statusFilter="rejected" />} />
         <Route path="repository"
           element={<StoreToRepository proposals={proposals} />} />
-        <Route path="grants" 
-          element={<GrantReviewPage />} />
         <Route path="notifications"
-          element={<Notifications />} />
+          element={<OfficeNotifications queuePath="/ovcred/for-endorsement"
+            intro="Proposals the MSRIC Director endorsed to you, and reminders from the MSRIC administrator." />} />
       </Routes>
     </Layout>
   );
