@@ -11,11 +11,11 @@ import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
-  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: <FaTableCellsLarge /> },
+  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: '⊞' },
   { path: '/special-assistant/submissions', label: 'Submissions',         icon: '📥' },
   { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: '✅' },
   { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: '📤' },
-  { path: '/special-assistant/notifications',label: 'Notifications',      icon: <FaBell /> },
+  { path: '/special-assistant/notifications',label: 'Notifications',      icon: '🔔' },
 ];
 
 const PROPOSAL_TYPES = {

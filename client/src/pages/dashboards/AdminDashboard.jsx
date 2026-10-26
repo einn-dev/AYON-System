@@ -10,11 +10,15 @@ import AdminOverview from './AdminOverview';
 import AdminUsersPage from './AdminUsersPage';
 import AuditLogPage from './AuditLogPage';
 import EmailLogPage from './EmailLogPage';
+import AdminRepositoryPage from './AdminRepositoryPage';
+import AdminGrantsPage from './AdminGrantsPage';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard',     icon: '⊞'  },
   { path: '/admin/users',     label: 'User Accounts', icon: '👥' },
   { path: '/admin/proposals', label: 'All Proposals', icon: '📄' },
+  { path: '/admin/repository', label: 'Repository',  icon: '🗄️' },
+  { path: '/admin/grants',    label: 'Grants',        icon: '💰' },
   { path: '/admin/audit',     label: 'Audit Log',     icon: '🛡️' },
   { path: '/admin/emails',    label: 'Email Log',     icon: '✉️' },
   { path: '/admin/reports',   label: 'Reports',       icon: '📊' },
@@ -52,6 +56,8 @@ const AdminDashboard = () => {
         {/* Role Assignment moved into User Accounts → Edit. Old links still work. */}
         <Route path="roles"     element={<Navigate to="/admin/users" replace />} />
         <Route path="proposals" element={<AllProposalsPage />} />
+        <Route path="repository" element={<AdminRepositoryPage />} />
+        <Route path="grants"     element={<AdminGrantsPage />} />
         <Route path="audit"     element={<AuditLogPage />} />
         <Route path="emails"    element={<EmailLogPage />} />
         <Route path="reports"   element={<ReportsPage />} />

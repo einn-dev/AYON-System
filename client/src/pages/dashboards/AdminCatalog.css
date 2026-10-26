@@ -1,0 +1,61 @@
+/* ─────────────────────────────────────────────────────────────
+   Admin: Repository and Grants pages.
+   The base look (panels, tables, badges, buttons, modal, forms)
+   comes from components/Layout.css and AdminModule.css.
+   ───────────────────────────────────────────────────────────── */
+
+.ac-title { font-weight: 600; color: #3d3235; }
+.ac-sub   { display: block; font-size: 0.76rem; color: #8a7a7d; margin-top: 2px; }
+.ac-note  { font-size: 0.8rem; color: #8a7a7d; margin-top: 2px; }
+.ac-cell-title { max-width: 360px; }
+
+/* "Approved but not yet stored" list */
+.ac-cand {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 20px; border-bottom: 1px solid #f6f0f0;
+}
+.ac-cand:last-child { border-bottom: none; }
+.ac-cand-main { min-width: 0; }
+
+/* bars: applications by type */
+.ac-bars { padding: 14px 20px; display: grid; gap: 8px; }
+.ac-bar {
+  display: grid; grid-template-columns: 210px 1fr 32px; align-items: center;
+  gap: 10px; font-size: 0.82rem; color: #5e5155;
+}
+.ac-bar-track { background: #f3e9ea; border-radius: 5px; height: 10px; display: block; overflow: hidden; }
+.ac-bar-fill  { display: block; height: 100%; border-radius: 5px; background: #8d1b2d; }
+.ac-bar b { text-align: right; color: #5e1420; }
+
+/* detail pop-ups */
+.ac-dl {
+  display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 7px 14px;
+  font-size: 0.86rem; margin: 0 0 14px;
+}
+.ac-dl dt { color: #8a7a7d; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.6px; padding-top: 2px; }
+.ac-dl dd { margin: 0; overflow-wrap: anywhere; }
+
+.ac-box {
+  background: #faf7f7; border: 1px solid #efe5e6; border-radius: 10px;
+  padding: 12px 14px; margin: 0 0 14px;
+}
+.ac-box h4 {
+  margin: 0 0 8px; font-size: 0.74rem; text-transform: uppercase;
+  letter-spacing: 0.7px; color: #8a7a7d; font-weight: 600;
+}
+.ac-box .ac-dl { margin: 0; }
+.ac-hist { margin: 0; padding-left: 18px; font-size: 0.82rem; color: #5e5155; }
+.ac-hist li { margin: 4px 0; }
+
+.modal.ac-wide { max-width: 600px; }
+.ac-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ac-textarea { min-height: 76px; resize: vertical; }
+.ac-count { font-size: 0.72rem; color: #8a7a7d; text-align: right; }
+
+@media (max-width: 720px) {
+  .ac-bar { grid-template-columns: 1fr 70px 28px; }
+  .ac-dl  { grid-template-columns: 1fr; gap: 2px; }
+  .ac-dl dd { margin-bottom: 8px; }
+  .ac-cand { flex-direction: column; align-items: flex-start; }
+  .modal.ac-wide { padding: 20px; }
+}

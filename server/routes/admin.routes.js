@@ -6,6 +6,11 @@ const {
   getAuditLogs, getEmailLogs, resendEmail, getDashboard,
   listProposals, getProposalTimeline, moveProposal, remindOffice,
 } = require('../controllers/admin.controller');
+const {
+  listRepository, listRepositoryCandidates, storeToRepository,
+  updateRepositoryItem, removeRepositoryItem,
+  listGrants, getGrant, decideGrant,
+} = require('../controllers/adminCatalog.controller');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 const adminOnly = [verifyToken, authorizeRoles('admin')];
@@ -28,6 +33,18 @@ router.get('/proposals',                      ...adminOnly, listProposals);
 router.get('/proposals/:id/timeline',         ...adminOnly, getProposalTimeline);
 router.post('/proposals/:id/move',            ...adminOnly, moveProposal);
 router.post('/proposals/:id/remind',          ...adminOnly, remindOffice);
+
+/* ── Repository ── */
+router.get('/repository',                     ...adminOnly, listRepository);
+router.get('/repository/candidates',          ...adminOnly, listRepositoryCandidates);
+router.post('/repository',                    ...adminOnly, storeToRepository);
+router.patch('/repository/:id',               ...adminOnly, updateRepositoryItem);
+router.post('/repository/:id/remove',         ...adminOnly, removeRepositoryItem);
+
+/* ── Grants ── */
+router.get('/grants',                         ...adminOnly, listGrants);
+router.get('/grants/:id',                     ...adminOnly, getGrant);
+router.post('/grants/:id/decision',           ...adminOnly, decideGrant);
 
 /* ── Logs ── */
 router.get('/audit-logs',                     ...adminOnly, getAuditLogs);

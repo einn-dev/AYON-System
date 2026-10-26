@@ -4,8 +4,17 @@ const supabase = require('../config/supabase');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 const { logAudit } = require('../utils/audit');
 
+/* Who may see what:
+     ?access=public  -> anyone (this is the public repository)
+     anything else   -> signed-in MSRIC staff only, because it includes PRIVATE items */
+const STAFF_ROLES = ['admin', 'msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
+const listGate = (req, res, next) => {
+  if (req.query.access === 'public') return next();
+  return verifyToken(req, res, () => authorizeRoles(...STAFF_ROLES)(req, res, next));
+};
+
 /* ── GET repository items ── */
-router.get('/', async (req, res) => {
+router.get('/', listGate, async (req, res) => {
   const { access } = req.query;
   try {
     let query = supabase
@@ -89,6 +98,9 @@ router.post('/', verifyToken, authorizeRoles('ovcred', 'admin'),
 router.patch('/:id', verifyToken, authorizeRoles('ovcred', 'admin'),
   async (req, res) => {
     const { access_type } = req.body;
+    if (!['public', 'private'].includes(access_type)) {
+      return res.status(400).json({ message: 'Access must be public or private.' });
+    }
     try {
       const { data: before } = await supabase
         .from('repository')

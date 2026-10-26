@@ -2,6 +2,8 @@ const express  = require('express');
 const router   = express.Router();
 const supabase = require('../config/supabase');
 const { notifyUser } = require('../utils/notify');
+const { notifyRole, fullName } = require('../utils/roleNotify');
+const { logAudit } = require('../utils/audit');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 /* ── POST apply for a grant ── */
@@ -77,6 +79,17 @@ router.post('/', verifyToken, authorizeRoles('researcher'), async (req, res) => 
       title:       'Grant Application Submitted',
       message:     `Your ${grant_type.replace(/_/g,' ')} application for "${proposal.title}" has been submitted.`,
     });
+
+    /* tell the offices that decide on grants (in-app only; never blocks the application) */
+    const label = grant_type.replace(/_/g, ' ');
+    const alert = {
+      proposal_id,
+      notif_type: 'submission',
+      title:      'New grant application',
+      message:    `${fullName(req.user) || 'A researcher'} applied for a ${label} grant for "${proposal.title}". It is waiting on the Grant Applications page.`,
+    };
+    await notifyRole('msric_director', alert);
+    await notifyRole('ovcred',         alert);
 
     return res.status(201).json({ message: 'Grant application submitted.', grant_id: gid });
   } catch (err) {
@@ -156,6 +169,14 @@ router.patch('/:id/status', verifyToken,
         .eq('grant_id', req.params.id);
 
       if (error) throw error;
+
+      await logAudit(req, {
+        action:     'grant_decided',
+        targetType: 'grant',
+        targetId:   grant.grant_id,
+        targetName: grant.research_proposals?.title || null,
+        details:    { to: status, grant_type: grant.grant_type },
+      });
 
       await notifyUser({
         user_id:     grant.research_proposals.user_id,

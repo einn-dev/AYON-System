@@ -9,6 +9,7 @@ import './OfficeNotifications.css';
 
 const ICONS = { submission: '📤', review: '📋', endorsement: '✍️', approval: '✅', rejection: '❌', general: '🔔' };
 
+const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
 const isReminder = (n) => /^reminder/i.test(n.title || '');
 const isWaiting  = (n) => !!n.proposal_id && !isReminder(n);
 
@@ -61,9 +62,12 @@ const OfficeNotifications = ({ queuePath, intro }) => {
     }
   };
 
+  /* a grant alert opens the Grant Applications page of the same office ("/director/..." -> "/director/grants") */
+  const grantsPath = `/${String(queuePath || '').split('/')[1]}/grants`;
+
   const openIt = async (n) => {
     if (!n.is_read) await markRead(n.notif_id);
-    navigate(`${queuePath}?open=${n.proposal_id}`);
+    navigate(isGrantAlert(n) ? grantsPath : `${queuePath}?open=${n.proposal_id}`);
   };
 
   const unread  = notifs.filter((n) => !n.is_read).length;

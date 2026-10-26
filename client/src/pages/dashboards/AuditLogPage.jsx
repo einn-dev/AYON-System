@@ -26,6 +26,8 @@ const ACTIONS = {
   email_resent:       { label: 'Email resent',        badge: 'badge-amber'  },
   repository_created: { label: 'Repository added',    badge: 'badge-amber'  },
   repository_updated: { label: 'Repository edited',   badge: 'badge-amber'  },
+  repository_removed: { label: 'Repository removed',  badge: 'badge-red'    },
+  grant_decided:      { label: 'Grant decision',      badge: 'badge-purple' },
   login_success:      { label: 'Login',               badge: 'badge-green'  },
   login_failed:       { label: 'Login failed',        badge: 'badge-red'    },
 };
@@ -47,6 +49,8 @@ const STAGE_LABELS = {
   endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
 };
 const OFFICE_LABELS = { special_assistant: 'Special Assistant', msric_director: 'MSRIC Director', ovcred: 'OVCRED' };
+
+const GRANT_STATES = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
 
 const roleName = (r) => ROLE_LABELS[r] || r || '—';
 const show     = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
@@ -90,8 +94,22 @@ const detailsText = (log) => {
       return d.sent === false ? 'Could not be sent' : 'Sent';
     case 'repository_created':
       return `Access: ${show(d.access_type)} · ${show(d.source_type)}`;
-    case 'repository_updated':
-      return d.access_type ? `Access: ${show(d.access_type.from)} → ${show(d.access_type.to)}` : '';
+    case 'repository_updated': {
+      /* the OVCRED page sends { access_type: {from,to} }; the Admin page sends { changes: {...} } */
+      const parts = [];
+      const ch = d.changes || (d.access_type ? { access_type: d.access_type } : {});
+      if (ch.access_type) parts.push(`Access: ${show(ch.access_type.from)} → ${show(ch.access_type.to)}`);
+      if (ch.title)       parts.push(`Title: ${show(ch.title.from)} → ${show(ch.title.to)}`);
+      if (ch.keywords)    parts.push('Keywords edited');
+      if (d.abstract_changed) parts.push('Abstract edited');
+      return parts.join('; ');
+    }
+    case 'repository_removed':
+      return `Removed (${show(d.access_type)} · ${show(d.source_type)})${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'grant_decided': {
+      const to = GRANT_STATES[d.to] || show(d.to);
+      return `${d.from ? `${GRANT_STATES[d.from] || d.from} → ` : ''}${to}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    }
     case 'login_failed':
       return LOGIN_REASONS[d.reason] || 'Failed attempt';
     default:
@@ -303,7 +321,7 @@ const AuditLogPage = () => {
 
         <div className="am-legend">
           Recorded: user created · user edited · role changed · activated / deactivated · password reset ·
-          email verified / resent · repository changes · logins (successful and failed)
+          email verified / resent · repository changes · grant decisions · logins (successful and failed)
         </div>
       </div>
     </>
