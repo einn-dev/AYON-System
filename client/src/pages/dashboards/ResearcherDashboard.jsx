@@ -11,6 +11,9 @@ import ResubmitModal from '../../components/ResubmitModal';
 import '../../components/Resubmit.css';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge } from 'react-icons/fa6';
 
+/* Files are stored as full web addresses; older records may hold a server path */
+const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
+
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
   { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
@@ -606,7 +609,7 @@ const Repository = () => {
                   <td>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
                   <td>
                     {r.file_path ? (
-                      <a href={`http://localhost:5000/${r.file_path}`}
+                      <a href={fileHref(r.file_path)}
                         target="_blank" rel="noreferrer"
                         className="btn btn-outline btn-sm">
                         View

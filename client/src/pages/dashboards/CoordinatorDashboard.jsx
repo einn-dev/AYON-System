@@ -5,6 +5,9 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaClipboardList, FaFileLines, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 
+/* Files are stored as full web addresses; older records may hold a server path */
+const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
+
 const NAV_ITEMS = [
   { path: '/coordinator/dashboard',     label: 'Dashboard',        icon: <FaTableCellsLarge /> },
   { path: '/coordinator/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
@@ -193,7 +196,7 @@ const EndorsementPanel = ({ proposals, endorserRole, onRefresh }) => {
                 {selected.file_path && (
                   <a className="btn btn-outline"
                     style={{ display: 'inline-block', textDecoration: 'none' }}
-                    href={`http://localhost:5000/${selected.file_path}`}
+                    href={fileHref(selected.file_path)}
                     target="_blank" rel="noreferrer">
                     <FaFileLines className="ic" />View Document
                   </a>
