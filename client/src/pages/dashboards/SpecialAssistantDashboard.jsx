@@ -27,6 +27,7 @@ const PROPOSAL_TYPES = {
 };
 
 const STATUS_BADGE = {
+  for_endorsement: 'badge-gray',
   draft:        'badge-gray',
   submitted:    'badge-blue',
   under_review: 'badge-amber',
@@ -173,6 +174,7 @@ const Submissions = ({ proposals, onRefresh }) => {
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
               <option value="all">All Status</option>
+              <option value="for_endorsement">At College (for endorsement)</option>
               <option value="submitted">Submitted</option>
               <option value="under_review">Under Review</option>
               <option value="returned">Returned</option>

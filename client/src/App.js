@@ -105,7 +105,7 @@ function App() {
           } />
 
           {/* Catch all */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<LandingPage />} />
         </Routes>
       </Router>
     </AuthProvider>

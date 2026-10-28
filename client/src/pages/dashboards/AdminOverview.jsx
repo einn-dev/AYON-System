@@ -12,12 +12,12 @@ const RANGES = [
   { value: '30',   label: 'Last 30 days' },
 ];
 
-const STATUS_ORDER  = ['submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
+const STATUS_ORDER  = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
 const STATUS_LABELS = {
-  submitted: 'Submitted', under_review: 'Under review', endorsed: 'Endorsed',
+  for_endorsement: 'For endorsement', submitted: 'Submitted', under_review: 'Under review', endorsed: 'Endorsed',
   returned: 'Returned', approved: 'Approved', rejected: 'Rejected',
 };
-const STATUS_BADGE = { submitted: 'badge-amber', under_review: 'badge-blue', endorsed: 'badge-green' };
+const STATUS_BADGE = { for_endorsement: 'badge-gray', submitted: 'badge-amber', under_review: 'badge-blue', endorsed: 'badge-green' };
 
 const TYPE_LABELS = {
   research_spotlight:    'Research Spotlight',
@@ -186,7 +186,7 @@ const AdminOverview = ({ users }) => {
           <div className="ao-tile">
             <div className="ao-tile-label">In progress</div>
             <div className="ao-tile-value">{kpis ? kpis.in_progress : '—'}</div>
-            <div className="ao-tile-sub">submitted, under review or endorsed</div>
+            <div className="ao-tile-sub">at the college, submitted, under review or endorsed</div>
           </div>
           <div className="ao-tile">
             <div className="ao-tile-label">Approval rate</div>

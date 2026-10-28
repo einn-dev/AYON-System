@@ -6,6 +6,7 @@ const supabase = require('../config/supabase');
 const {
   getMyProposals, submitProposal, getAllProposals,
   getProposalById, updateProposalStatus, resubmitProposal,
+  endorseProposal, getMyEndorsements,
 } = require('../controllers/proposal.controller');
 
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
@@ -73,6 +74,8 @@ router.get('/my',           verifyToken, authorizeRoles('researcher'),  getMyPro
 router.post('/',            verifyToken, authorizeRoles('researcher'),  uploadOne, uploadToSupabase, submitProposal);
 router.get('/',             verifyToken, authorizeRoles(...VIEW_ROLES), getAllProposals);
 router.post('/:id/resubmit', verifyToken, authorizeRoles('researcher'), uploadOne, uploadToSupabase, resubmitProposal);
+router.get('/endorsements/mine', verifyToken,
+  authorizeRoles('research_coordinator', 'chairperson', 'college_dean'), getMyEndorsements);
 router.get('/:id',          verifyToken, getProposalById);
 router.patch('/:id/status', verifyToken, authorizeRoles(...REVIEW_ROLES), updateProposalStatus);
 
@@ -126,7 +129,12 @@ router.post('/:id/checklist', verifyToken, authorizeRoles(...SA_ROLES),
 router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred','admin'),
   async (req, res) => {
     const { id } = req.params;
-    const { decision, remarks } = req.body;
+    const { remarks } = req.body || {};
+    /* the table only accepts approve / reject / return; the screens may send other words */
+    const DECISION = { approve: 'approve', approved: 'approve', endorse: 'approve', endorsed: 'approve',
+                       reject: 'reject', rejected: 'reject', return: 'return', returned: 'return' };
+    const decision = DECISION[String((req.body || {}).decision || '').trim().toLowerCase()];
+    if (!decision) return res.status(400).json({ message: 'Invalid decision.' });
     try {
       const { data: proposal } = await supabase
         .from('research_proposals')
@@ -145,13 +153,18 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
 
       if (error) throw error;
 
-      await supabase.from('notifications').insert({
-        user_id:     proposal.user_id,
-        proposal_id: parseInt(id),
-        notif_type:  'review',
-        title:       'Proposal Decision Made',
-        message:     `Your proposal "${proposal.title}" has been ${decision} by the MSRIC Director.`,
-      });
+      /* a return already told the researcher (with the reason) when the status changed */
+      if (decision !== 'return') {
+        const done = { approve: 'approved', reject: 'rejected' }[decision];
+        const who  = req.user.role === 'ovcred' ? 'OVCRED' : req.user.role === 'admin' ? 'the Admin' : 'the MSRIC Director';
+        await supabase.from('notifications').insert({
+          user_id:     proposal.user_id,
+          proposal_id: parseInt(id),
+          notif_type:  'review',
+          title:       'Proposal Decision Made',
+          message:     `Your proposal "${proposal.title}" has been ${done} by ${who}.`,
+        });
+      }
 
       return res.status(201).json({ message: 'Review saved.' });
     } catch (err) {
@@ -161,55 +174,10 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
   }
 );
 
-/* ── Endorse proposal (Coordinator / Chairperson / Dean) ── */
+/* ── Endorse or return at the college level (Coordinator → Chairperson → Dean) ──
+   The rules (whose turn, same college/department, required note) are in the controller. */
 router.post('/:id/endorse', verifyToken,
-  authorizeRoles('research_coordinator','chairperson','college_dean','admin'),
-  async (req, res) => {
-    const { id } = req.params;
-    const { endorser_role, endorse_status, remarks } = req.body;
-
-    const validRoles    = ['research_coordinator','chairperson','college_dean'];
-    const validStatuses = ['endorsed','rejected'];
-
-    if (!validRoles.includes(endorser_role) || !validStatuses.includes(endorse_status)) {
-      return res.status(400).json({ message: 'Invalid endorser role or status.' });
-    }
-
-    try {
-      const { data: proposal } = await supabase
-        .from('research_proposals')
-        .select('user_id, title')
-        .eq('proposal_id', id)
-        .single();
-
-      if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
-
-      const { error } = await supabase.from('endorsements').insert({
-        proposal_id:    parseInt(id),
-        endorser_id:    req.user.user_id,
-        endorser_role,
-        endorse_status,
-        remarks:        remarks || null,
-        date_endorsed:  endorse_status === 'endorsed' ? new Date().toISOString() : null,
-        date_rejected:  endorse_status === 'rejected' ? new Date().toISOString() : null,
-      });
-
-      if (error) throw error;
-
-      await supabase.from('notifications').insert({
-        user_id:     proposal.user_id,
-        proposal_id: parseInt(id),
-        notif_type:  'endorsement',
-        title:       'Proposal Endorsement Update',
-        message:     `Your proposal "${proposal.title}" has been ${endorse_status} by the ${endorser_role.replace(/_/g, ' ')}.`,
-      });
-
-      return res.status(201).json({ message: `Proposal ${endorse_status} successfully.` });
-    } catch (err) {
-      console.error('Endorse error:', err);
-      return res.status(500).json({ message: 'Server error.' });
-    }
-  }
-);
+  authorizeRoles('research_coordinator', 'chairperson', 'college_dean'),
+  endorseProposal);
 
 module.exports = router;

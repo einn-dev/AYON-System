@@ -17,6 +17,7 @@ const ACTIONS = {
   proposal_moved:     { label: 'Proposal moved',      badge: 'badge-purple' },
   proposal_reminder_sent: { label: 'Reminder sent',   badge: 'badge-amber'  },
   proposal_returned:  { label: 'Proposal returned',   badge: 'badge-red'    },
+  proposal_endorsed:  { label: 'Proposal endorsed',   badge: 'badge-green'  },
   proposal_resubmitted: { label: 'Proposal resubmitted', badge: 'badge-blue' },
   password_changed:   { label: 'Password changed',    badge: 'badge-gray'   },
   password_reset_requested: { label: 'Reset link requested', badge: 'badge-amber' },
@@ -72,7 +73,10 @@ const detailsText = (log) => {
     case 'proposal_moved':
       return `${show(STAGE_LABELS[d.from] || d.from)} → ${show(STAGE_LABELS[d.to] || d.to)}${d.reopened ? ' (reopened)' : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
     case 'proposal_returned':
-      return `Returned to the researcher${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+      return `Returned to the researcher${d.stage ? ` at the college level (${String(d.stage).replace(/_/g, ' ')})` : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'proposal_endorsed':
+      return `Endorsed as ${String(d.role || '').replace(/_/g, ' ')}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
+        + `${d.next ? ` · now with: ${String(d.next).replace(/_/g, ' ')}` : ''}${d.note ? ` · Note: ${d.note}` : ''}`;
     case 'proposal_resubmitted': {
       const did = [d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'file'].filter(Boolean);
       return `Revision ${show(d.revision)}${did.length ? ` · changed: ${did.join(', ')}` : ''}`;

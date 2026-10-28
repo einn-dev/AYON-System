@@ -42,7 +42,7 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>MSRIC Staff Dashboard</h1>
-        <p>Monitor all research proposal submissions across MSIRC.</p>
+        <p>Proposals that passed the college level and reached the Special Assistant.</p>
       </div>
       <div className="stats-grid">
         <div className="stat-card blue">
@@ -120,7 +120,7 @@ const AllSubmissions = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>All Submissions</h1>
-        <p>View and monitor all research proposals submitted to MSIRC.</p>
+        <p>Proposals that passed the college level and reached the Special Assistant.</p>
       </div>
       <div className="panel">
         <div className="panel-header">

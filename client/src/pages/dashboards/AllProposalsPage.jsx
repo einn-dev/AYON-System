@@ -25,6 +25,7 @@ const PROPOSAL_TYPES = {
 };
 
 const STATUS_BADGE = {
+  for_endorsement: 'badge-amber',
   submitted:    'badge-blue',
   under_review: 'badge-amber',
   returned:     'badge-red',
@@ -34,6 +35,7 @@ const STATUS_BADGE = {
 };
 
 const STATUS_LABELS = {
+  for_endorsement: 'For endorsement',
   submitted:    'Submitted',
   under_review: 'Under review',
   returned:     'Returned',
@@ -43,6 +45,9 @@ const STATUS_LABELS = {
 };
 
 const OFFICE_LABELS = {
+  research_coordinator: 'Research Coordinator',
+  chairperson:       'Chairperson',
+  college_dean:      'College Dean',
   special_assistant: 'Special Assistant',
   msric_director:    'MSRIC Director',
   ovcred:            'OVCRED',
@@ -72,7 +77,9 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
   const [alert,   setAlert]   = useState(null);
   const [busy,    setBusy]    = useState('');            // 'move' | 'remind' | ''
 
-  const options = MOVE_OPTIONS.filter(o => o.value !== proposal.status);
+  /* the college endorsements cannot be skipped: at that stage the only move is back to the researcher */
+  const options = MOVE_OPTIONS.filter(o => o.value !== proposal.status
+    && (proposal.status !== 'for_endorsement' || o.value === 'returned'));
   const [target, setTarget] = useState(options[0]?.value || 'returned');
   const [reason, setReason] = useState('');
   const [ack,    setAck]    = useState(false);
@@ -406,6 +413,7 @@ const AllProposalsPage = () => {
                     </td>
                     <td className="po-title">
                       {p.title}
+                      {Number(p.round) > 1 && <span className="po-sub">Round {p.round} (resubmitted)</span>}
                       <span className="po-sub">{PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}</span>
                     </td>
                     <td>

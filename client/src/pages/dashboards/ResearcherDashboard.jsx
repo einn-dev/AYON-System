@@ -9,6 +9,7 @@ import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
 import ResubmitModal from '../../components/ResubmitModal';
 import '../../components/Resubmit.css';
+import ProposalTracker, { ROLE_LABEL, whereNow } from '../../components/ProposalTracker';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge } from 'react-icons/fa6';
 
 /* Files are stored as full web addresses; older records may hold a server path */
@@ -34,6 +35,7 @@ const PROPOSAL_TYPES = [
 
 const STATUS_BADGE = {
   draft:        'badge-gray',
+  for_endorsement: 'badge-amber',
   submitted:    'badge-blue',
   under_review: 'badge-amber',
   returned:     'badge-red',
@@ -48,7 +50,7 @@ const statusLabel = (s) => s?.replace(/_/g, ' ');
 const Overview = ({ proposals, user }) => {
   const counts = {
     total:       proposals.length,
-    submitted:   proposals.filter(p => p.status === 'submitted').length,
+    submitted:   proposals.filter(p => ['for_endorsement', 'submitted'].includes(p.status)).length,
     approved:    proposals.filter(p => p.status === 'approved').length,
     under_review:proposals.filter(p => p.status === 'under_review').length,
     rejected:     proposals.filter(p => p.status === 'rejected').length,
@@ -233,6 +235,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
               value={filter} onChange={e => setFilter(e.target.value)}>
               <option value="all">All Status</option>
               <option value="draft">Draft</option>
+              <option value="for_endorsement">For Endorsement</option>
               <option value="submitted">Submitted</option>
               <option value="under_review">Under Review</option>
               <option value="returned">Returned</option>
@@ -273,6 +276,9 @@ const MyProposals = ({ proposals, onRefresh }) => {
                   <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
                     {statusLabel(p.status)}
                   </span>
+                  {p.status !== 'draft' && p.status !== 'approved' && p.status !== 'rejected' && (
+                    <div style={{ fontSize: '0.72rem', color: '#718096', marginTop: 3 }}>{whereNow(p)}</div>
+                  )}
                 </td>
                 <td style={{ color: '#718096' }}>
                   {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
@@ -298,8 +304,9 @@ const MyProposals = ({ proposals, onRefresh }) => {
       {/* Proposal Detail Modal */}
       {selected && (
         <div className="modal-overlay" onClick={() => setSelected(null)}>
-          <div className="modal" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 680 }} onClick={e => e.stopPropagation()}>
             <h3>{selected.title}</h3>
+            {selected.status !== 'draft' && <ProposalTracker proposal={selected} showReturn={false} />}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: 16 }}>
               {[
                 { label: 'Type',        value: PROPOSAL_TYPES.find(t => t.value === selected.proposal_type)?.label },
@@ -318,11 +325,16 @@ const MyProposals = ({ proposals, onRefresh }) => {
             </div>
             {selected.status === 'returned' && (
               <div className="rs-returned">
-                <strong>Returned: changes needed</strong>
+                <strong>
+                  Returned{selected.returned_by_role ? ` by the ${ROLE_LABEL[selected.returned_by_role] || 'office'}` : ''}: changes needed
+                </strong>
                 {selected.returned_at && (
                   <small>{new Date(selected.returned_at).toLocaleString()}</small>
                 )}
                 <p>{selected.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
+                <small style={{ marginTop: 8 }}>
+                  After you edit and resubmit, it starts again from the college level (Research Coordinator, Chairperson, Dean) and then the office.
+                </small>
               </div>
             )}
             {selected.description && (

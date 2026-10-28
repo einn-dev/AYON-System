@@ -4,6 +4,7 @@ const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole } = require('../utils/roleNotify');
+const { endorsersFor, ownerOf } = require('../utils/endorsementChain');
 const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
@@ -714,7 +715,7 @@ const resendEmail = async (req, res) => {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PH_OFFSET_MS = 8 * 60 * 60 * 1000;      // months are counted in Philippine time (UTC+8)
 
-const OPEN_STATUSES    = ['submitted', 'under_review', 'endorsed'];
+const OPEN_STATUSES    = ['for_endorsement', 'submitted', 'under_review', 'endorsed'];
 const DECIDED_STATUSES = ['approved', 'rejected'];
 const PROPOSAL_TYPES   = [
   'research_spotlight', 'internally_funded', 'publication_incentive',
@@ -924,7 +925,7 @@ const getDashboard = async (req, res) => {
    approve, reject or endorse: those decisions stay with the reviewers.
    ───────────────────────────────────────────────────────────── */
 const STAGE_LABELS = {
-  draft: 'Draft', submitted: 'Submitted', under_review: 'Under review',
+  draft: 'Draft', for_endorsement: 'For endorsement', submitted: 'Submitted', under_review: 'Under review',
   returned: 'Returned', endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
 };
 
@@ -935,6 +936,9 @@ const HOLDER_ROLE = {
   endorsed:     'ovcred',
 };
 const HOLDER_LABEL = {
+  research_coordinator: 'Research Coordinator',
+  chairperson:       'Chairperson',
+  college_dean:      'College Dean',
   special_assistant: 'Special Assistant',
   msric_director:    'MSRIC Director',
   ovcred:            'OVCRED',
@@ -944,6 +948,9 @@ const MOVE_TARGETS   = ['returned', 'submitted', 'under_review'];
 const REASON_MIN     = 10;
 const REASON_MAX     = 500;
 const REMIND_WAIT_MS = 24 * 60 * 60 * 1000;     // one reminder per proposal per day
+
+/* the role a proposal is waiting on (a college role while it is being endorsed) */
+const holderOf = (p) => (p.status === 'for_endorsement' ? (p.endorsement_stage || null) : (HOLDER_ROLE[p.status] || null));
 
 /* ids of ACTIVE accounts that hold a role */
 const activeHolders = async (roleType) => {
@@ -966,7 +973,7 @@ const loadHistory = async (proposalId) => {
   const [subRes, revRes, endRes] = await Promise.all([
     supabase.from('submissions').select('submission_id, proposal_id, date_submitted, approved_date, rejected_date').eq('proposal_id', proposalId),
     supabase.from('review_documents').select('review_id, proposal_id, reviewer_id, decision, remarks, review_date').eq('proposal_id', proposalId),
-    supabase.from('endorsements').select('endorsement_id, proposal_id, endorser_id, endorser_role, endorse_status, remarks, date_endorsed, date_rejected').eq('proposal_id', proposalId),
+    supabase.from('endorsements').select('*').eq('proposal_id', proposalId),
   ]);
   if (subRes.error) throw subRes.error;
   if (revRes.error) throw revRes.error;
@@ -996,7 +1003,7 @@ const listProposals = async (req, res) => {
 
     const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
       fetchAll('research_proposals',
-        'proposal_id, title, description, file_path, proposal_type, status, submitted_at, created_at, updated_at, users ( first_name, last_name, email, college, department )',
+        'proposal_id, title, description, file_path, proposal_type, status, endorsement_stage, revision_count, submitted_at, created_at, updated_at, users ( first_name, last_name, email, college, department )',
         'proposal_id'),
       fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
       fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
@@ -1027,7 +1034,9 @@ const listProposals = async (req, res) => {
           department:     p.users?.department || null,
           last_action_at: new Date(last).toISOString(),
           days_waiting:   whole(last, now),
-          with_role:      HOLDER_ROLE[p.status] || null,
+          with_role:      holderOf(p),
+          endorsement_stage: p.endorsement_stage || null,
+          round:          (Number(p.revision_count) || 0) + 1,
         };
       })
       .sort((a, b) => b.days_waiting - a.days_waiting);
@@ -1104,11 +1113,13 @@ const getProposalTimeline = async (req, res) => {
     }
 
     for (const e of endorsements) {
-      const at = e.endorse_status === 'rejected' ? e.date_rejected : e.date_endorsed;
+      const back = e.endorse_status === 'rejected' || e.endorse_status === 'returned';
+      const at = back ? e.date_rejected : e.date_endorsed;
       if (!at) continue;
+      const verb = e.endorse_status === 'returned' ? 'Returned' : back ? 'Rejected' : 'Endorsed';
       events.push({
         at,
-        text: `${e.endorse_status === 'rejected' ? 'Rejected' : 'Endorsed'} by ${who(e.endorser_id)} (${niceRole(e.endorser_role)})`,
+        text: `${verb} by ${who(e.endorser_id)} (${HOLDER_LABEL[e.endorser_role] || niceRole(e.endorser_role)})${Number(e.round) > 1 ? `, round ${e.round}` : ''}`,
         reason: e.remarks || null,
       });
     }
@@ -1172,6 +1183,12 @@ const moveProposal = async (req, res) => {
     if (proposal.status === status) {
       return res.status(400).json({ message: `This proposal is already "${STAGE_LABELS[status]}".` });
     }
+    /* the college endorsements cannot be skipped: at that stage the Admin can only return it */
+    if (proposal.status === 'for_endorsement' && status !== 'returned') {
+      return res.status(400).json({
+        message: 'This proposal is still with the college endorsers. The Admin can only return it to the researcher at this stage.',
+      });
+    }
 
     const reopening = DECIDED_STATUSES.includes(proposal.status);
     if (reopening && confirm_reopen !== true) {
@@ -1192,8 +1209,8 @@ const moveProposal = async (req, res) => {
         .select('proposal_id'),
       { status, updated_at: nowIso },
       status === 'returned'
-        ? { return_reason: why, returned_at: nowIso, returned_by: req.user.user_id }
-        : {},
+        ? { return_reason: why, returned_at: nowIso, returned_by: req.user.user_id, endorsement_stage: null }
+        : { endorsement_stage: null },
     );
     if (updErr) throw updErr;
     if (!changed || !changed.length) {
@@ -1246,13 +1263,13 @@ const remindOffice = async (req, res) => {
   try {
     const { data: proposal, error } = await supabase
       .from('research_proposals')
-      .select('proposal_id, title, status, updated_at, submitted_at, created_at')
+      .select('proposal_id, title, status, endorsement_stage, user_id, updated_at, submitted_at, created_at')
       .eq('proposal_id', id)
       .maybeSingle();
     if (error) throw error;
     if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
 
-    const role = HOLDER_ROLE[proposal.status];
+    const role = holderOf(proposal);
     if (!role) {
       return res.status(400).json({ message: 'This proposal is not waiting on an office, so there is nobody to remind.' });
     }
@@ -1269,7 +1286,10 @@ const remindOffice = async (req, res) => {
       return res.status(429).json({ message: 'A reminder for this proposal was already sent in the last 24 hours.' });
     }
 
-    const recipients = await activeHolders(role);
+    /* a college endorser is reminded only for researchers of their own college/department */
+    const recipients = proposal.status === 'for_endorsement'
+      ? await endorsersFor(role, await ownerOf(proposal.user_id))
+      : await activeHolders(role);
     if (!recipients.length) {
       return res.status(400).json({
         message: `No active account has the ${HOLDER_LABEL[role]} role, so there is nobody to remind.`,

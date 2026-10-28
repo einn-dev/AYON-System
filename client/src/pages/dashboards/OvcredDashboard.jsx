@@ -5,6 +5,11 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
+import ReturnReasonModal from '../../components/ReturnReasonModal';
+import ProposalTracker from '../../components/ProposalTracker';
+
+/* Files are stored as full web addresses; older records may hold a server path */
+const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
   { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: '⊞' },
@@ -150,9 +155,23 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
   const [storeToRepo, setStoreToRepo] = useState(true);
+  const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const hl = useOpenHighlight(proposals.length > 0);
 
   const endorsed = proposals.filter(p => p.status === 'endorsed');
+
+  /* send it back to the researcher; after they resubmit it starts again from the college */
+  const handleReturn = async (reason) => {
+    await API.patch(`/proposals/${returning.proposal_id}/status`, { status: 'returned', reason });
+    try {
+      await API.post(`/proposals/${returning.proposal_id}/review`, { decision: 'return', remarks: reason });
+    } catch { /* the return itself went through; the review record is extra */ }
+    setReturning(null);
+    setSelected(null);
+    setRemarks('');
+    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Research Coordinator.' });
+    onRefresh();
+  };
 
   const handleDecision = async (decision) => {
     if (decision === 'rejected' && !remarks.trim()) {
@@ -275,6 +294,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <span className="badge badge-purple">Endorsed by Director</span>
               </div>
               <div className="panel-body">
+                <ProposalTracker proposal={selected} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
                   gap: '12px 28px', marginBottom: 20 }}>
                   {[
@@ -329,7 +349,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 {selected.file_path && (
                   <a className="btn btn-outline"
                     style={{ display: 'inline-block', textDecoration: 'none' }}
-                    href={`http://localhost:5000/${selected.file_path}`}
+                    href={fileHref(selected.file_path)}
                     target="_blank" rel="noreferrer">
                     📄 View Attached Document
                   </a>
@@ -383,6 +403,11 @@ const ForApproval = ({ proposals, onRefresh }) => {
                       onClick={() => handleDecision('approve')}>
                       {saving ? 'Processing...' : '✓ Grant Final Approval'}
                     </button>
+                    <button className="btn btn-outline"
+                      disabled={saving}
+                      onClick={() => setReturning(selected)}>
+                      ↩ Return to Researcher
+                    </button>
                     <button className="btn btn-danger"
                       disabled={saving}
                       onClick={() => handleDecision('rejected')}>
@@ -403,6 +428,13 @@ const ForApproval = ({ proposals, onRefresh }) => {
             </div>
           </div>
         </div>
+      )}
+      {returning && (
+        <ReturnReasonModal
+          title={returning.title}
+          researcher={`${returning.first_name || ''} ${returning.last_name || ''}`.trim()}
+          onConfirm={handleReturn}
+          onClose={() => setReturning(null)} />
       )}
     </>
   );

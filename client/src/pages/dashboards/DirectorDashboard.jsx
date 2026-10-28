@@ -5,6 +5,11 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
+import ReturnReasonModal from '../../components/ReturnReasonModal';
+import ProposalTracker from '../../components/ProposalTracker';
+
+/* Files are stored as full web addresses; older records may hold a server path */
+const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
   { path: '/director/dashboard',    label: 'Dashboard',         icon: '⊞' },
@@ -146,9 +151,23 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [remarks,  setRemarks]  = useState('');
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
+  const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const hl = useOpenHighlight(proposals.length > 0);
 
   const filtered = proposals.filter(p => p.status === statusFilter);
+
+  /* send it back to the researcher; after they resubmit it starts again from the college */
+  const handleReturn = async (reason) => {
+    await API.patch(`/proposals/${returning.proposal_id}/status`, { status: 'returned', reason });
+    try {
+      await API.post(`/proposals/${returning.proposal_id}/review`, { decision: 'return', remarks: reason });
+    } catch { /* the return itself went through; the review record is extra */ }
+    setReturning(null);
+    setSelected(null);
+    setRemarks('');
+    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Research Coordinator.' });
+    onRefresh();
+  };
 
   const handleDecision = async (proposalId, decision) => {
     if (!remarks.trim() && decision === 'rejected') {
@@ -159,9 +178,12 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
       await API.patch(`/proposals/${proposalId}/status`, { status: decision });
 
       if (decision === 'approved' || decision === 'endorsed') {
+        /* the review record only knows approve / reject / return: endorsing to OVCRED is an approval */
         await API.post(`/proposals/${proposalId}/review`, {
-          decision,
-          remarks: remarks || `Proposal ${decision} by MSRIC Director.`,
+          decision: 'approve',
+          remarks: remarks || (decision === 'endorsed'
+            ? 'Approved and endorsed to OVCRED by the MSRIC Director.'
+            : 'Proposal approved by MSRIC Director.'),
         });
       } else if (decision === 'rejected') {
         await API.post(`/proposals/${proposalId}/review`, {
@@ -274,6 +296,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 </span>
               </div>
               <div className="panel-body">
+                <ProposalTracker proposal={selected} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
                   {[
                     { label: 'Researcher',   value: `${selected.first_name} ${selected.last_name}` },
@@ -324,7 +347,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 {selected.file_path && (
                   <a className="btn btn-outline"
                     style={{ display: 'inline-block', textDecoration: 'none' }}
-                    href={`http://localhost:5000/${selected.file_path}`}
+                    href={fileHref(selected.file_path)}
                     target="_blank" rel="noreferrer">
                     📄 View Attached Document
                   </a>
@@ -361,6 +384,13 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                         {saving ? 'Processing...' : '✓ Approve Only'}
                       </button>
 
+                      {/* Return to the researcher (a reason is required) */}
+                      <button className="btn btn-outline"
+                        disabled={saving}
+                        onClick={() => setReturning(selected)}>
+                        ↩ Return to Researcher
+                      </button>
+
                       {/* Reject */}
                       <button className="btn btn-danger"
                         disabled={saving}
@@ -374,6 +404,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
                       <strong>Note:</strong> "Approve & Endorse" forwards the proposal to OVCRED
                       for final approval. "Approve Only" keeps it within MSIRC.
+                      "Return to Researcher" sends it back for changes; after resubmission it
+                      starts again from the Research Coordinator.
                     </div>
                   </div>
                 </div>
@@ -400,6 +432,13 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             )}
           </div>
         </div>
+      )}
+      {returning && (
+        <ReturnReasonModal
+          title={returning.title}
+          researcher={`${returning.first_name || ''} ${returning.last_name || ''}`.trim()}
+          onConfirm={handleReturn}
+          onClose={() => setReturning(null)} />
       )}
     </>
   );
