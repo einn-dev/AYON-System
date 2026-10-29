@@ -6,36 +6,21 @@ import '../../components/Layout.css';
 import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModal';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
+import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaFileLines, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
+const PROPOSAL_TYPES = TYPE_LABEL;
+
 const NAV_ITEMS = [
-  { path: '/special-assistant/dashboard',   label: 'Dashboard',          icon: '⊞' },
-  { path: '/special-assistant/submissions', label: 'Submissions',         icon: '📥' },
-  { path: '/special-assistant/validate',    label: 'Validate Documents',  icon: '✅' },
-  { path: '/special-assistant/forwarded',   label: 'Forwarded',           icon: '📤' },
-  { path: '/special-assistant/notifications',label: 'Notifications',      icon: '🔔' },
+  { path: '/special-assistant/dashboard',     label: 'Dashboard',           icon: <FaTableCellsLarge /> },
+  { path: '/special-assistant/validate',      label: 'For Validation',      icon: <FaClipboardCheck /> },
+  { path: '/special-assistant/forwarded',     label: 'Validated Proposals', icon: <FaPaperPlane /> },
+  { path: '/special-assistant/submissions',   label: 'All Proposals',       icon: <FaInbox /> },
+  { path: '/special-assistant/notifications', label: 'Notifications',       icon: <FaBell /> },
 ];
-
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  for_endorsement: 'badge-gray',
-  draft:        'badge-gray',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
 
 const REQUIREMENTS = [
   'Accomplished Proposal Form',
@@ -59,24 +44,24 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>Special Assistant Dashboard</h1>
-        <p>Validate submitted proposals and forward complete documents to the Director.</p>
+        <p>Validate proposals and forward complete documents to the MSIRC Director.</p>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card blue">
-          <span className="stat-label">Pending Validation</span>
+          <span className="stat-label">{STATUS_LABEL.submitted}</span>
           <span className="stat-value">{pending}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Under Review</span>
+          <span className="stat-label">{STATUS_LABEL.under_review}</span>
           <span className="stat-value">{reviewing}</span>
         </div>
         <div className="stat-card green">
-          <span className="stat-label">Forwarded</span>
+          <span className="stat-label">Validated</span>
           <span className="stat-value">{forwarded}</span>
         </div>
         <div className="stat-card red">
-          <span className="stat-label">Returned</span>
+          <span className="stat-label">{STATUS_LABEL.returned}</span>
           <span className="stat-value">{returned}</span>
         </div>
       </div>
@@ -84,16 +69,16 @@ const Overview = ({ proposals }) => {
       {/* Pending Submissions */}
       <div className="panel">
         <div className="panel-header">
-          <h2>Pending Submissions</h2>
+          <h2>Waiting for Validation</h2>
           <span className="badge badge-blue">{pending} new</span>
         </div>
         <table className="data-table">
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Submitted</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
+              <th>Date Submitted</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -115,15 +100,15 @@ const Overview = ({ proposals }) => {
                     {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                   </td>
                   <td>
-                    <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                      {p.status?.replace(/_/g, ' ')}
+                    <span className={`badge ${statusBadge(p.status)}`}>
+                      {statusLabel(p.status)}
                     </span>
                   </td>
                 </tr>
               ))}
             {pending === 0 && (
               <tr><td colSpan={5}>
-                <div className="empty-state"><p>No pending submissions.</p></div>
+                <div className="empty-state"><p>No proposals are waiting for validation.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -152,15 +137,15 @@ const Submissions = ({ proposals, onRefresh }) => {
   const confirmReturn = async (reason) => {
     await API.patch(`/proposals/${returning.id}/status`, { status: 'returned', reason });
     setReturning(null);
-    setAlert({ type: 'success', msg: 'Submission returned to the researcher, with your reason.' });
+    setAlert({ type: 'success', msg: 'The proposal was returned to the researcher with your reason.' });
     onRefresh();
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>All Submissions</h1>
-        <p>View and manage all research proposal submissions.</p>
+        <h1>All Proposals</h1>
+        <p>Every research proposal submitted to MSIRC.</p>
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -173,14 +158,8 @@ const Submissions = ({ proposals, onRefresh }) => {
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
-              <option value="all">All Status</option>
-              <option value="for_endorsement">At College (for endorsement)</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="returned">Returned</option>
-              <option value="endorsed">Endorsed</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">All Statuses</option>
+              {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
           </div>
         </div>
@@ -190,10 +169,10 @@ const Submissions = ({ proposals, onRefresh }) => {
             <tr>
               <th>#</th>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>Status</th>
-              <th>Submitted</th>
+              <th>Date Submitted</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -210,8 +189,8 @@ const Submissions = ({ proposals, onRefresh }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                    {p.status?.replace(/_/g, ' ')}
+                  <span className={`badge ${statusBadge(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
@@ -225,14 +204,14 @@ const Submissions = ({ proposals, onRefresh }) => {
                           id: p.proposal_id, title: p.title,
                           name: `${p.first_name} ${p.last_name}`,
                         })}>
-                        Return
+                        Return to Researcher
                       </button>
                     )}
                     {p.file_path && (
                       <a className="btn btn-outline btn-sm"
                         href={fileHref(p.file_path)}
                         target="_blank" rel="noreferrer">
-                        File
+                        View Document
                       </a>
                     )}
                   </div>
@@ -241,7 +220,7 @@ const Submissions = ({ proposals, onRefresh }) => {
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={7}>
-                <div className="empty-state"><p>No submissions found.</p></div>
+                <div className="empty-state"><p>No proposals found.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -298,11 +277,11 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
         requirements: checklist,
         remarks,
       });
-      setAlert({ type: 'success', msg: 'Documents validated and forwarded to the Director!' });
+      setAlert({ type: 'success', msg: 'Documents validated and forwarded to the MSIRC Director.' });
       setSelected(null);
       onRefresh();
     } catch {
-      setAlert({ type: 'error', msg: 'Failed to forward submission.' });
+      setAlert({ type: 'error', msg: 'The proposal could not be forwarded. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -321,11 +300,11 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
         status: 'returned',
         reason: remarks.trim(),
       });
-      setAlert({ type: 'success', msg: 'Submission returned to the researcher, with your remarks as the reason.' });
+      setAlert({ type: 'success', msg: 'The proposal was returned to the researcher with your remarks as the reason.' });
       setSelected(null);
       onRefresh();
     } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Failed to return submission.' });
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The proposal could not be returned. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -338,8 +317,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Validate Documents</h1>
-        <p>Check document completeness before forwarding to the MSRIC Director.</p>
+        <h1>For Validation</h1>
+        <p>Check document completeness before forwarding to the MSIRC Director.</p>
       </div>
 
       {!selected && <OpenNotice state={hl} where="the validation queue" />}
@@ -351,16 +330,16 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
       {!selected ? (
         <div className="panel">
           <div className="panel-header">
-            <h2>Submissions Awaiting Validation</h2>
+            <h2>Proposals Waiting for Validation</h2>
             <span className="badge badge-blue">{pending.length}</span>
           </div>
           <table className="data-table">
             <thead>
               <tr>
                 <th>Researcher</th>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Submitted</th>
+                <th>Research Title</th>
+                <th>Proposal Type</th>
+                <th>Date Submitted</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -381,14 +360,14 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   <td>
                     <button className="btn btn-primary btn-sm"
                       onClick={() => openValidation(p)}>
-                      Validate
+                      Review
                     </button>
                   </td>
                 </tr>
               ))}
               {pending.length === 0 && (
                 <tr><td colSpan={5}>
-                  <div className="empty-state"><p>No submissions awaiting validation.</p></div>
+                  <div className="empty-state"><p>No proposals are waiting for validation.</p></div>
                 </td></tr>
               )}
             </tbody>
@@ -400,7 +379,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => setSelected(null)}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to List
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -449,7 +428,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                       color: '#fff', fontSize: '0.75rem', fontWeight: 700,
                       transition: 'all 0.15s',
                     }}>
-                      {checklist[req] === 'complete' ? '✓' : ''}
+                      {checklist[req] === 'complete' ? <FaCheck /> : ''}
                     </div>
                     <span style={{
                       fontSize: '0.875rem',
@@ -460,13 +439,13 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                 ))}
 
                 <div className="form-group" style={{ marginTop: 16 }}>
-                  <label>Remarks / Notes</label>
+                  <label>Remarks</label>
                   <textarea rows={3} value={remarks}
                     onChange={e => setRemarks(e.target.value)}
-                    placeholder="Add remarks or notes for this submission..."
+                    placeholder="Add remarks for this proposal..."
                     style={{ resize: 'vertical' }} />
                   <span style={{ fontSize: '0.78rem', color: '#8a7a7d' }}>
-                    If you return this submission, these remarks are sent to the researcher as the reason.
+                    If you return this proposal, these remarks are sent to the researcher as the reason.
                   </span>
                 </div>
               </div>
@@ -475,15 +454,15 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             {/* Right — Submission Info + Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="panel">
-                <div className="panel-header"><h2>Submission Info</h2></div>
+                <div className="panel-header"><h2>Proposal Details</h2></div>
                 <div className="panel-body">
                   {[
                     { label: 'Researcher', value: `${selected.first_name} ${selected.last_name}` },
                     { label: 'Email',      value: selected.email },
                     { label: 'College',    value: selected.college || '—' },
                     { label: 'Department', value: selected.department || '—' },
-                    { label: 'Type',       value: PROPOSAL_TYPES[selected.proposal_type] },
-                    { label: 'Submitted',  value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
+                    { label: 'Proposal Type', value: PROPOSAL_TYPES[selected.proposal_type] },
+                    { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
                   ].map(item => (
                     <div key={item.label} style={{ marginBottom: 12 }}>
                       <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{item.label}</p>
@@ -491,7 +470,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     </div>
                   ))}
                   <div style={{ marginTop: 4 }}>
-                    <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
+                    <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Research Title</p>
                     <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{selected.title}</p>
                   </div>
                   {selected.file_path && (
@@ -499,7 +478,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                       style={{ display: 'block', textAlign: 'center', marginTop: 14, textDecoration: 'none' }}
                       href={fileHref(selected.file_path)}
                       target="_blank" rel="noreferrer">
-                      View Attached File
+                      <FaFileLines className="ic" />View Document
                     </a>
                   )}
                 </div>
@@ -513,7 +492,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     onClick={handleForward}
                     disabled={saving || !allComplete}
                     style={{ opacity: allComplete ? 1 : 0.5 }}>
-                    {saving ? 'Forwarding...' : '📤 Forward to Director'}
+                    {saving ? 'Forwarding...' : <><FaPaperPlane className="ic" />Validate and Forward</>}
                   </button>
                   {!allComplete && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
@@ -524,7 +503,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     className="btn btn-danger"
                     onClick={handleReturn}
                     disabled={saving}>
-                    ↩ Return to Researcher
+                    <FaRotateLeft className="ic" />Return to Researcher
                   </button>
                 </div>
               </div>
@@ -545,8 +524,8 @@ const Forwarded = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Forwarded Submissions</h1>
-        <p>Proposals that have been validated and forwarded to the Director.</p>
+        <h1>Validated Proposals</h1>
+        <p>Proposals you validated and forwarded to the MSIRC Director.</p>
       </div>
 
       <div className="panel">
@@ -554,10 +533,10 @@ const Forwarded = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>Current Status</th>
-              <th>Submitted</th>
+              <th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>
@@ -572,8 +551,8 @@ const Forwarded = ({ proposals }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                    {p.status?.replace(/_/g, ' ')}
+                  <span className={`badge ${statusBadge(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
@@ -583,7 +562,7 @@ const Forwarded = ({ proposals }) => {
             ))}
             {forwarded.length === 0 && (
               <tr><td colSpan={5}>
-                <div className="empty-state"><p>No forwarded submissions yet.</p></div>
+                <div className="empty-state"><p>No validated proposals yet.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -623,7 +602,7 @@ const SpecialAssistantDashboard = () => {
         <Route path="forwarded"    element={<Forwarded proposals={proposals} />} />
         <Route path="notifications" element={
           <OfficeNotifications queuePath="/special-assistant/validate"
-            intro="New and resubmitted proposals waiting for you to validate, and reminders from the MSRIC administrator." />} />
+            intro="New and resubmitted proposals waiting for you to validate, and reminders from the MSIRC Administrator." />} />
       </Routes>
     </Layout>
   );

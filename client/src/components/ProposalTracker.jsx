@@ -1,10 +1,12 @@
 import React from 'react';
 import './ProposalTracker.css';
+import { ROLE_LABEL, statusLabel } from '../utils/terms';
+import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from 'react-icons/fa6';
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:
      College:  Research Coordinator → Chairperson → College Dean
-     Office:   Special Assistant → MSRIC Director → OVCRED → Decision
+     Office:   Special Assistant → MSIRC Director → OVCRED → Decision
    and the endorsement history (every round), with the notes.
 
    The proposal needs (the server adds these):
@@ -15,15 +17,7 @@ import './ProposalTracker.css';
 export const COLLEGE_CHAIN = ['research_coordinator', 'chairperson', 'college_dean'];
 const OFFICE_CHAIN = ['special_assistant', 'msric_director', 'ovcred'];
 
-export const ROLE_LABEL = {
-  research_coordinator: 'Research Coordinator',
-  chairperson:          'Chairperson',
-  college_dean:         'College Dean',
-  special_assistant:    'Special Assistant',
-  msric_director:       'MSRIC Director',
-  ovcred:               'OVCRED',
-  admin:                'Admin',
-};
+export { ROLE_LABEL };
 
 const SHORT = {
   research_coordinator: 'Coordinator',
@@ -44,14 +38,12 @@ export const whereNow = (p) => {
   if (!p) return '';
   switch (p.status) {
     case 'draft':           return 'Not submitted yet';
-    case 'for_endorsement': return `Awaiting ${ROLE_LABEL[p.endorsement_stage] || 'college'} endorsement`;
+    case 'for_endorsement': return `Waiting for the ${ROLE_LABEL[p.endorsement_stage] || 'college'}`;
     case 'submitted':       return 'With the Special Assistant';
-    case 'under_review':    return 'With the MSRIC Director';
+    case 'under_review':    return 'With the MSIRC Director';
     case 'endorsed':        return 'With OVCRED for final approval';
-    case 'returned':        return `Returned to the researcher${p.returned_by_role ? ` by the ${ROLE_LABEL[p.returned_by_role] || 'office'}` : ''}`;
-    case 'approved':        return 'Approved';
-    case 'rejected':        return 'Rejected';
-    default:                return String(p.status || '').replace(/_/g, ' ');
+    case 'returned':        return `Returned for revision${p.returned_by_role ? ` by the ${ROLE_LABEL[p.returned_by_role] || 'office'}` : ''}`;
+    default:                return statusLabel(p.status);
   }
 };
 
@@ -105,8 +97,8 @@ const buildSteps = (p) => {
   return [...college, ...office, decision];
 };
 
-const MARK = { done: '✓', now: '•', skip: '–', returned: '!', rejected: '✕' };
-const NOTE = { skip: 'not needed', returned: 'returned', now: 'now' };
+const MARK = { done: <FaCheck />, now: <FaCircle style={{ fontSize: '0.45rem' }} />, skip: <FaMinus />, returned: <FaExclamation />, rejected: <FaXmark /> };
+const NOTE = { skip: 'Not Needed', returned: 'Returned', now: 'Current' };
 
 const fmt = (d) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 
@@ -139,7 +131,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
 
       {showReturn && proposal.status === 'returned' && proposal.return_reason && (
         <div className="pt-return">
-          <b>Returned{proposal.returned_by_role ? ` by the ${ROLE_LABEL[proposal.returned_by_role] || 'office'}` : ''}</b>
+          <b>Returned for Revision{proposal.returned_by_role ? ` by the ${ROLE_LABEL[proposal.returned_by_role] || 'office'}` : ''}</b>
           {proposal.returned_at && <small> · {fmt(proposal.returned_at)}</small>}
           <p>{proposal.return_reason}</p>
           <small>After the researcher edits and resubmits, it starts again from the Research Coordinator.</small>
@@ -148,7 +140,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
 
       {showHistory && history.length > 0 && (
         <div className="pt-history">
-          <h4>Endorsement history</h4>
+          <h4>Endorsement History</h4>
           <ul>
             {history.map((e, i) => (
               <li key={e.endorsement_id || i}>

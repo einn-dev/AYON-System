@@ -6,6 +6,8 @@ import '../../components/Layout.css';
 import './AdminModule.css';
 import './ProposalOversight.css';
 import { errText, fmtWhen, Pager } from './adminShared';
+import { FaFileLines, FaLock } from 'react-icons/fa6';
+import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
    Admin → All Proposals
@@ -16,48 +18,23 @@ import { errText, fmtWhen, Pager } from './adminShared';
 
 const PAGE_SIZE = 25;
 
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  for_endorsement: 'badge-amber',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
-
-const STATUS_LABELS = {
-  for_endorsement: 'For endorsement',
-  submitted:    'Submitted',
-  under_review: 'Under review',
-  returned:     'Returned',
-  endorsed:     'Endorsed',
-  approved:     'Approved',
-  rejected:     'Rejected',
-};
+const PROPOSAL_TYPES = TYPE_LABEL;
+const STATUS_LABELS  = STATUS_LABEL;
 
 const OFFICE_LABELS = {
   research_coordinator: 'Research Coordinator',
   chairperson:       'Chairperson',
   college_dean:      'College Dean',
   special_assistant: 'Special Assistant',
-  msric_director:    'MSRIC Director',
+  msric_director:    'MSIRC Director',
   ovcred:            'OVCRED',
 };
 
 /* where an Admin may send a proposal back to */
 const MOVE_OPTIONS = [
-  { value: 'returned',     label: 'Back to the researcher' },
+  { value: 'returned',     label: 'Back to the Researcher' },
   { value: 'submitted',    label: 'Special Assistant (document check)' },
-  { value: 'under_review', label: 'MSRIC Director (review)' },
+  { value: 'under_review', label: 'MSIRC Director (review)' },
 ];
 
 const STUCK_OPTIONS = [3, 7, 14, 30];
@@ -151,7 +128,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
         <div className="po-head">
           <div>
             <h2 id="po-title">{proposal.title}</h2>
-            <span className={`badge ${STATUS_BADGE[proposal.status] || 'badge-gray'}`} style={{ marginTop: 6, display: 'inline-block' }}>
+            <span className={`badge ${statusBadge(proposal.status)}`} style={{ marginTop: 6, display: 'inline-block' }}>
               {STATUS_LABELS[proposal.status] || proposal.status}
             </span>
           </div>
@@ -164,15 +141,15 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
             <div><small>Email</small><b>{proposal.email || '—'}</b></div>
             <div><small>College</small><b>{proposal.college || '—'}</b></div>
             <div><small>Department</small><b>{proposal.department || '—'}</b></div>
-            <div><small>Type</small><b>{PROPOSAL_TYPES[proposal.proposal_type] || proposal.proposal_type}</b></div>
-            <div><small>Submitted</small><b>{dateOnly(proposal.submitted_at)}</b></div>
+            <div><small>Proposal Type</small><b>{PROPOSAL_TYPES[proposal.proposal_type] || proposal.proposal_type}</b></div>
+            <div><small>Date Submitted</small><b>{dateOnly(proposal.submitted_at)}</b></div>
           </div>
 
           {proposal.description && <p className="po-desc">{proposal.description}</p>}
           {proposal.file_path && (
             <p style={{ margin: '0 0 12px' }}>
               <a className="btn btn-outline btn-sm" href={proposal.file_path} target="_blank" rel="noreferrer"
-                style={{ textDecoration: 'none' }}>📄 View file</a>
+                style={{ textDecoration: 'none' }}><FaFileLines className="ic" />View Document</a>
             </p>
           )}
 
@@ -184,7 +161,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
             </div>
           )}
 
-          <div className="po-sec">What happened so far</div>
+          <div className="po-sec">History</div>
           {events === null && <p className="po-muted">Loading…</p>}
           {loadErr && <div className="alert alert-error">{loadErr}</div>}
           {events && events.length > 0 && (
@@ -192,20 +169,20 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
               {events.map((ev, i) => (
                 <li key={i} className={ev.admin ? 'admin' : ''}>
                   <b>{ev.text}</b>
-                  <small>{fmtWhen(ev.at)}{ev.admin ? ` · Admin${ev.by ? ` (${ev.by})` : ''}` : ''}</small>
+                  <small>{fmtWhen(ev.at)}{ev.admin ? ` · Administrator${ev.by ? ` (${ev.by})` : ''}` : ''}</small>
                   {ev.reason && <span className="po-why">{ev.admin ? 'Reason: ' : ''}{ev.reason}</span>}
                 </li>
               ))}
             </ul>
           )}
 
-          <div className="po-sec">Admin actions</div>
+          <div className="po-sec">Administrator Actions</div>
           <div className="po-act">
             <div className="po-rule">
-              <span>🔒</span>
+              <span><FaLock /></span>
               <span>
-                Admins can send a proposal back or remind the people it is waiting on. Admins{' '}
-                <b>cannot approve, reject or endorse</b> a proposal. Those decisions stay with the reviewers.
+                The Administrator can send a proposal back or remind the people it is waiting on, but{' '}
+                <b>cannot approve, reject or endorse</b> it. Those decisions stay with the reviewers.
               </span>
             </div>
 
@@ -242,13 +219,13 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
 
             <div className="po-btns">
               <button type="button" className="btn btn-primary" disabled={!canMove} onClick={move}>
-                {busy === 'move' ? 'Moving…' : 'Move proposal'}
+                {busy === 'move' ? 'Moving…' : 'Move Proposal'}
               </button>
               {office && (
                 <button type="button" className="btn btn-outline" disabled={busy !== ''} onClick={remind}>
                   {busy === 'remind'
                     ? 'Sending…'
-                    : `Send reminder to ${OFFICE_LABELS[office]}${people != null ? ` (${people} ${people === 1 ? 'person' : 'people'})` : ''}`}
+                    : `Send Reminder to ${OFFICE_LABELS[office]}${people != null ? ` (${people} ${people === 1 ? 'person' : 'people'})` : ''}`}
                 </button>
               )}
             </div>
@@ -329,24 +306,24 @@ const AllProposalsPage = () => {
     <>
       <div className="page-header">
         <h1>All Proposals</h1>
-        <p>System-wide view of every submitted proposal, with oversight tools for the Admin.</p>
+        <p>Every submitted proposal, with oversight tools for the Administrator.</p>
       </div>
 
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
         <div className="stat-card blue">
-          <span className="stat-label">Total proposals</span>
+          <span className="stat-label">Total Proposals</span>
           <span className="stat-value">{counts.total}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Still in progress</span>
+          <span className="stat-label">In Progress</span>
           <span className="stat-value">{counts.inProgress}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Stuck {stuckDays}+ days</span>
+          <span className="stat-label">Waiting {stuckDays}+ Days</span>
           <span className="stat-value">{counts.stuck}</span>
         </div>
         <div className="stat-card red">
-          <span className="stat-label">Returned to researcher</span>
+          <span className="stat-label">Returned for Revision</span>
           <span className="stat-value">{counts.returned}</span>
         </div>
       </div>
@@ -357,17 +334,17 @@ const AllProposalsPage = () => {
             <input className="search-input" placeholder="Search by name, title or college…"
               value={search} onChange={onFilter(setSearch)} />
             <select className="search-input" style={{ minWidth: 140 }} value={status} onChange={onFilter(setStatus)}>
-              <option value="all">All status</option>
+              <option value="all">All Statuses</option>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <select className="search-input" style={{ minWidth: 170 }} value={type} onChange={onFilter(setType)}>
-              <option value="all">All types</option>
+              <option value="all">All Types</option>
               {Object.entries(PROPOSAL_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <label className="po-stuck">
               <input type="checkbox" checked={stuckOnly}
                 onChange={e => { setStuckOnly(e.target.checked); setPage(1); }} />
-              Stuck for
+              Waiting for
               <select value={stuckDays} onChange={e => { setStuckDays(Number(e.target.value)); setPage(1); }}>
                 {STUCK_OPTIONS.map(d => <option key={d} value={d}>{d}+</option>)}
               </select>
@@ -397,10 +374,10 @@ const AllProposalsPage = () => {
               <thead>
                 <tr>
                   <th>Researcher</th>
-                  <th>Title</th>
+                  <th>Research Title</th>
                   <th>Status</th>
-                  <th>Waiting on</th>
-                  <th>Days waiting</th>
+                  <th>Waiting On</th>
+                  <th>Days Waiting</th>
                   <th></th>
                 </tr>
               </thead>
@@ -417,7 +394,7 @@ const AllProposalsPage = () => {
                       <span className="po-sub">{PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}</span>
                     </td>
                     <td>
-                      <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
+                      <span className={`badge ${statusBadge(p.status)}`}>
                         {STATUS_LABELS[p.status] || p.status}
                       </span>
                     </td>
@@ -433,7 +410,7 @@ const AllProposalsPage = () => {
                     </td>
                     <td>
                       <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>
-                        Open
+                        View Details
                       </button>
                     </td>
                   </tr>

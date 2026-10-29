@@ -74,7 +74,7 @@ const NotificationsPage = () => {
           </div>
           {unreadCount > 0 && (
             <button className="btn btn-outline btn-sm" onClick={markAllRead}>
-              Mark all as read
+              Mark All as Read
             </button>
           )}
         </div>

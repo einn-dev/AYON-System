@@ -8,7 +8,7 @@ const PAGE_SIZE = 25;
 
 const TYPE_LABELS = {
   verification:   'Verification',
-  password_reset: 'Password reset',
+  password_reset: 'Password Reset',
   notification:   'Notification',
 };
 
@@ -86,11 +86,11 @@ const EmailLogPage = () => {
 
       <div className="stats-grid">
         <div className="stat-card green">
-          <span className="stat-label">Sent (7 days)</span>
+          <span className="stat-label">Sent (7 Days)</span>
           <span className="stat-value">{stats.sent_7d}</span>
         </div>
         <div className="stat-card red">
-          <span className="stat-label">Failed (7 days)</span>
+          <span className="stat-label">Failed (7 Days)</span>
           <span className="stat-value">{stats.failed_7d}</span>
         </div>
       </div>
@@ -102,21 +102,21 @@ const EmailLogPage = () => {
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 150 }}
               value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
-              <option value="">All statuses</option>
+              <option value="">All Statuses</option>
               <option value="sent">Sent</option>
               <option value="failed">Failed</option>
             </select>
             <select className="search-input" style={{ minWidth: 150 }}
               value={type} onChange={e => { setType(e.target.value); setPage(1); }}>
-              <option value="">All types</option>
+              <option value="">All Types</option>
               <option value="verification">Verification</option>
-              <option value="password_reset">Password reset</option>
+              <option value="password_reset">Password Reset</option>
               <option value="notification">Notification</option>
             </select>
             {filtersOn && (
               <button className="btn btn-outline btn-sm" onClick={() => {
                 setSearch(''); setSearchTerm(''); setStatus(''); setType(''); setPage(1);
-              }}>Clear filters</button>
+              }}>Clear Filters</button>
             )}
           </div>
           <button className="btn btn-outline btn-sm" onClick={load} disabled={loading}>Refresh</button>

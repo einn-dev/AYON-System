@@ -3,6 +3,7 @@ const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole, fullName } = require('../utils/roleNotify');
 const { notifyUser } = require('../utils/notify');
+const { statusLabel } = require('../utils/terms');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, inScope, notifyIds, roundOf, attachTrail,
@@ -357,7 +358,7 @@ const updateProposalStatus = async (req, res) => {
       proposal_id: parseInt(id),
       notif_type:  'review',
       title:       'Proposal Status Updated',
-      message:     `Your proposal "${proposal.title}" status has been updated to: ${status}.`,
+      message:     `The status of your proposal "${proposal.title}" is now: ${statusLabel(status)}.`,
     });
 
     /* tell the office that now has it on its desk (only when the stage really changed) */

@@ -7,36 +7,22 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
+import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
+const PROPOSAL_TYPES = TYPE_LABEL;
+
 const NAV_ITEMS = [
-  { path: '/director/dashboard',    label: 'Dashboard',         icon: '⊞' },
-  { path: '/director/for-review',   label: 'For Review',        icon: '📋' },
-  { path: '/director/approved',     label: 'Approved',          icon: '✅' },
-  { path: '/director/rejected',     label: 'Rejected',          icon: '✗'  },
-  { path: '/director/endorsed',     label: 'Endorsed to OVCRED',icon: '📤' },
-  { path: '/director/notifications',label: 'Notifications',     icon: '🔔' },
+  { path: '/director/dashboard',     label: 'Dashboard',          icon: <FaTableCellsLarge /> },
+  { path: '/director/for-review',    label: 'For Review',         icon: <FaClipboardList /> },
+  { path: '/director/endorsed',      label: 'Endorsed to OVCRED', icon: <FaPaperPlane /> },
+  { path: '/director/approved',      label: 'Approved Proposals', icon: <FaCircleCheck /> },
+  { path: '/director/rejected',      label: 'Rejected Proposals', icon: <FaCircleXmark /> },
+  { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
-
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  draft:        'badge-gray',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
 
 /* ─────────── Overview ─────────── */
 const Overview = ({ proposals }) => {
@@ -48,7 +34,7 @@ const Overview = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Director Dashboard</h1>
+        <h1>MSIRC Director Dashboard</h1>
         <p>Review validated proposals and make approval decisions for MSIRC.</p>
       </div>
 
@@ -81,9 +67,9 @@ const Overview = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Submitted</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
+              <th>Date Submitted</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -105,15 +91,15 @@ const Overview = ({ proposals }) => {
                     {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                   </td>
                   <td>
-                    <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                      {p.status?.replace(/_/g, ' ')}
+                    <span className={`badge ${statusBadge(p.status)}`}>
+                      {statusLabel(p.status)}
                     </span>
                   </td>
                 </tr>
               ))}
             {forReview === 0 && (
               <tr><td colSpan={5}>
-                <div className="empty-state"><p>No proposals awaiting review.</p></div>
+                <div className="empty-state"><p>No proposals are waiting for your review.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -182,8 +168,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         await API.post(`/proposals/${proposalId}/review`, {
           decision: 'approve',
           remarks: remarks || (decision === 'endorsed'
-            ? 'Approved and endorsed to OVCRED by the MSRIC Director.'
-            : 'Proposal approved by MSRIC Director.'),
+            ? 'Approved and endorsed to OVCRED by the MSIRC Director.'
+            : 'Proposal approved by the MSIRC Director.'),
         });
       } else if (decision === 'rejected') {
         await API.post(`/proposals/${proposalId}/review`, {
@@ -192,12 +178,12 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         });
       }
 
-      setAlert({ type: 'success', msg: `Proposal ${decision} successfully!` });
+      setAlert({ type: 'success', msg: { endorsed: 'Proposal endorsed to OVCRED.', approved: 'Proposal approved.', rejected: 'Proposal rejected.' }[decision] || 'Decision saved.' });
       setSelected(null);
       setRemarks('');
       onRefresh();
     } catch {
-      setAlert({ type: 'error', msg: 'Action failed. Please try again.' });
+      setAlert({ type: 'error', msg: 'The decision could not be saved. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -218,7 +204,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         <p>
           {statusFilter === 'under_review'
             ? 'Review validated proposals forwarded by the Special Assistant.'
-            : `All proposals with status: ${statusFilter.replace(/_/g, ' ')}.`}
+            : `All proposals with the status "${statusLabel(statusFilter)}".`}
         </p>
       </div>
 
@@ -237,9 +223,9 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               <tr>
                 <th>#</th>
                 <th>Researcher</th>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Submitted</th>
+                <th>Research Title</th>
+                <th>Proposal Type</th>
+                <th>Date Submitted</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -280,7 +266,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to List
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -291,8 +277,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             <div className="panel">
               <div className="panel-header">
                 <h2>Proposal Details</h2>
-                <span className={`badge ${STATUS_BADGE[selected.status]}`}>
-                  {selected.status?.replace(/_/g, ' ')}
+                <span className={`badge ${statusBadge(selected.status)}`}>
+                  {statusLabel(selected.status)}
                 </span>
               </div>
               <div className="panel-body">
@@ -333,7 +319,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                   <div style={{ marginBottom: 20 }}>
                     <p style={{ fontSize: '0.72rem', color: '#718096',
                       textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
-                      Abstract / Description
+                      Abstract
                     </p>
                     <p style={{ color: '#2d3748', lineHeight: 1.7,
                       margin: 0, fontSize: '0.9rem',
@@ -349,7 +335,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={fileHref(selected.file_path)}
                     target="_blank" rel="noreferrer">
-                    📄 View Attached Document
+                    <FaFileLines className="ic" />View Document
                   </a>
                 )}
               </div>
@@ -362,10 +348,10 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                   <div className="panel-header"><h2>Director's Decision</h2></div>
                   <div className="panel-body">
                     <div className="form-group">
-                      <label>Remarks / Comments</label>
+                      <label>Remarks</label>
                       <textarea rows={5} value={remarks}
                         onChange={e => setRemarks(e.target.value)}
-                        placeholder="Add your remarks or comments about this proposal..."
+                        placeholder="Add your remarks about this proposal..."
                         style={{ resize: 'vertical' }} />
                     </div>
 
@@ -374,36 +360,36 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <button className="btn btn-success"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
-                        {saving ? 'Processing...' : '📤 Approve & Endorse to OVCRED'}
+                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to OVCRED</>}
                       </button>
 
                       {/* Approve only */}
                       <button className="btn btn-primary"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'approved')}>
-                        {saving ? 'Processing...' : '✓ Approve Only'}
+                        {saving ? 'Processing...' : <><FaCheck className="ic" />Approve</>}
                       </button>
 
                       {/* Return to the researcher (a reason is required) */}
                       <button className="btn btn-outline"
                         disabled={saving}
                         onClick={() => setReturning(selected)}>
-                        ↩ Return to Researcher
+                        <FaRotateLeft className="ic" />Return to Researcher
                       </button>
 
                       {/* Reject */}
                       <button className="btn btn-danger"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'rejected')}>
-                        {saving ? 'Processing...' : '✗ Reject'}
+                        {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
                       </button>
                     </div>
 
                     <div style={{ marginTop: 12, padding: 12,
                       background: '#fffbeb', borderRadius: 8,
                       border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
-                      <strong>Note:</strong> "Approve & Endorse" forwards the proposal to OVCRED
-                      for final approval. "Approve Only" keeps it within MSIRC.
+                      <strong>Note:</strong> "Endorse to OVCRED" approves the proposal and forwards it to OVCRED
+                      for final approval. "Approve" keeps it within MSIRC.
                       "Return to Researcher" sends it back for changes; after resubmission it
                       starts again from the Research Coordinator.
                     </div>
@@ -415,16 +401,16 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             {/* View-only right panel for non-review statuses */}
             {statusFilter !== 'under_review' && (
               <div className="panel">
-                <div className="panel-header"><h2>Decision Info</h2></div>
+                <div className="panel-header"><h2>Decision</h2></div>
                 <div className="panel-body">
                   <div style={{ marginBottom: 12 }}>
                     <p style={{ fontSize: '0.72rem', color: '#718096',
                       textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>
-                      Final Status
+                      Status
                     </p>
-                    <span className={`badge ${STATUS_BADGE[selected.status]}`}
+                    <span className={`badge ${statusBadge(selected.status)}`}
                       style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
-                      {selected.status?.replace(/_/g, ' ')}
+                      {statusLabel(selected.status)}
                     </span>
                   </div>
                 </div>
@@ -465,7 +451,7 @@ const DirectorDashboard = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <Layout navItems={NAV_ITEMS} role="MSRIC Director">
+    <Layout navItems={NAV_ITEMS} role="MSIRC Director">
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"
@@ -480,7 +466,7 @@ const DirectorDashboard = () => {
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
-            intro="Proposals the Special Assistant forwarded to you, and reminders from the MSRIC administrator." />} />
+            intro="Proposals the Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />
       </Routes>
     </Layout>
   );

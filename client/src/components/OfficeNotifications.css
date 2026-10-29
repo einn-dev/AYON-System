@@ -40,7 +40,7 @@
 }
 .on-item.unread { background: #f3f7fc; cursor: pointer; }
 .on-item:last-child { border-bottom: 0; }
-.on-ico  { font-size: 1.25rem; line-height: 1.2; flex-shrink: 0; }
+.on-ico  { font-size: 1.15rem; line-height: 1.2; flex-shrink: 0; color: #8d1b2d; width: 28px; text-align: center; }
 .on-body { flex: 1; min-width: 0; }
 .on-body strong { display: block; color: #5e1420; font-size: 0.9rem; margin-bottom: 2px; }
 .on-body p { margin: 0 0 4px; color: #6b5e61; font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; }
@@ -56,3 +56,6 @@ tr.row-hl > td:first-child { box-shadow: inset 4px 0 0 #e0a526; }
   .on-item { flex-wrap: wrap; padding: 12px 14px; }
   .on-act { flex-direction: row; width: 100%; justify-content: flex-end; }
 }
+
+/* Status labels are already written in Title Case (utils/terms.js), so badges show them exactly as written */
+body .badge { text-transform: none; }

@@ -4,7 +4,7 @@ import API from '../services/authService';
 import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
-import { FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
 const linkButton = {
   display: 'block', textDecoration: 'none', textAlign: 'center', marginTop: 20,
@@ -46,7 +46,7 @@ const VerifyEmailPage = () => {
 
         {state === 'loading' && (
           <>
-            <h2>Verifying your email...</h2>
+            <h2>Verifying Your Email...</h2>
             <p style={{ color: '#8a7a7d', fontSize: '0.9rem' }}>Please wait a moment.</p>
           </>
         )}
@@ -54,22 +54,22 @@ const VerifyEmailPage = () => {
         {state === 'success' && (
           <>
             <div style={{ fontSize: '2.6rem', marginBottom: 8 }}><FaCircleCheck style={{ color: '#276749' }} /></div>
-            <h2>Email verified</h2>
+            <h2>Email Verified</h2>
             <p style={{ color: '#6b5e61', fontSize: '0.9rem', lineHeight: 1.6 }}>{message}</p>
-            <Link to="/login" className="auth-btn" style={linkButton}>Go to sign in</Link>
+            <Link to="/login" className="auth-btn" style={linkButton}>Go to Sign In</Link>
           </>
         )}
 
         {state === 'error' && (
           <>
             <div style={{ fontSize: '2.6rem', marginBottom: 8 }}><FaTriangleExclamation style={{ color: '#b7791f' }} /></div>
-            <h2>Verification failed</h2>
+            <h2>Verification Failed</h2>
             <p className="auth-error" style={{ textAlign: 'left' }}>{message}</p>
             <p style={{ color: '#6b5e61', fontSize: '0.85rem', marginTop: 16 }}>
               Enter your email to get a new link:
             </p>
             <ResendVerification askForEmail />
-            <p className="auth-footer"><Link to="/login">Back to sign in</Link></p>
+            <p className="auth-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>
           </>
         )}
       </div>

@@ -7,6 +7,7 @@ import { PasswordStrength, PasswordRules, checkNewPassword } from '../components
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import '../components/PasswordPages.css';
+import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
 const NEW_LINK_MESSAGES = ['RESET_LINK_INVALID', 'RESET_LINK_EXPIRED'];
 
@@ -62,26 +63,26 @@ const ResetPasswordPage = () => {
 
         {deadLink ? (
           <div className="pw-done">
-            <div className="pw-done-icon">⚠️</div>
-            <h2>Link not valid</h2>
+            <div className="pw-done-icon"><FaTriangleExclamation style={{ color: '#b7791f' }} /></div>
+            <h2>Link Not Valid</h2>
             <p>{deadLink}</p>
             <Link to="/forgot-password" className="auth-btn" style={{
               display: 'block', textDecoration: 'none', textAlign: 'center', marginTop: 20,
-            }}>Request a new link</Link>
-            <p className="auth-footer"><Link to="/login">← Back to sign in</Link></p>
+            }}>Request a New Link</Link>
+            <p className="auth-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>
           </div>
         ) : done ? (
           <div className="pw-done">
-            <div className="pw-done-icon">✅</div>
-            <h2>Password updated</h2>
+            <div className="pw-done-icon"><FaCircleCheck style={{ color: '#276749' }} /></div>
+            <h2>Password Updated</h2>
             <p>Your password was changed. You were signed out on all devices.</p>
             <button type="button" className="auth-btn" style={{ width: '100%', marginTop: 20 }} onClick={goToSignIn}>
-              Go to sign in
+              Go to Sign In
             </button>
           </div>
         ) : (
           <form className="auth-form" onSubmit={submit} noValidate>
-            <h2 style={{ marginBottom: 0 }}>Choose a new password</h2>
+            <h2 style={{ marginBottom: 0 }}>Choose a New Password</h2>
             <p style={{ textAlign: 'center', color: '#8a7a7d', fontSize: '0.88rem', lineHeight: 1.55 }}>
               You will be signed out on all devices.
             </p>
@@ -89,7 +90,7 @@ const ResetPasswordPage = () => {
             {error && <p className="auth-error" role="alert">{error}</p>}
 
             <div className="form-group">
-              <label>New password</label>
+              <label>New Password</label>
               <PasswordInput
                 name="new_password" value={password} autoComplete="new-password"
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
@@ -98,7 +99,7 @@ const ResetPasswordPage = () => {
             </div>
 
             <div className="form-group">
-              <label>Confirm new password</label>
+              <label>Confirm New Password</label>
               <PasswordInput
                 name="confirm_password" value={confirm} autoComplete="new-password"
                 onChange={(e) => { setConfirm(e.target.value); setError(''); }}
@@ -108,11 +109,11 @@ const ResetPasswordPage = () => {
             <PasswordRules value={password} confirm={confirm} />
 
             <button type="submit" className="auth-btn" disabled={busy}>
-              {busy ? 'Saving...' : 'Reset password'}
+              {busy ? 'Saving...' : 'Reset Password'}
             </button>
 
             <p className="auth-footer" style={{ marginTop: 4 }}>
-              <Link to="/login">← Back to sign in</Link>
+              <Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link>
             </p>
           </form>
         )}

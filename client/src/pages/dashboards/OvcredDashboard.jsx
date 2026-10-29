@@ -7,36 +7,22 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
+const PROPOSAL_TYPES = TYPE_LABEL;
+
 const NAV_ITEMS = [
-  { path: '/ovcred/dashboard',       label: 'Dashboard',          icon: '⊞' },
-  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: '📋' },
-  { path: '/ovcred/approved',        label: 'Final Approved',      icon: '✅' },
-  { path: '/ovcred/rejected',        label: 'Rejected',            icon: '✗'  },
-  { path: '/ovcred/repository',      label: 'Store to Repository', icon: '🗄' },
-  { path: '/ovcred/notifications',   label: 'Notifications',       icon: '🔔' },
+  { path: '/ovcred/dashboard',       label: 'Dashboard',           icon: <FaTableCellsLarge /> },
+  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
+  { path: '/ovcred/approved',        label: 'Approved Proposals',  icon: <FaCircleCheck /> },
+  { path: '/ovcred/rejected',        label: 'Rejected Proposals',  icon: <FaCircleXmark /> },
+  { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive /> },
+  { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
 ];
-
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  draft:        'badge-gray',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
 
 /* ─────────── Overview ─────────── */
 const Overview = ({ proposals }) => {
@@ -58,7 +44,7 @@ const Overview = ({ proposals }) => {
           <span className="stat-value">{forApproval}</span>
         </div>
         <div className="stat-card green">
-          <span className="stat-label">Finally Approved</span>
+          <span className="stat-label">Approved</span>
           <span className="stat-value">{approved}</span>
         </div>
         <div className="stat-card red">
@@ -74,16 +60,16 @@ const Overview = ({ proposals }) => {
       {/* Endorsed proposals awaiting final approval */}
       <div className="panel">
         <div className="panel-header">
-          <h2>Endorsed Proposals Awaiting Final Approval</h2>
+          <h2>Proposals Waiting for Final Approval</h2>
           <span className="badge badge-amber">{forApproval} pending</span>
         </div>
         <table className="data-table">
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Endorsed Date</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
+              <th>Date Submitted</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -105,15 +91,15 @@ const Overview = ({ proposals }) => {
                     {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                   </td>
                   <td>
-                    <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                      {p.status?.replace(/_/g, ' ')}
+                    <span className={`badge ${statusBadge(p.status)}`}>
+                      {statusLabel(p.status)}
                     </span>
                   </td>
                 </tr>
               ))}
             {forApproval === 0 && (
               <tr><td colSpan={5}>
-                <div className="empty-state"><p>No proposals awaiting final approval.</p></div>
+                <div className="empty-state"><p>No proposals are waiting for final approval.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -203,13 +189,13 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
       setAlert({
         type: 'success',
-        msg: `Proposal ${newStatus} successfully!${decision === 'approve' && storeToRepo ? ' Stored to repository.' : ''}`,
+        msg: `Proposal ${newStatus === 'approved' ? 'approved' : 'rejected'}.${decision === 'approve' && storeToRepo ? ' It was stored in the Research Repository.' : ''}`,
       });
       setSelected(null);
       setRemarks('');
       onRefresh();
     } catch {
-      setAlert({ type: 'error', msg: 'Action failed. Please try again.' });
+      setAlert({ type: 'error', msg: 'The decision could not be saved. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -220,7 +206,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
       <OpenNotice state={hl} where="your endorsement queue" />
       <div className="page-header">
         <h1>For Final Approval</h1>
-        <p>Review proposals endorsed by the MSRIC Director and give final OVCRED approval.</p>
+        <p>Review proposals endorsed by the MSIRC Director and give the final OVCRED decision.</p>
       </div>
 
       {alert && !selected && (
@@ -230,7 +216,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
       {!selected ? (
         <div className="panel">
           <div className="panel-header">
-            <h2>Endorsed Proposals</h2>
+            <h2>Proposals for Final Approval</h2>
             <span className="badge badge-purple">{endorsed.length}</span>
           </div>
           <table className="data-table">
@@ -238,8 +224,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
               <tr>
                 <th>#</th>
                 <th>Researcher</th>
-                <th>Title</th>
-                <th>Type</th>
+                <th>Research Title</th>
+                <th>Proposal Type</th>
                 <th>College</th>
                 <th>Action</th>
               </tr>
@@ -280,7 +266,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
           <button className="btn btn-outline btn-sm"
             style={{ marginBottom: 16 }}
             onClick={() => { setSelected(null); setAlert(null); }}>
-            ← Back to list
+            <FaArrowLeft className="ic" />Back to List
           </button>
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -334,7 +320,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                   <div style={{ marginBottom: 20 }}>
                     <p style={{ fontSize: '0.72rem', color: '#718096',
                       textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
-                      Abstract / Description
+                      Abstract
                     </p>
                     <p style={{
                       color: '#2d3748', lineHeight: 1.7, margin: 0,
@@ -351,7 +337,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     style={{ display: 'inline-block', textDecoration: 'none' }}
                     href={fileHref(selected.file_path)}
                     target="_blank" rel="noreferrer">
-                    📄 View Attached Document
+                    <FaFileLines className="ic" />View Document
                   </a>
                 )}
               </div>
@@ -363,10 +349,10 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <div className="panel-header"><h2>OVCRED Decision</h2></div>
                 <div className="panel-body">
                   <div className="form-group">
-                    <label>Remarks / Comments</label>
+                    <label>Remarks</label>
                     <textarea rows={4} value={remarks}
                       onChange={e => setRemarks(e.target.value)}
-                      placeholder="Add your official remarks..."
+                      placeholder="Add your remarks..."
                       style={{ resize: 'vertical' }} />
                   </div>
 
@@ -384,7 +370,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#fff', fontSize: '0.72rem', fontWeight: 700,
                     }}>
-                      {storeToRepo ? '✓' : ''}
+                      {storeToRepo ? <FaCheck /> : ''}
                     </div>
                     <div>
                       <p style={{ fontWeight: 600, color: '#1a3a5c',
@@ -401,17 +387,17 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     <button className="btn btn-success"
                       disabled={saving}
                       onClick={() => handleDecision('approve')}>
-                      {saving ? 'Processing...' : '✓ Grant Final Approval'}
+                      {saving ? 'Processing...' : <><FaCheck className="ic" />Grant Final Approval</>}
                     </button>
                     <button className="btn btn-outline"
                       disabled={saving}
                       onClick={() => setReturning(selected)}>
-                      ↩ Return to Researcher
+                      <FaRotateLeft className="ic" />Return to Researcher
                     </button>
                     <button className="btn btn-danger"
                       disabled={saving}
                       onClick={() => handleDecision('rejected')}>
-                      {saving ? 'Processing...' : '✗ Reject Endorsement'}
+                      {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
                     </button>
                   </div>
 
@@ -420,7 +406,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     borderRadius: 8, border: '1px solid #9ae6b4',
                     fontSize: '0.78rem', color: '#276749',
                   }}>
-                    <strong>Final approval</strong> will notify the researcher and MSRIC Director.
+                    <strong>Final approval</strong> will notify the researcher and the MSIRC Director.
                     If "Store to Repository" is checked, the research will be archived automatically.
                   </div>
                 </div>
@@ -443,7 +429,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 /* ─────────── Approved / Rejected (shared view) ─────────── */
 const FilteredList = ({ proposals, statusFilter }) => {
   const filtered = proposals.filter(p => p.status === statusFilter);
-  const title    = statusFilter === 'approved' ? 'Finally Approved' : 'Rejected Proposals';
+  const title    = statusFilter === 'approved' ? 'Approved Proposals' : 'Rejected Proposals';
 
   return (
     <>
@@ -467,10 +453,10 @@ const FilteredList = ({ proposals, statusFilter }) => {
             <tr>
               <th>#</th>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>College</th>
-              <th>Date</th>
+              <th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>
@@ -545,15 +531,15 @@ const StoreToRepository = ({ proposals }) => {
 
   const handleStore = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Title is required.' });
+    if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Research title is required.' });
     setSaving(true);
     try {
       await API.post('/repository', form);
-      setAlert({ type: 'success', msg: 'Research stored in repository successfully!' });
+      setAlert({ type: 'success', msg: 'Research stored in the Research Repository.' });
       setForm({ title:'',abstract:'',author:'',college:'',department:'',
         keywords:'',access_type:'private',source_type:'proposal',proposal_id:'' });
     } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Failed to store.' });
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The research could not be stored. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -562,7 +548,7 @@ const StoreToRepository = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Store to Repository</h1>
+        <h1>Research Repository</h1>
         <p>Archive approved research outputs in the MSIRC digital repository.</p>
       </div>
 
@@ -571,7 +557,7 @@ const StoreToRepository = ({ proposals }) => {
         borderBottom: '2px solid #e8edf2' }}>
         {[
           { key: 'store',  label: 'Store Research' },
-          { key: 'list',   label: 'View Repository' },
+          { key: 'list',   label: 'Repository Items' },
           { key: 'select', label: 'From Approved Proposals' },
         ].map(t => (
           <button key={t.key}
@@ -646,7 +632,7 @@ const StoreToRepository = ({ proposals }) => {
                 </select>
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Storing...' : '🗄 Store to Repository'}
+                {saving ? 'Storing...' : <><FaBoxArchive className="ic" />Store to Repository</>}
               </button>
             </form>
           </div>
@@ -663,7 +649,7 @@ const StoreToRepository = ({ proposals }) => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Research Title</th>
                 <th>Author</th>
                 <th>College</th>
                 <th>Access</th>
@@ -678,7 +664,7 @@ const StoreToRepository = ({ proposals }) => {
                   <td>{r.college || '—'}</td>
                   <td>
                     <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.access_type}
+                      {r.access_type === 'public' ? 'Public' : 'Private'}
                     </span>
                   </td>
                   <td style={{ color: '#718096' }}>
@@ -688,7 +674,7 @@ const StoreToRepository = ({ proposals }) => {
               ))}
               {repoList.length === 0 && (
                 <tr><td colSpan={5}>
-                  <div className="empty-state"><p>Repository is empty.</p></div>
+                  <div className="empty-state"><p>The repository is empty.</p></div>
                 </td></tr>
               )}
             </tbody>
@@ -708,9 +694,9 @@ const StoreToRepository = ({ proposals }) => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Research Title</th>
                 <th>Researcher</th>
-                <th>Type</th>
+                <th>Proposal Type</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -779,7 +765,7 @@ const OvcredDashboard = () => {
           element={<StoreToRepository proposals={proposals} />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/ovcred/for-endorsement"
-            intro="Proposals the MSRIC Director endorsed to you, and reminders from the MSRIC administrator." />} />
+            intro="Proposals the MSIRC Director endorsed to you, and reminders from the MSIRC Administrator." />} />
       </Routes>
     </Layout>
   );

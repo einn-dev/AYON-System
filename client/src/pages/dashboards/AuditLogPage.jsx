@@ -3,34 +3,35 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import { ROLE_LABELS, errText, fmtWhen, startOfDay, Pager } from './adminShared';
+import { STATUS_LABEL, ROLE_LABEL } from '../../utils/terms';
 
 const PAGE_SIZE = 25;
 
 /* What each kind of action is called, and the badge color it gets */
 const ACTIONS = {
-  user_created:       { label: 'User created',        badge: 'badge-blue'   },
-  user_updated:       { label: 'User edited',         badge: 'badge-gray'   },
-  role_changed:       { label: 'Role changed',        badge: 'badge-purple' },
-  user_activated:     { label: 'Account activated',   badge: 'badge-green'  },
-  user_deactivated:   { label: 'Account deactivated', badge: 'badge-red'    },
-  password_reset:     { label: 'Password reset',      badge: 'badge-gray'   },
-  proposal_moved:     { label: 'Proposal moved',      badge: 'badge-purple' },
-  proposal_reminder_sent: { label: 'Reminder sent',   badge: 'badge-amber'  },
-  proposal_returned:  { label: 'Proposal returned',   badge: 'badge-red'    },
-  proposal_endorsed:  { label: 'Proposal endorsed',   badge: 'badge-green'  },
-  proposal_resubmitted: { label: 'Proposal resubmitted', badge: 'badge-blue' },
-  password_changed:   { label: 'Password changed',    badge: 'badge-gray'   },
-  password_reset_requested: { label: 'Reset link requested', badge: 'badge-amber' },
-  password_reset_completed: { label: 'Password reset by link', badge: 'badge-green' },
-  email_verified:     { label: 'Email verified',      badge: 'badge-green'  },
-  verification_resent:{ label: 'Verification resent', badge: 'badge-amber'  },
-  email_resent:       { label: 'Email resent',        badge: 'badge-amber'  },
-  repository_created: { label: 'Repository added',    badge: 'badge-amber'  },
-  repository_updated: { label: 'Repository edited',   badge: 'badge-amber'  },
-  repository_removed: { label: 'Repository removed',  badge: 'badge-red'    },
-  grant_decided:      { label: 'Grant decision',      badge: 'badge-purple' },
+  user_created:       { label: 'User Created',        badge: 'badge-blue'   },
+  user_updated:       { label: 'User Edited',         badge: 'badge-gray'   },
+  role_changed:       { label: 'Role Changed',        badge: 'badge-purple' },
+  user_activated:     { label: 'Account Activated',   badge: 'badge-green'  },
+  user_deactivated:   { label: 'Account Deactivated', badge: 'badge-red'    },
+  password_reset:     { label: 'Password Reset',      badge: 'badge-gray'   },
+  proposal_moved:     { label: 'Proposal Moved',      badge: 'badge-purple' },
+  proposal_reminder_sent: { label: 'Reminder Sent',   badge: 'badge-amber'  },
+  proposal_returned:  { label: 'Proposal Returned',   badge: 'badge-red'    },
+  proposal_endorsed:  { label: 'Proposal Endorsed',   badge: 'badge-green'  },
+  proposal_resubmitted: { label: 'Proposal Resubmitted', badge: 'badge-blue' },
+  password_changed:   { label: 'Password Changed',    badge: 'badge-gray'   },
+  password_reset_requested: { label: 'Reset Link Requested', badge: 'badge-amber' },
+  password_reset_completed: { label: 'Password Reset by Link', badge: 'badge-green' },
+  email_verified:     { label: 'Email Verified',      badge: 'badge-green'  },
+  verification_resent:{ label: 'Verification Resent', badge: 'badge-amber'  },
+  email_resent:       { label: 'Email Resent',        badge: 'badge-amber'  },
+  repository_created: { label: 'Repository Added',    badge: 'badge-amber'  },
+  repository_updated: { label: 'Repository Edited',   badge: 'badge-amber'  },
+  repository_removed: { label: 'Repository Removed',  badge: 'badge-red'    },
+  grant_decided:      { label: 'Grant Decision',      badge: 'badge-purple' },
   login_success:      { label: 'Login',               badge: 'badge-green'  },
-  login_failed:       { label: 'Login failed',        badge: 'badge-red'    },
+  login_failed:       { label: 'Login Failed',        badge: 'badge-red'    },
 };
 
 const FIELD_LABELS = {
@@ -45,11 +46,8 @@ const LOGIN_REASONS = {
   email_not_verified:  'Email not verified yet',
 };
 
-const STAGE_LABELS = {
-  submitted: 'Submitted', under_review: 'Under review', returned: 'Returned',
-  endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
-};
-const OFFICE_LABELS = { special_assistant: 'Special Assistant', msric_director: 'MSRIC Director', ovcred: 'OVCRED' };
+const STAGE_LABELS  = STATUS_LABEL;
+const OFFICE_LABELS = ROLE_LABEL;
 
 const GRANT_STATES = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
 
@@ -73,10 +71,10 @@ const detailsText = (log) => {
     case 'proposal_moved':
       return `${show(STAGE_LABELS[d.from] || d.from)} → ${show(STAGE_LABELS[d.to] || d.to)}${d.reopened ? ' (reopened)' : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
     case 'proposal_returned':
-      return `Returned to the researcher${d.stage ? ` at the college level (${String(d.stage).replace(/_/g, ' ')})` : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+      return `Returned to the researcher${d.stage ? ` at the college level (${ROLE_LABEL[d.stage] || d.stage})` : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
     case 'proposal_endorsed':
-      return `Endorsed as ${String(d.role || '').replace(/_/g, ' ')}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
-        + `${d.next ? ` · now with: ${String(d.next).replace(/_/g, ' ')}` : ''}${d.note ? ` · Note: ${d.note}` : ''}`;
+      return `Endorsed as ${ROLE_LABEL[d.role] || d.role || '—'}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
+        + `${d.next ? ` · now with: ${ROLE_LABEL[d.next] || d.next}` : ''}${d.note ? ` · Note: ${d.note}` : ''}`;
     case 'proposal_resubmitted': {
       const did = [d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'file'].filter(Boolean);
       return `Revision ${show(d.revision)}${did.length ? ` · changed: ${did.join(', ')}` : ''}`;
@@ -86,13 +84,13 @@ const detailsText = (log) => {
     case 'password_reset':
       return 'Temporary password created; must be changed at next sign-in';
     case 'password_changed':
-      return d.forced ? 'Required change after an Admin reset' : 'Changed by the account owner';
+      return d.forced ? 'Required change after an Administrator reset' : 'Changed by the account owner';
     case 'password_reset_requested':
       return 'Asked for a reset link ("Forgot password")';
     case 'password_reset_completed':
       return 'Chose a new password through the emailed link';
     case 'email_verified':
-      return d.by === 'admin' ? 'Marked as verified by an Admin' : '';
+      return d.by === 'admin' ? 'Marked as verified by an Administrator' : '';
     case 'verification_resent':
     case 'email_resent':
       return d.sent === false ? 'Could not be sent' : 'Sent';
@@ -228,15 +226,15 @@ const AuditLogPage = () => {
 
       <div className="stats-grid">
         <div className="stat-card blue">
-          <span className="stat-label">Events today</span>
+          <span className="stat-label">Events Today</span>
           <span className="stat-value">{stats.today}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Role changes (7 days)</span>
+          <span className="stat-label">Role Changes (7 Days)</span>
           <span className="stat-value">{stats.role_changes_7d}</span>
         </div>
         <div className="stat-card red">
-          <span className="stat-label">Failed logins (7 days)</span>
+          <span className="stat-label">Failed Logins (7 Days)</span>
           <span className="stat-value">{stats.failed_logins_7d}</span>
         </div>
       </div>
@@ -248,7 +246,7 @@ const AuditLogPage = () => {
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 170 }}
               value={action} onChange={e => { setAction(e.target.value); setPage(1); }}>
-              <option value="">All actions</option>
+              <option value="">All Actions</option>
               {Object.entries(ACTIONS).map(([key, a]) => (
                 <option key={key} value={key}>{a.label}</option>
               ))}
@@ -258,7 +256,7 @@ const AuditLogPage = () => {
             {filtersOn && (
               <button className="btn btn-outline btn-sm" onClick={() => {
                 setSearch(''); setSearchTerm(''); setAction(''); setDate(''); setPage(1);
-              }}>Clear filters</button>
+              }}>Clear Filters</button>
             )}
           </div>
           <div className="am-actions">

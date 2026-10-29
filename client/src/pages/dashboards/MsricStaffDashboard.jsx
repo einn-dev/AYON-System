@@ -4,31 +4,16 @@ import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import { FaBell, FaBoxArchive, FaInbox, FaTableCellsLarge } from 'react-icons/fa6';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+
+const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/msric-staff/dashboard',      label: 'Dashboard',       icon: <FaTableCellsLarge /> },
-  { path: '/msric-staff/submissions',    label: 'All Submissions',  icon: <FaInbox /> },
-  { path: '/msric-staff/repository',     label: 'Repository',       icon: <FaBoxArchive /> },
+  { path: '/msric-staff/submissions',    label: 'All Proposals',     icon: <FaInbox /> },
+  { path: '/msric-staff/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/msric-staff/notifications',  label: 'Notifications',    icon: <FaBell /> },
 ];
-
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  draft:        'badge-gray',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
 
 const Overview = ({ proposals }) => {
   const counts = {
@@ -41,7 +26,7 @@ const Overview = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>MSRIC Staff Dashboard</h1>
+        <h1>MSIRC Staff Dashboard</h1>
         <p>Proposals that passed the college level and reached the Special Assistant.</p>
       </div>
       <div className="stats-grid">
@@ -50,11 +35,11 @@ const Overview = ({ proposals }) => {
           <span className="stat-value">{counts.total}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Submitted</span>
+          <span className="stat-label">{STATUS_LABEL.submitted}</span>
           <span className="stat-value">{counts.submitted}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Under Review</span>
+          <span className="stat-label">{STATUS_LABEL.under_review}</span>
           <span className="stat-value">{counts.under_review}</span>
         </div>
         <div className="stat-card green">
@@ -64,15 +49,15 @@ const Overview = ({ proposals }) => {
       </div>
 
       <div className="panel">
-        <div className="panel-header"><h2>Recent Submissions</h2></div>
+        <div className="panel-header"><h2>Recent Proposals</h2></div>
         <table className="data-table">
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>Status</th>
-              <th>Date</th>
+              <th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>
@@ -84,8 +69,8 @@ const Overview = ({ proposals }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                    {p.status?.replace(/_/g, ' ')}
+                  <span className={`badge ${statusBadge(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
@@ -95,7 +80,7 @@ const Overview = ({ proposals }) => {
             ))}
             {proposals.length === 0 && (
               <tr><td colSpan={5}>
-                <div className="empty-state"><p>No submissions yet.</p></div>
+                <div className="empty-state"><p>No proposals yet.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -119,7 +104,7 @@ const AllSubmissions = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>All Submissions</h1>
+        <h1>All Proposals</h1>
         <p>Proposals that passed the college level and reached the Special Assistant.</p>
       </div>
       <div className="panel">
@@ -129,21 +114,18 @@ const AllSubmissions = ({ proposals }) => {
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
-              <option value="all">All Status</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="returned">Returned</option>
-              <option value="endorsed">Endorsed</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">All Statuses</option>
+              {STATUS_ORDER.filter(s => s !== 'for_endorsement').map(s => (
+                <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+              ))}
             </select>
           </div>
         </div>
         <table className="data-table">
           <thead>
             <tr>
-              <th>#</th><th>Researcher</th><th>Title</th>
-              <th>Type</th><th>Status</th><th>Date</th>
+              <th>#</th><th>Researcher</th><th>Research Title</th>
+              <th>Proposal Type</th><th>Status</th><th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>
@@ -159,8 +141,8 @@ const AllSubmissions = ({ proposals }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status]}`}>
-                    {p.status?.replace(/_/g, ' ')}
+                  <span className={`badge ${statusBadge(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
@@ -212,7 +194,7 @@ const Repository = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Title</th><th>Author</th><th>College</th>
+                <th>Research Title</th><th>Author</th><th>College</th>
                 <th>Access</th><th>Date Stored</th>
               </tr>
             </thead>
@@ -224,7 +206,7 @@ const Repository = () => {
                   <td>{r.college || '—'}</td>
                   <td>
                     <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.access_type}
+                      {r.access_type === 'public' ? 'Public' : 'Private'}
                     </span>
                   </td>
                   <td style={{ color: '#718096' }}>
@@ -234,7 +216,7 @@ const Repository = () => {
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={5}>
-                  <div className="empty-state"><p>No items found.</p></div>
+                  <div className="empty-state"><p>No research found.</p></div>
                 </td></tr>
               )}
             </tbody>
@@ -267,11 +249,11 @@ const Notifications = () => {
     <>
       <div className="page-header">
         <h1>Notifications</h1>
-        <p>System alerts and updates.</p>
+        <p>Updates and alerts from MSIRC.</p>
       </div>
       <div className="panel">
         {loading ? <div className="empty-state"><p>Loading...</p></div>
-          : notifs.length === 0 ? <div className="empty-state"><p>No notifications.</p></div>
+          : notifs.length === 0 ? <div className="empty-state"><p>No notifications yet.</p></div>
           : notifs.map(n => (
             <div key={n.notif_id}
               onClick={() => !n.is_read && markRead(n.notif_id)}
@@ -320,7 +302,7 @@ const MsricStaffDashboard = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <Layout navItems={NAV_ITEMS} role="MSRIC Staff">
+    <Layout navItems={NAV_ITEMS} role="MSIRC Staff">
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"     element={<Overview proposals={proposals} />} />

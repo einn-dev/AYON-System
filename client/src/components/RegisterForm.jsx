@@ -5,7 +5,7 @@ import PasswordInput from './PasswordInput';
 import ResendVerification from './ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import { COLLEGES, getDepartments } from '../data/Colleges';
-import { FaEnvelopeCircleCheck } from 'react-icons/fa6';
+import { FaArrowLeft, FaEnvelopeCircleCheck } from 'react-icons/fa6';
 
 const EMPTY_FORM = {
   first_name: '', last_name: '', email: '',
@@ -296,7 +296,7 @@ const RegisterForm = () => {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
         <p className="reg-note">
-          Staff, Director, and other roles are created by the system administrator.
+          MSIRC Staff, the MSIRC Director and the other roles are created by the Administrator.
         </p>
       </div>
 
@@ -304,7 +304,7 @@ const RegisterForm = () => {
       {done && (
         <div className="as-done">
           <div className="as-done-icon"><FaEnvelopeCircleCheck /></div>
-          <h2>Check your email</h2>
+          <h2>Check Your Email</h2>
 
           {done.emailSent ? (
             <p className="as-done-text">
@@ -328,7 +328,7 @@ const RegisterForm = () => {
             Typed the wrong email? Go back and fix it
           </button>
 
-          <p className="reg-footer"><Link to="/login">Back to sign in</Link></p>
+          <p className="reg-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>
         </div>
       )}
     </section>

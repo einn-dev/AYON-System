@@ -12,13 +12,13 @@ import photoConference from '../assets/msirc-conference.jpg';
 import './LandingPage.css';
 
 /* ───────────── data ───────────── */
-const STAGES = ['Submitted', 'Endorsed', 'Validated', 'Under review', 'Approved', 'Archived'];
+const STAGES = ['Submitted', 'Endorsed', 'Validated', 'Under Review', 'Approved', 'Archived'];
 
 const FEED = [
   'Researcher uploaded the proposal and requirements.',
   'College level endorsed the proposal.',
   'Special Assistant checked the documents against the checklist.',
-  'MSRIC Director is reviewing the proposal.',
+  'The MSIRC Director is reviewing the proposal.',
   'OVCRED gave the final approval.',
   'Saved to the repository. Everyone was notified.',
 ];
@@ -47,9 +47,9 @@ const STATS = [
 
 const STEPS = [
   [FaUserGraduate,    'Researcher',        'Uploads the proposal',      'Pick the proposal type, fill in the details and attach the requirements. Nothing to print or carry around.', 'Submitted'],
-  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The coordinator, chairperson or dean of your college reviews and endorses it, or sends it back with comments.', 'Endorsed'],
+  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Research Coordinator, Chairperson and College Dean of your college review and endorse it, or return it with remarks.', 'Endorsed'],
   [FaUserCheck,       'Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded or returned for correction.', 'Validated'],
-  [FaUserTie,         'MSRIC Director',    'Reviews and decides',       'The director reviews the validated proposal and makes the institute’s decision.', 'Under review'],
+  [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal and makes the institute’s decision.', 'Under Review'],
   [FaStamp,           'OVCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs off.', 'Approved'],
   [FaDatabase,        'System',            'Archives and notifies',     'Approved research is saved to the repository and every person involved gets an alert.', 'Archived'],
 ];
@@ -64,7 +64,7 @@ const TYPES = [
 
 const FAQ = [
   ['Who can create an account?',
-   'Researchers can register on their own. Staff, director and other roles are created by the system administrator.'],
+   'Researchers can register on their own. MSIRC Staff, the MSIRC Director and the other roles are created by the Administrator.'],
   ['Why do I need to verify my email?',
    'After you register we send a link to your email. Click it to activate your account. The link is valid for 24 hours, and you can ask for a new one if it expires.'],
   ['What files can I upload?',

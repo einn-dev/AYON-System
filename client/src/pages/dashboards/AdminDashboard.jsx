@@ -12,16 +12,17 @@ import AuditLogPage from './AuditLogPage';
 import EmailLogPage from './EmailLogPage';
 import AdminRepositoryPage from './AdminRepositoryPage';
 import AdminGrantsPage from './AdminGrantsPage';
+import { FaBoxArchive, FaChartColumn, FaEnvelope, FaFileLines, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
-  { path: '/admin/dashboard', label: 'Dashboard',     icon: '⊞'  },
-  { path: '/admin/users',     label: 'User Accounts', icon: '👥' },
-  { path: '/admin/proposals', label: 'All Proposals', icon: '📄' },
-  { path: '/admin/repository', label: 'Repository',  icon: '🗄️' },
-  { path: '/admin/grants',    label: 'Grants',        icon: '💰' },
-  { path: '/admin/audit',     label: 'Audit Log',     icon: '🛡️' },
-  { path: '/admin/emails',    label: 'Email Log',     icon: '✉️' },
-  { path: '/admin/reports',   label: 'Reports',       icon: '📊' },
+  { path: '/admin/dashboard',  label: 'Dashboard',             icon: <FaTableCellsLarge /> },
+  { path: '/admin/users',      label: 'User Accounts',         icon: <FaUsers /> },
+  { path: '/admin/proposals',  label: 'All Proposals',         icon: <FaFileLines /> },
+  { path: '/admin/repository', label: 'Research Repository',   icon: <FaBoxArchive /> },
+  { path: '/admin/grants',     label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
+  { path: '/admin/reports',    label: 'Reports',               icon: <FaChartColumn /> },
+  { path: '/admin/audit',      label: 'Audit Log',             icon: <FaShieldHalved /> },
+  { path: '/admin/emails',     label: 'Email Log',             icon: <FaEnvelope /> },
 ];
 
 /* ─────────── Main Admin Dashboard ─────────── */

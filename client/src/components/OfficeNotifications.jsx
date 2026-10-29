@@ -3,11 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import API from '../services/authService';
 import './Layout.css';
 import './OfficeNotifications.css';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
-/* Notifications page for the Special Assistant, MSRIC Director and OVCRED.
+/* Notifications page for the Special Assistant, MSIRC Director and OVCRED.
      queuePath: where "Open" goes (their queue), for example "/director/for-review"   */
 
-const ICONS = { submission: '📤', review: '📋', endorsement: '✍️', approval: '✅', rejection: '❌', general: '🔔' };
+const ICONS = {
+  submission:  <FaPaperPlane />,
+  review:      <FaClipboardList />,
+  endorsement: <FaSignature />,
+  approval:    <FaCircleCheck />,
+  rejection:   <FaCircleXmark />,
+  general:     <FaBell />,
+};
 
 const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
 const isReminder = (n) => /^reminder/i.test(n.title || '');
@@ -82,7 +90,7 @@ const OfficeNotifications = ({ queuePath, intro }) => {
     <>
       <div className="page-header">
         <h1>Notifications</h1>
-        <p>{intro || 'Proposals waiting for you and alerts from the MSRIC administrator.'}</p>
+        <p>{intro || 'Proposals waiting for you and alerts from the MSIRC Administrator.'}</p>
       </div>
 
       {problem && <div className="alert alert-error" role="alert">{problem}</div>}
@@ -91,18 +99,18 @@ const OfficeNotifications = ({ queuePath, intro }) => {
         <div className="panel-header">
           <div className="on-toolbar">
             <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter notifications">
-              <option value="all">All notifications</option>
-              <option value="unread">Unread only</option>
-              <option value="waiting">Proposals waiting for me</option>
-              <option value="reminder">Reminders from Admin</option>
+              <option value="all">All Notifications</option>
+              <option value="unread">Unread Only</option>
+              <option value="waiting">Proposals Waiting for Me</option>
+              <option value="reminder">Reminders from the Administrator</option>
             </select>
             {unread > 0
               ? <span className="badge badge-blue">{unread} unread</span>
-              : !loading && !failed && <span className="badge badge-green">All caught up</span>}
+              : !loading && !failed && <span className="badge badge-green">All Caught Up</span>}
             {unread > 0 && (
               <button type="button" className="btn btn-outline btn-sm on-spacer"
                 onClick={markAll} disabled={busy}>
-                {busy ? 'Working...' : 'Mark all as read'}
+                {busy ? 'Working...' : 'Mark All as Read'}
               </button>
             )}
           </div>
@@ -113,18 +121,18 @@ const OfficeNotifications = ({ queuePath, intro }) => {
         ) : failed ? (
           <div className="empty-state">
             <p>Could not load your notifications.</p>
-            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try again</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
           </div>
         ) : shown.length === 0 ? (
           <div className="empty-state">
-            <p style={{ fontSize: '2rem', margin: 0 }}>🔔</p>
+            <p style={{ fontSize: '2rem', margin: 0 }}><FaBell /></p>
             <p>{filter === 'all' ? 'No notifications yet.' : 'Nothing matches this filter.'}</p>
           </div>
         ) : (
           shown.map((n) => (
             <div key={n.notif_id} className={`on-item${n.is_read ? '' : ' unread'}`}
               onClick={() => { if (!n.is_read) markRead(n.notif_id); }}>
-              <div className="on-ico" aria-hidden="true">{ICONS[n.notif_type] || '🔔'}</div>
+              <div className="on-ico" aria-hidden="true">{ICONS[n.notif_type] || <FaBell />}</div>
               <div className="on-body">
                 <strong>{n.title}</strong>
                 <p>{n.message}</p>
@@ -135,7 +143,7 @@ const OfficeNotifications = ({ queuePath, intro }) => {
                 {n.proposal_id && (
                   <button type="button" className="btn btn-primary btn-sm"
                     onClick={(e) => { e.stopPropagation(); openIt(n); }}>
-                    Open
+                    Review
                   </button>
                 )}
               </div>

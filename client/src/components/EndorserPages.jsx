@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/authService';
-import ProposalTracker, { COLLEGE_CHAIN, ROLE_LABEL, roundOf, whereNow } from './ProposalTracker';
+import ProposalTracker, { COLLEGE_CHAIN, roundOf, whereNow } from './ProposalTracker';
 import { FaArrowLeft, FaCheck, FaFileLines, FaRotateLeft } from 'react-icons/fa6';
+import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -15,28 +16,13 @@ import { FaArrowLeft, FaCheck, FaFileLines, FaRotateLeft } from 'react-icons/fa6
 export const NOTE_MIN = 10;
 export const NOTE_MAX = 500;
 
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-export const ENDORSER_BADGE = {
-  for_endorsement: 'badge-amber',
-  submitted:       'badge-blue',
-  under_review:    'badge-amber',
-  returned:        'badge-red',
-  endorsed:        'badge-purple',
-  approved:        'badge-green',
-  rejected:        'badge-red',
-};
+const PROPOSAL_TYPES = TYPE_LABEL;
+export const ENDORSER_BADGE = STATUS_BADGE;
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
-const statusText = (s) => (s === 'for_endorsement' ? 'for endorsement' : String(s || '').replace(/_/g, ' '));
+const statusText = statusLabel;
 
 /* Is it this role's turn on this proposal? */
 export const isMyTurn = (p, role) => p.status === 'for_endorsement' && p.endorsement_stage === role;
@@ -120,7 +106,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
       return setAlert({
         type: 'error',
         msg: decision === 'endorsed'
-          ? `Please write a note (at least ${NOTE_MIN} characters) before endorsing.`
+          ? `Please write your remarks (at least ${NOTE_MIN} characters) before endorsing.`
           : `Please write what the researcher needs to fix (at least ${NOTE_MIN} characters).`,
       });
     }
@@ -158,8 +144,8 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>#</th><th>Researcher</th><th>Title</th>
-                <th>Type</th><th>Waiting since</th><th>Action</th>
+                <th>#</th><th>Researcher</th><th>Research Title</th>
+                <th>Proposal Type</th><th>Waiting Since</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -184,14 +170,14 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                   <td style={{ color: '#718096' }}>{fmt(p.updated_at || p.submitted_at)}</td>
                   <td>
                     <button className="btn btn-primary btn-sm" onClick={() => open(p)}>
-                      View &amp; Endorse
+                      Review
                     </button>
                   </td>
                 </tr>
               ))}
               {queue.length === 0 && (
                 <tr><td colSpan={6}>
-                  <div className="empty-state"><p>No proposals waiting for your endorsement.</p></div>
+                  <div className="empty-state"><p>No proposals are waiting for your endorsement.</p></div>
                 </td></tr>
               )}
             </tbody>
@@ -204,7 +190,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
   return (
     <div>
       <button className="btn btn-outline btn-sm" style={{ marginBottom: 16 }} onClick={back}>
-        <FaArrowLeft className="ic" />Back to list
+        <FaArrowLeft className="ic" />Back to List
       </button>
 
       {alert && <div className={`alert alert-${alert.type}`} role="alert">{alert.msg}</div>}
@@ -278,7 +264,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           <div className="panel-body">
             <div className="form-group">
               <label htmlFor="endorse-note">
-                Note or remarks <span style={{ color: '#b3261e' }}>*</span>
+                Remarks <span style={{ color: '#b3261e' }}>*</span>
               </label>
               <textarea id="endorse-note" rows={6} value={note} maxLength={NOTE_MAX}
                 onChange={e => { setNote(e.target.value); setAlert(null); }}
@@ -297,7 +283,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                 </button>
                 <button className="btn btn-danger" disabled={saving}
                   onClick={() => (noteOk ? setConfirming(true) : send('returned'))}>
-                  <FaRotateLeft className="ic" />Return to researcher
+                  <FaRotateLeft className="ic" />Return to Researcher
                 </button>
               </div>
             ) : (
@@ -308,7 +294,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-danger btn-sm" disabled={saving} onClick={() => send('returned')}>
-                    {saving ? 'Returning...' : 'Yes, return it'}
+                    {saving ? 'Returning...' : 'Yes, Return It'}
                   </button>
                   <button className="btn btn-outline btn-sm" disabled={saving} onClick={() => setConfirming(false)}>
                     Cancel
@@ -356,7 +342,7 @@ export const EndorsedHistory = () => {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>Researcher</th><th>Title</th><th>Your action</th><th>Your note</th><th>Now</th></tr>
+              <tr><th>Researcher</th><th>Research Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th></tr>
             </thead>
             <tbody>
               {shown.map(e => (

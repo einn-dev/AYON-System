@@ -41,7 +41,7 @@ const SECTIONS = [
   {
     title: 'Review and approval',
     body: [
-      'Submitting a proposal or a grant application does not guarantee that it will be approved or funded. Proposals pass through endorsement, document validation, review by the MSRIC Director, and final approval by OVCRED. Any of these officers may approve, return, or reject a submission and may add remarks.',
+      'Submitting a proposal or a grant application does not guarantee that it will be approved or funded. Proposals pass through endorsement, document validation, review by the MSIRC Director, and final approval by OVCRED. Any of these officers may approve, return, or reject a submission and may add remarks.',
       'Decisions are made by the responsible university officers. AYON only records and delivers them.',
     ],
   },

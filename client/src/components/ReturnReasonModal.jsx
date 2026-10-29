@@ -46,7 +46,7 @@ const ReturnReasonModal = ({ title, researcher, onConfirm, onClose }) => {
     <div className="modal-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}>
       <div className="modal" style={{ maxWidth: 520 }} role="dialog" aria-modal="true" aria-labelledby="rr-title">
-        <h3 id="rr-title" style={{ marginBottom: 6 }}>Return to researcher</h3>
+        <h3 id="rr-title" style={{ marginBottom: 6 }}>Return to Researcher</h3>
         <p style={{ margin: '0 0 16px', color: '#8a7a7d', fontSize: '0.86rem' }}>
           "{title}"{researcher ? <> by <b>{researcher}</b></> : null}
         </p>
@@ -55,7 +55,7 @@ const ReturnReasonModal = ({ title, researcher, onConfirm, onClose }) => {
 
         <div className="rs-field">
           <label className="rs-label" htmlFor="rr-reason">
-            Reason for returning <span style={{ color: '#b3261e' }}>*</span>
+            Reason for Return <span style={{ color: '#b3261e' }}>*</span>
             <span className="rs-count" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>
               {clean.length}/{REASON_MAX}
             </span>
@@ -75,7 +75,7 @@ const ReturnReasonModal = ({ title, researcher, onConfirm, onClose }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className="btn btn-danger" onClick={send} disabled={!canSend}>
-            {saving ? 'Returning...' : 'Return to researcher'}
+            {saving ? 'Returning...' : 'Return to Researcher'}
           </button>
         </div>
       </div>

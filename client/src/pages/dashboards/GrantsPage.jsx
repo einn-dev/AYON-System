@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
+import { typeLabel, grantStatusLabel } from '../../utils/terms';
 
 const GRANT_TYPES = [
   { value: 'research_spotlight',    label: 'Research Spotlight' },
@@ -50,18 +51,18 @@ const GrantsPage = ({ proposals }) => {
     setSaving(true);
     try {
       await API.post('/grants', form);
-      setAlert({ type: 'success', msg: 'Grant application submitted!' });
+      setAlert({ type: 'success', msg: 'Grant application submitted.' });
       setShowModal(false);
       fetchGrants();
     } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Application failed.' });
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The application could not be submitted. Please try again.' });
     } finally { setSaving(false); }
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>Grant &amp; Incentives</h1>
+        <h1>Grants and Incentives</h1>
         <p>Apply for grants and incentives for your approved research.</p>
       </div>
 
@@ -70,19 +71,19 @@ const GrantsPage = ({ proposals }) => {
       {/* Eligible proposals */}
       <div className="panel">
         <div className="panel-header">
-          <h2>Approved Proposals — Eligible for Grants</h2>
+          <h2>Approved Proposals Eligible for Grants</h2>
           <span className="badge badge-green">{eligible.length}</span>
         </div>
         <table className="data-table">
           <thead>
-            <tr><th>Title</th><th>Type</th><th>Action</th></tr>
+            <tr><th>Research Title</th><th>Proposal Type</th><th>Action</th></tr>
           </thead>
           <tbody>
             {eligible.map(p => (
               <tr key={p.proposal_id}>
                 <td><strong>{p.title}</strong></td>
                 <td style={{ fontSize: '0.82rem', color: '#718096' }}>
-                  {p.proposal_type?.replace(/_/g,' ')}
+                  {typeLabel(p.proposal_type)}
                 </td>
                 <td>
                   <button className="btn btn-primary btn-sm" onClick={() => openApply(p)}>
@@ -107,18 +108,18 @@ const GrantsPage = ({ proposals }) => {
         <div className="panel-header"><h2>My Grant Applications</h2></div>
         <table className="data-table">
           <thead>
-            <tr><th>Proposal</th><th>Grant Type</th><th>Status</th><th>Date Applied</th></tr>
+            <tr><th>Research Title</th><th>Grant Type</th><th>Status</th><th>Date Applied</th></tr>
           </thead>
           <tbody>
             {myGrants.map(g => (
               <tr key={g.grant_id}>
                 <td><strong>{g.proposal_title}</strong></td>
                 <td style={{ fontSize: '0.82rem', color: '#718096' }}>
-                  {g.grant_type?.replace(/_/g,' ')}
+                  {typeLabel(g.grant_type)}
                 </td>
                 <td>
                   <span className={`badge ${GRANT_BADGE[g.status] || 'badge-gray'}`}>
-                    {g.status}
+                    {grantStatusLabel(g.status)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
@@ -139,7 +140,7 @@ const GrantsPage = ({ proposals }) => {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-            <h3>Apply for Grant / Incentive</h3>
+            <h3>Apply for a Grant or Incentive</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Grant Type</label>

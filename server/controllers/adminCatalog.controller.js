@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const { typeLabel } = require('../utils/terms');
 const { logAudit, fullName } = require('../utils/audit');
 const { notifyUser } = require('../utils/notify');
 
@@ -350,7 +351,7 @@ const decideGrant = async (req, res) => {
     }
 
     const title = g.research_proposals?.title || 'your proposal';
-    const label = String(g.grant_type).replace(/_/g, ' ');
+    const label = typeLabel(g.grant_type);
 
     await logAudit(req, {
       action:     'grant_decided',

@@ -96,28 +96,28 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         role="dialog" aria-modal="true" aria-labelledby="rs-title">
         <div className="rs-head">
           <div>
-            <h3 id="rs-title">Edit and resubmit</h3>
+            <h3 id="rs-title">Edit and Resubmit</h3>
             <p>Fix what the office asked for, then send it back.</p>
           </div>
           <button type="button" className="rs-x" onClick={onClose} disabled={saving} aria-label="Close">✕</button>
         </div>
 
         <div className="rs-returned">
-          <strong>Why it was returned</strong>
+          <strong>Reason for Return</strong>
           <p>{proposal.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
         </div>
 
         {error && <div className="alert alert-error" role="alert">{error}</div>}
 
         <div className="rs-field">
-          <label className="rs-label" htmlFor="rs-title-in">Proposal title</label>
+          <label className="rs-label" htmlFor="rs-title-in">Research Title</label>
           <input id="rs-title-in" type="text" value={title} maxLength={TITLE_MAX + 50}
             onChange={e => setTitle(e.target.value)} autoComplete="off" />
           {titleProblem && <div className="rs-hint err">{titleProblem}</div>}
         </div>
 
         <div className="rs-field">
-          <label className="rs-label" htmlFor="rs-desc-in">Description / abstract</label>
+          <label className="rs-label" htmlFor="rs-desc-in">Abstract</label>
           <textarea id="rs-desc-in" value={desc} onChange={e => setDesc(e.target.value)} />
           <div className={`rs-hint${descProblem ? ' err' : ''}`}>
             {descProblem || 'Tip: answer the points in the reason above.'}
@@ -125,7 +125,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         </div>
 
         <div className="rs-field">
-          <span className="rs-label">Proposal file</span>
+          <span className="rs-label">Document</span>
           <div className="rs-file">
             <div className="rs-file-main">
               {file ? (
@@ -152,7 +152,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setFile(null)}>Undo</button>
             ) : (
               <button type="button" className="btn btn-outline btn-sm" onClick={() => fileRef.current?.click()}>
-                {hasOldFile ? 'Replace file' : 'Attach file'}
+                {hasOldFile ? 'Replace File' : 'Attach File'}
               </button>
             )}
             <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={pickFile} hidden />
@@ -174,7 +174,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className="btn btn-success" onClick={send} disabled={!canSend}>
-            {saving ? 'Resubmitting...' : 'Resubmit to MSIRC'}
+            {saving ? 'Resubmitting...' : 'Resubmit Proposal'}
           </button>
         </div>
       </div>

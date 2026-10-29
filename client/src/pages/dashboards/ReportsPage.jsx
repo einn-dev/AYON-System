@@ -3,6 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './Reports.css';
 import { FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar, FaTableList } from 'react-icons/fa6';
+import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
@@ -12,39 +13,25 @@ import { FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDoll
 const REPORT_TYPES = [
   { key: 'proposals',  icon: <FaFileLines />,         label: 'Proposals Report',
     desc: 'Every proposal in the filters: researcher, college, type, status and where it is waiting.', csv: true },
-  { key: 'grants',     icon: <FaHandHoldingDollar />, label: 'Grants Report',
+  { key: 'grants',     icon: <FaHandHoldingDollar />, label: 'Grants and Incentives Report',
     desc: 'Grant and incentive applications in the period and college, with their status.', csv: true },
-  { key: 'repository', icon: <FaBoxArchive />,        label: 'Repository Report',
+  { key: 'repository', icon: <FaBoxArchive />,        label: 'Research Repository Report',
     desc: 'Research stored in the repository in the period and college.', csv: true },
   { key: 'summary',    icon: <FaChartColumn />,       label: 'Summary Report',
     desc: 'The numbers on this page (status, waiting stages, colleges) on one printable page.', csv: false },
 ];
 
 const PERIODS = [
-  { value: 'all',    label: 'All time' },
-  { value: 'year',   label: 'This year' },
-  { value: '90',     label: 'Last 90 days' },
-  { value: '30',     label: 'Last 30 days' },
-  { value: 'custom', label: 'Custom dates…' },
+  { value: 'all',    label: 'All Time' },
+  { value: 'year',   label: 'This Year' },
+  { value: '90',     label: 'Last 90 Days' },
+  { value: '30',     label: 'Last 30 Days' },
+  { value: 'custom', label: 'Custom Dates…' },
 ];
 
-const STATUSES = [
-  { value: 'for_endorsement', label: 'For Endorsement' },
-  { value: 'submitted',       label: 'Submitted' },
-  { value: 'under_review',    label: 'Under Review' },
-  { value: 'endorsed',        label: 'Endorsed' },
-  { value: 'returned',        label: 'Returned' },
-  { value: 'approved',        label: 'Approved' },
-  { value: 'rejected',        label: 'Rejected' },
-];
+const STATUSES = STATUS_ORDER.map(value => ({ value, label: STATUS_LABEL[value] }));
 
-const TYPES = [
-  { value: 'internally_funded',     label: 'Internally Funded' },
-  { value: 'research_spotlight',    label: 'Research Spotlight' },
-  { value: 'publication_incentive', label: 'Publication Incentive' },
-  { value: 'travel_oral',           label: 'Travel / Oral Presentation' },
-  { value: 'externally_funded',     label: 'Externally Funded' },
-];
+const TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }));
 
 const EMPTY = { period: 'all', from: '', to: '', college: '', status: '', type: '' };
 
@@ -163,9 +150,9 @@ const ReportsPage = () => {
     filters.period === 'custom'
       ? `${filters.from || 'start'} to ${filters.to || 'today'}`
       : PERIODS.find(p => p.value === filters.period)?.label,
-    filters.college || 'All colleges',
-    filters.status ? STATUSES.find(s => s.value === filters.status)?.label : 'All statuses',
-    filters.type ? TYPES.find(x => x.value === filters.type)?.label : 'All types',
+    filters.college || 'All Colleges',
+    filters.status ? STATUSES.find(s => s.value === filters.status)?.label : 'All Statuses',
+    filters.type ? TYPES.find(x => x.value === filters.type)?.label : 'All Types',
   ];
   const isDefault = JSON.stringify(filters) === JSON.stringify(EMPTY);
 
@@ -198,21 +185,21 @@ const ReportsPage = () => {
         <div className="rp-f">
           <label htmlFor="rp-college">College</label>
           <select id="rp-college" value={filters.college} onChange={set('college')}>
-            <option value="">All colleges</option>
+            <option value="">All Colleges</option>
             {colleges.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="rp-f">
           <label htmlFor="rp-status">Status</label>
           <select id="rp-status" value={filters.status} onChange={set('status')}>
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
         <div className="rp-f">
           <label htmlFor="rp-type">Proposal type</label>
           <select id="rp-type" value={filters.type} onChange={set('type')}>
-            <option value="">All types</option>
+            <option value="">All Types</option>
             {TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
           </select>
         </div>
@@ -230,12 +217,12 @@ const ReportsPage = () => {
       {/* Totals */}
       <div className="rp-tiles">
         {[
-          ['Total proposals',  t?.total,      'in the filters'],
-          ['At the college',   t?.at_college, 'Coordinator, Chair or Dean'],
-          ['In office review', t?.in_office,  'SA, Director or OVCRED'],
-          ['Returned',         t?.returned,   'waiting on the researcher'],
+          ['Total Proposals',  t?.total,      'in the filters'],
+          ['At the College',   t?.at_college, 'Coordinator, Chair or Dean'],
+          ['In Office Review', t?.in_office,  'SA, Director or OVCRED'],
+          ['Returned for Revision', t?.returned,   'waiting on the researcher'],
           ['Approved',         t?.approved,   ''],
-          ['Approval rate',    t ? pct(t.approval_rate) : undefined, t ? `${t.decided} decided` : ''],
+          ['Approval Rate',    t ? pct(t.approval_rate) : undefined, t ? `${t.decided} decided` : ''],
         ].map(([label, value, sub]) => (
           <div className="rp-tile" key={label}>
             <div className="rp-tile-l">{label}</div>
@@ -247,24 +234,24 @@ const ReportsPage = () => {
 
       <div className="rp-grid2">
         <div className="panel rp-panel">
-          <div className="panel-header"><h2>Proposals by status</h2><small>within the filters</small></div>
+          <div className="panel-header"><h2>Proposals by Status</h2><small>within the filters</small></div>
           {summary ? <Bars rows={summary.by_status} /> : <div className="empty-state"><p>Loading…</p></div>}
         </div>
         <div className="panel rp-panel">
-          <div className="panel-header"><h2>Where open proposals are waiting</h2><small>right now</small></div>
+          <div className="panel-header"><h2>Where Open Proposals Are Waiting</h2><small>right now</small></div>
           {summary ? <Bars rows={summary.waiting} /> : <div className="empty-state"><p>Loading…</p></div>}
         </div>
       </div>
 
       <div className="panel rp-panel">
-        <div className="panel-header"><h2>Proposals by college</h2><small>approval rate = approved ÷ decided</small></div>
+        <div className="panel-header"><h2>Proposals by College</h2><small>approval rate = approved ÷ decided</small></div>
         <div className="rp-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th>College</th><th className="rp-n">Total</th><th className="rp-n">At college</th>
-                <th className="rp-n">In office review</th><th className="rp-n">Approved</th>
-                <th className="rp-n">Rejected</th><th className="rp-n">Approval rate</th>
+                <th>College</th><th className="rp-n">Total</th><th className="rp-n">At College</th>
+                <th className="rp-n">In Office Review</th><th className="rp-n">Approved</th>
+                <th className="rp-n">Rejected</th><th className="rp-n">Approval Rate</th>
               </tr>
             </thead>
             <tbody>
@@ -297,12 +284,12 @@ const ReportsPage = () => {
             <div className="rp-card-btns">
               <button className="btn btn-primary btn-sm" disabled={!!downloading}
                 onClick={() => download(r.key, 'pdf')}>
-                {downloading === `${r.key}-pdf` ? 'Generating…' : <><FaDownload className="ic" />PDF</>}
+                {downloading === `${r.key}-pdf` ? 'Generating…' : <><FaDownload className="ic" />Download PDF</>}
               </button>
               {r.csv && (
                 <button className="btn btn-outline btn-sm" disabled={!!downloading}
                   onClick={() => download(r.key, 'csv')}>
-                  {downloading === `${r.key}-csv` ? 'Generating…' : <><FaTableList className="ic" />CSV</>}
+                  {downloading === `${r.key}-csv` ? 'Generating…' : <><FaTableList className="ic" />Download CSV</>}
                 </button>
               )}
             </div>

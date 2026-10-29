@@ -3,6 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import { COLLEGES, getDepartments } from '../../data/Colleges';
+import { FaCheck, FaLock, FaPlus } from 'react-icons/fa6';
 import {
   ROLES, ROLE_LABELS, ROLES_NEED_COLLEGE, ROLES_NEED_DEPARTMENT,
   LOCKED_STYLE, roleBadge, userStatus, STATUS_META, errText,
@@ -47,7 +48,7 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
     setSaving(true);
     try {
       await API.post('/admin/users', form);
-      notify('success', 'User created successfully!');
+      notify('success', 'User account created.');
       onCreated();
       onClose();
     } catch (error) {
@@ -312,7 +313,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal am-wide" onClick={e => e.stopPropagation()}>
-        <h3>Edit user</h3>
+        <h3>Edit User</h3>
         <p className="am-modal-sub">
           {status === 'pending' ? 'Email not verified yet' : 'Email verified'}
           {status === 'deactivated' ? ' · Account deactivated' : ''}
@@ -326,8 +327,8 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
         )}
         {!isSelf && isLastAdmin && (
           <div className="am-note">
-            This is the last active Admin account, so its role and status are locked.
-            Create or activate another Admin first.
+            This is the last active Administrator account, so its role and status are locked.
+            Create or activate another Administrator first.
           </div>
         )}
         {err && <div className="alert alert-error">{err}</div>}
@@ -414,19 +415,19 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
           </div>
 
           <div className="am-tools">
-            <h4>Account tools</h4>
+            <h4>Account Tools</h4>
             <div className="am-actions">
               <button type="button" className="btn btn-outline btn-sm"
                 disabled={!!busy} onClick={() => { setConfirmReset(true); setTempPw(''); }}>
-                Reset password
+                Reset Password
               </button>
               <button type="button" className="btn btn-outline btn-sm"
                 disabled={!!busy || status !== 'pending'} onClick={markVerified}>
-                {busy === 'verify' ? 'Working…' : 'Mark email as verified'}
+                {busy === 'verify' ? 'Working…' : 'Mark Email as Verified'}
               </button>
               <button type="button" className="btn btn-outline btn-sm"
                 disabled={!!busy || status !== 'pending'} onClick={resendVerification}>
-                {busy === 'resend' ? 'Sending…' : 'Resend verification'}
+                {busy === 'resend' ? 'Sending…' : 'Resend Verification'}
               </button>
             </div>
 
@@ -451,7 +452,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
                 <div className="am-temp-row">
                   <code>{tempPw}</code>
                   <button type="button" className="btn btn-outline btn-sm" onClick={copyTemp}>
-                    {copied ? 'Copied ✓' : 'Copy'}
+                    {copied ? <><FaCheck className="ic" />Copied</> : 'Copy'}
                   </button>
                 </div>
               </div>
@@ -463,7 +464,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
               {tempPw ? 'Close' : 'Cancel'}
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving || !dirty}>
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -539,7 +540,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
 
       <div className="stats-grid">
         <div className="stat-card blue">
-          <span className="stat-label">All accounts</span>
+          <span className="stat-label">All Accounts</span>
           <span className="stat-value">{counts.all}</span>
         </div>
         <div className="stat-card green">
@@ -547,7 +548,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
           <span className="stat-value">{counts.active}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Pending verification</span>
+          <span className="stat-label">Pending Verification</span>
           <span className="stat-value">{counts.pending}</span>
         </div>
         <div className="stat-card red">
@@ -568,14 +569,14 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
             </select>
             <select className="search-input" style={{ minWidth: 170 }}
               value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="all">All statuses</option>
+              <option value="all">All Statuses</option>
               <option value="active">Active</option>
-              <option value="pending">Pending verification</option>
+              <option value="pending">Pending Verification</option>
               <option value="deactivated">Deactivated</option>
             </select>
           </div>
           <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>
-            + Add User
+            <FaPlus className="ic" />Add User
           </button>
         </div>
 
@@ -601,7 +602,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
                 const lock = self || isLastAdmin(u);
                 const lockWhy = self
                   ? 'You cannot deactivate your own account'
-                  : 'This is the last active Admin';
+                  : 'This is the last active Administrator';
 
                 return (
                   <tr key={u.user_id}>
@@ -646,8 +647,8 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
         </div>
 
         <div className="am-legend">
-          🔒 A greyed-out Deactivate button is blocked on purpose: you can't deactivate or demote
-          your own account, and the last active Admin can't be removed.
+          <FaLock className="ic" />A greyed-out Deactivate button is blocked on purpose: you can't deactivate or demote
+          your own account, and the last active Administrator can't be removed.
         </div>
       </div>
 

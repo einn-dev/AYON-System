@@ -9,7 +9,7 @@ import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import '../components/PasswordPages.css';
 
-/* Shown right after someone signs in with a temporary password an Admin gave them.
+/* Shown right after someone signs in with a temporary password the Administrator gave them.
    The server blocks everything else until this is done. */
 const ChangePasswordPage = () => {
   const { user, loading, login, logout } = useAuth();
@@ -61,26 +61,26 @@ const ChangePasswordPage = () => {
         </div>
 
         <form className="auth-form" onSubmit={submit} noValidate>
-          <h2 style={{ marginBottom: 0 }}>Set a new password</h2>
+          <h2 style={{ marginBottom: 0 }}>Set a New Password</h2>
 
           <p className="pw-notice" role="status">
-            An administrator reset your password. For your security, choose a new
+            The Administrator reset your password. For your security, choose a new
             password before you continue.
           </p>
 
           {error && <p className="auth-error" role="alert">{error}</p>}
 
           <div className="form-group">
-            <label>Temporary password</label>
+            <label>Temporary Password</label>
             <PasswordInput
               name="current_password" value={current} autoComplete="current-password"
-              placeholder="The one the administrator gave you"
+              placeholder="The one the Administrator gave you"
               onChange={(e) => { setCurrent(e.target.value); setError(''); }}
             />
           </div>
 
           <div className="form-group">
-            <label>New password</label>
+            <label>New Password</label>
             <PasswordInput
               name="new_password" value={password} autoComplete="new-password"
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
@@ -89,7 +89,7 @@ const ChangePasswordPage = () => {
           </div>
 
           <div className="form-group">
-            <label>Confirm new password</label>
+            <label>Confirm New Password</label>
             <PasswordInput
               name="confirm_password" value={confirm} autoComplete="new-password"
               onChange={(e) => { setConfirm(e.target.value); setError(''); }}
@@ -97,12 +97,12 @@ const ChangePasswordPage = () => {
           </div>
 
           <button type="submit" className="auth-btn" disabled={busy}>
-            {busy ? 'Saving...' : 'Save and continue'}
+            {busy ? 'Saving...' : 'Save and Continue'}
           </button>
 
           <p className="auth-footer" style={{ marginTop: 4 }}>
             Signed in as <strong>{user.email}</strong> ·{' '}
-            <button type="button" className="pw-linkbtn" onClick={signOut}>Sign out</button>
+            <button type="button" className="pw-linkbtn" onClick={signOut}>Sign Out</button>
           </p>
         </form>
       </div>

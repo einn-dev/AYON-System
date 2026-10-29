@@ -24,7 +24,7 @@ const ExternalResearchPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Title is required.' });
+    if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Research title is required.' });
     setSaving(true);
     try {
       const data = new FormData();
@@ -35,20 +35,20 @@ const ExternalResearchPage = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setAlert({ type: 'success', msg: 'External research uploaded and stored to repository!' });
+      setAlert({ type: 'success', msg: 'External research uploaded and stored in the Research Repository.' });
       setForm({ title:'',external_agency:'',description:'',funding_amount:'',start_date:'',end_date:'' });
       setFile(null);
       fetchItems();
     } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Upload failed.' });
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The upload failed. Please try again.' });
     } finally { setSaving(false); }
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>External Funded Research</h1>
-        <p>Upload completed externally funded research for repository archiving.</p>
+        <h1>External Research</h1>
+        <p>Upload completed externally funded research to store it in the Research Repository.</p>
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
@@ -72,7 +72,7 @@ const ExternalResearchPage = () => {
                   placeholder="e.g. DOST, CHED, USAID" />
               </div>
               <div className="form-group">
-                <label>Description / Abstract</label>
+                <label>Abstract</label>
                 <textarea rows={4} value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="Brief description of the research..."
@@ -107,11 +107,11 @@ const ExternalResearchPage = () => {
                 border: '1px solid #bee3f8', fontSize: '0.78rem',
                 color: '#2c5282', marginBottom: 14,
               }}>
-                Externally funded research is stored directly in the repository —
-                no review workflow required.
+                Externally funded research is stored directly in the Research Repository.
+                It does not go through the review workflow.
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Uploading...' : <><FaUpload className="ic" />Upload & Archive</>}
+                {saving ? 'Uploading...' : <><FaUpload className="ic" />Upload and Archive</>}
               </button>
             </form>
           </div>
@@ -128,7 +128,7 @@ const ExternalResearchPage = () => {
           ) : (
             <table className="data-table">
               <thead>
-                <tr><th>Title</th><th>Agency</th><th>Uploaded</th></tr>
+                <tr><th>Research Title</th><th>Funding Agency</th><th>Date Uploaded</th></tr>
               </thead>
               <tbody>
                 {items.map(x => (

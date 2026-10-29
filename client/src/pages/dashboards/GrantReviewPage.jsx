@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import { FaCheck, FaXmark } from 'react-icons/fa6';
+import { grantStatusLabel } from '../../utils/terms';
 
 const GRANT_TYPES = {
   research_spotlight:    'Research Spotlight',
@@ -59,11 +60,11 @@ const GrantReviewPage = () => {
       await API.patch(`/grants/${grantId}/status`, { status });
       setAlert({
         type: 'success',
-        msg:  `Grant application ${status}! The researcher has been notified via email and in-app.`,
+        msg:  `Grant application ${status}. The researcher was notified by email and in AYON.`,
       });
       fetchGrants();
     } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'Action failed.' });
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The decision could not be saved. Please try again.' });
     } finally {
       setActingOn(null);
     }
@@ -109,7 +110,7 @@ const GrantReviewPage = () => {
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
-              <option value="all">All Status</option>
+              <option value="all">All Statuses</option>
             </select>
             <select className="search-input" style={{ minWidth: 190 }}
               value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
@@ -130,9 +131,9 @@ const GrantReviewPage = () => {
               <tr>
                 <th>#</th>
                 <th>Researcher</th>
-                <th>Proposal</th>
+                <th>Research Title</th>
                 <th>Grant Type</th>
-                <th>Applied</th>
+                <th>Date Applied</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -154,7 +155,7 @@ const GrantReviewPage = () => {
                   </td>
                   <td>
                     <span className={`badge ${GRANT_BADGE[g.status] || 'badge-gray'}`}>
-                      {g.status}
+                      {grantStatusLabel(g.status)}
                     </span>
                   </td>
                   <td>

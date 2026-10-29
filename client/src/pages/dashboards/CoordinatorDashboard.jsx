@@ -5,31 +5,16 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge } from 'react-icons/fa6';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
+import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+
+const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/coordinator/dashboard',     label: 'Dashboard',        icon: <FaTableCellsLarge /> },
   { path: '/coordinator/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
-  { path: '/coordinator/endorsed',      label: 'Endorsed',          icon: <FaCircleCheck /> },
+  { path: '/coordinator/endorsed',      label: 'Endorsed Proposals', icon: <FaCircleCheck /> },
   { path: '/coordinator/notifications', label: 'Notifications',     icon: <FaBell /> },
 ];
-
-const PROPOSAL_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel / Oral Presentation',
-  externally_funded:     'Externally Funded',
-};
-
-const STATUS_BADGE = {
-  for_endorsement: 'badge-amber',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
 
 const Notifications = () => {
   const [notifs,  setNotifs]  = useState([]);
@@ -54,7 +39,7 @@ const Notifications = () => {
       <div className="page-header"><h1>Notifications</h1></div>
       <div className="panel">
         {loading ? <div className="empty-state"><p>Loading...</p></div>
-          : notifs.length === 0 ? <div className="empty-state"><p>No notifications.</p></div>
+          : notifs.length === 0 ? <div className="empty-state"><p>No notifications yet.</p></div>
           : notifs.map(n => (
             <div key={n.notif_id}
               onClick={() => !n.is_read && markRead(n.notif_id)}
@@ -94,11 +79,11 @@ const Overview = ({ proposals }) => {
       <EndorserStats proposals={proposals} role="research_coordinator" />
       <div className="panel">
         <div className="panel-header">
-          <h2>Latest Proposals</h2>
+          <h2>Recent Proposals</h2>
         </div>
         <table className="data-table">
           <thead>
-            <tr><th>Researcher</th><th>Title</th><th>Type</th><th>Status</th></tr>
+            <tr><th>Researcher</th><th>Research Title</th><th>Proposal Type</th><th>Status</th></tr>
           </thead>
           <tbody>
             {proposals.slice(0, 6).map(p => (
@@ -109,8 +94,8 @@ const Overview = ({ proposals }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
-                    {p.status?.replace(/_/g, ' ')}
+                  <span className={`badge ${statusBadge(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                 </td>
               </tr>

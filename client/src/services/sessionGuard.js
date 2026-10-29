@@ -13,8 +13,8 @@ import API from './authService';
    ───────────────────────────────────────────────────────────── */
 
 const SESSION_ENDED = {
-  ACCOUNT_DEACTIVATED: 'Your account has been deactivated. Please contact the MSRIC office.',
-  ACCOUNT_NOT_FOUND:   'Your account could not be found. Please contact the MSRIC office.',
+  ACCOUNT_DEACTIVATED: 'Your account has been deactivated. Please contact the MSIRC office.',
+  ACCOUNT_NOT_FOUND:   'Your account could not be found. Please contact the MSIRC office.',
   SESSION_REVOKED:     'Your session was ended. Please sign in again.',
   ROLE_CHANGED:        'Your role was changed by an administrator. Please sign in again.',
   TOKEN_INVALID:       'Your session expired. Please sign in again.',

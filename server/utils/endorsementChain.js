@@ -20,15 +20,7 @@ const SCOPE = {
   college_dean:         'college',
 };
 
-const ROLE_LABEL = {
-  research_coordinator: 'Research Coordinator',
-  chairperson:          'Chairperson',
-  college_dean:         'College Dean',
-  special_assistant:    'Special Assistant',
-  msric_director:       'MSRIC Director',
-  ovcred:               'OVCRED',
-  admin:                'Admin',
-};
+const { ROLE_LABEL } = require('./terms');
 
 const NOTE_MIN = 10;
 const NOTE_MAX = 500;

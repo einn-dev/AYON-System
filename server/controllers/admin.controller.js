@@ -5,6 +5,7 @@ const { logAudit, fullName } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole } = require('../utils/roleNotify');
 const { endorsersFor, ownerOf } = require('../utils/endorsementChain');
+const { STATUS_LABEL, roleLabel } = require('../utils/terms');
 const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
@@ -924,10 +925,7 @@ const getDashboard = async (req, res) => {
    The Admin can send a proposal BACK or remind people. The Admin can never
    approve, reject or endorse: those decisions stay with the reviewers.
    ───────────────────────────────────────────────────────────── */
-const STAGE_LABELS = {
-  draft: 'Draft', for_endorsement: 'For endorsement', submitted: 'Submitted', under_review: 'Under review',
-  returned: 'Returned', endorsed: 'Endorsed', approved: 'Approved', rejected: 'Rejected',
-};
+const STAGE_LABELS = STATUS_LABEL;
 
 /* Which office a proposal is waiting on, by status (proposals wait in a role's queue) */
 const HOLDER_ROLE = {
@@ -940,7 +938,7 @@ const HOLDER_LABEL = {
   chairperson:       'Chairperson',
   college_dean:      'College Dean',
   special_assistant: 'Special Assistant',
-  msric_director:    'MSRIC Director',
+  msric_director:    'MSIRC Director',
   ovcred:            'OVCRED',
 };
 
@@ -1091,7 +1089,7 @@ const getProposalTimeline = async (req, res) => {
       (people || []).forEach(u => names.set(String(u.user_id), fullName(u)));
     }
     const who = (uid) => names.get(String(uid)) || 'Someone';
-    const niceRole = (r) => String(r || '').replace(/_/g, ' ');
+    const niceRole = roleLabel;
 
     const events = [];
     events.push({
@@ -1222,8 +1220,8 @@ const moveProposal = async (req, res) => {
       user_id:     proposal.user_id,
       proposal_id: proposal.proposal_id,
       notif_type:  'review',
-      title:       'Your proposal was moved by the Admin',
-      message:     `Your proposal "${proposal.title}" was moved from "${STAGE_LABELS[proposal.status]}" to "${STAGE_LABELS[status]}" by the MSRIC administrator. Reason: ${why}`,
+      title:       'Your proposal was moved by the Administrator',
+      message:     `Your proposal "${proposal.title}" was moved from "${STAGE_LABELS[proposal.status]}" to "${STAGE_LABELS[status]}" by the MSIRC Administrator. Reason: ${why}`,
     });
     if (nErr) console.error('moveProposal notification failed:', nErr.message || nErr);
 
@@ -1236,7 +1234,7 @@ const moveProposal = async (req, res) => {
         proposal_id: proposal.proposal_id,
         notif_type:  desk === 'special_assistant' ? 'submission' : 'review',
         title:       'A proposal was moved to your queue',
-        message:     `"${proposal.title}" by ${fullName(owner) || 'the researcher'} was moved to your stage by the MSRIC administrator. Reason: ${why}`,
+        message:     `"${proposal.title}" by ${fullName(owner) || 'the researcher'} was moved to your stage by the MSIRC Administrator. Reason: ${why}`,
       }, { exclude: [req.user.user_id] });
     }
 

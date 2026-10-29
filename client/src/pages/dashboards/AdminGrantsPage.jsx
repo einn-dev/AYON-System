@@ -87,13 +87,13 @@ const GrantModal = ({ grantId, onDecide, onClose }) => {
           <>
             <dl className="ac-dl">
               <dt>Researcher</dt><dd>{[g.first_name, g.last_name].filter(Boolean).join(' ') || '—'}{g.college ? ` · ${g.college}` : ''}</dd>
-              <dt>Proposal</dt><dd>{g.proposal_title || '—'}</dd>
-              <dt>Applied</dt><dd>{fmtDate(g.date_applied)}</dd>
+              <dt>Research Title</dt><dd>{g.proposal_title || '—'}</dd>
+              <dt>Date Applied</dt><dd>{fmtDate(g.date_applied)}</dd>
               <dt>Status</dt><dd><span className={`badge ${STATUS_BADGE[g.status] || 'badge-gray'}`}>{cap(g.status)}</span></dd>
             </dl>
 
             <div className="ac-box">
-              <h4>What the researcher filled in</h4>
+              <h4>Application Details</h4>
               {rows.length
                 ? <dl className="ac-dl">{rows.map(([k, v]) => (<React.Fragment key={k}><dt>{k}</dt><dd>{v}</dd></React.Fragment>))}</dl>
                 : <span className="am-muted">No extra details were saved with this application.</span>}
@@ -174,7 +174,7 @@ const AdminGrantsPage = () => {
     const text = {
       approved: 'The researcher will be told it was approved.',
       rejected: 'The researcher will be told it was rejected, with your reason.',
-      pending:  'The application goes back to the Director and OVCRED list as pending. The researcher is not notified.',
+      pending:  'The application goes back to the MSIRC Director and OVCRED list as pending. The researcher is not notified.',
     }[to];
     setConfirm({
       title: `${verb} this application?`,
@@ -196,22 +196,22 @@ const AdminGrantsPage = () => {
   return (
     <>
       <div className="page-header">
-        <h1>Grants</h1>
-        <p>All grant and incentive applications, with the details the researcher filled in. Admin can step in when the Director or OVCRED is unavailable.</p>
+        <h1>Grants and Incentives</h1>
+        <p>All grant and incentive applications, with the details the researcher filled in. The Administrator can step in when the MSIRC Director or OVCRED is unavailable.</p>
       </div>
 
       {error   && <div className="alert alert-error" role="alert">{error}</div>}
       {message && <div className="alert alert-success" role="status">{message}</div>}
 
       <div className="stats-grid">
-        <div className="stat-card blue"><span className="stat-label">Applications</span><span className="stat-value">{grants.length}</span></div>
+        <div className="stat-card blue"><span className="stat-label">Total Applications</span><span className="stat-value">{grants.length}</span></div>
         <div className="stat-card amber"><span className="stat-label">Pending</span><span className="stat-value">{n('pending')}</span></div>
         <div className="stat-card green"><span className="stat-label">Approved</span><span className="stat-value">{n('approved')}</span></div>
         <div className="stat-card red"><span className="stat-label">Rejected</span><span className="stat-value">{n('rejected')}</span></div>
       </div>
 
       <div className="panel">
-        <div className="panel-header"><strong style={{ color: '#5e1420' }}>Applications by type</strong></div>
+        <div className="panel-header"><strong style={{ color: '#5e1420' }}>Applications by Type</strong></div>
         <div className="ac-bars">
           {Object.entries(GRANT_TYPES).map(([k, label]) => {
             const c = grants.filter(g => g.grant_type === k).length;
@@ -232,18 +232,18 @@ const AdminGrantsPage = () => {
             <input className="search-input" placeholder="Search researcher or proposal..."
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <select className="search-input" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
-              <option value="all">All status</option>
+              <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
             <select className="search-input" value={type} onChange={(e) => setType(e.target.value)} aria-label="Grant type">
-              <option value="all">All grant types</option>
+              <option value="all">All Grant Types</option>
               {Object.entries(GRANT_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             {filtersOn && (
               <button type="button" className="btn btn-outline btn-sm"
-                onClick={() => { setSearch(''); setStatus('all'); setType('all'); }}>Clear filters</button>
+                onClick={() => { setSearch(''); setStatus('all'); setType('all'); }}>Clear Filters</button>
             )}
           </div>
           <span className="badge badge-blue">{filtered.length} shown</span>
@@ -252,7 +252,7 @@ const AdminGrantsPage = () => {
         <div className="am-scroll">
           <table className="data-table">
             <thead>
-              <tr><th>Researcher</th><th>Proposal</th><th>Grant type</th><th>Applied</th><th>Status</th><th>Actions</th></tr>
+              <tr><th>Researcher</th><th>Research Title</th><th>Grant Type</th><th>Date Applied</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {pageRows.map(g => (
@@ -267,7 +267,7 @@ const AdminGrantsPage = () => {
                   <td><span className={`badge ${STATUS_BADGE[g.status] || 'badge-gray'}`}>{cap(g.status)}</span></td>
                   <td>
                     <div className="am-actions">
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(g.grant_id)}>Details</button>
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(g.grant_id)}>View Details</button>
                       {g.status === 'pending' ? (
                         <>
                           <button type="button" className="btn btn-success btn-sm" onClick={() => decide(g, 'approved')}>Approve</button>

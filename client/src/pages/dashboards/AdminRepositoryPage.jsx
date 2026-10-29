@@ -10,7 +10,7 @@ import { ConfirmBox, fileHref, cap, fmtDate } from './AdminCatalogShared';
 const PAGE_SIZE = 25;
 
 const ACCESS_BADGE = { public: 'badge-green', private: 'badge-amber' };
-const SOURCE_LABEL = { proposal: 'Proposal', external: 'External' };
+const SOURCE_LABEL = { proposal: 'Proposal', external: 'Externally Funded' };
 
 /* ─────────── Details + edit pop-up ─────────── */
 const ItemModal = ({ item, onSaved, onClose }) => {
@@ -51,7 +51,7 @@ const ItemModal = ({ item, onSaved, onClose }) => {
     <div className="modal-overlay" onClick={() => { if (!saving) onClose(); }}>
       <div className="modal ac-wide" role="dialog" aria-modal="true" aria-label="Repository item"
         onClick={(e) => e.stopPropagation()}>
-        <h3>Repository item</h3>
+        <h3>Repository Item</h3>
         <p className="am-modal-sub">
           {item.source_type === 'external' ? 'Externally funded research' : `From proposal #${item.proposal_id ?? '—'}`}
         </p>
@@ -68,10 +68,10 @@ const ItemModal = ({ item, onSaved, onClose }) => {
         </dl>
 
         <div className="ac-box">
-          <h4>Edit details</h4>
+          <h4>Edit Details</h4>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <div className="form-group">
-            <label htmlFor="rp-title">Title</label>
+            <label htmlFor="rp-title">Research Title</label>
             <input id="rp-title" value={title} maxLength={255} onChange={(e) => setTitle(e.target.value)} disabled={saving} />
           </div>
           <div className="form-group">
@@ -97,7 +97,7 @@ const ItemModal = ({ item, onSaved, onClose }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Close</button>
           <button type="button" className="btn btn-primary" onClick={save} disabled={saving || !dirty}>
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -173,7 +173,7 @@ const AdminRepositoryPage = () => {
   };
 
   const askStore = (c) => setConfirm({
-    title: 'Store in repository?',
+    title: 'Store in the Research Repository?',
     text: `"${c.title}" will be stored as PRIVATE. You can make it public afterwards.`,
     confirmLabel: 'Store',
     run: async () => {
@@ -188,7 +188,7 @@ const AdminRepositoryPage = () => {
       title: `Make this ${to}?`,
       text: to === 'public'
         ? 'Every researcher will be able to see and open this in their Repository page.'
-        : 'Researchers will no longer see this item. MSRIC offices and Admin still can.',
+        : 'Researchers will no longer see this item. MSIRC offices and the Administrator still can.',
       confirmLabel: `Make ${to}`,
       run: async () => {
         await API.patch(`/admin/repository/${i.repo_id}`, { access_type: to });
@@ -198,7 +198,7 @@ const AdminRepositoryPage = () => {
   };
 
   const askRemove = (i) => setConfirm({
-    title: 'Remove from repository?',
+    title: 'Remove from the Research Repository?',
     text: `"${i.title}" will be taken out of the repository. The proposal itself and its uploaded file are NOT deleted.`,
     reason: true,
     confirmLabel: 'Remove',
@@ -214,7 +214,7 @@ const AdminRepositoryPage = () => {
   return (
     <>
       <div className="page-header">
-        <h1>Repository</h1>
+        <h1>Research Repository</h1>
         <p>Every stored research output. Control who can see each one, fix its details, or take it out.</p>
       </div>
 
@@ -222,10 +222,10 @@ const AdminRepositoryPage = () => {
       {message && <div className="alert alert-success" role="status">{message}</div>}
 
       <div className="stats-grid">
-        <div className="stat-card blue"><span className="stat-label">Stored items</span><span className="stat-value">{counts.total}</span></div>
+        <div className="stat-card blue"><span className="stat-label">Stored Items</span><span className="stat-value">{counts.total}</span></div>
         <div className="stat-card green"><span className="stat-label">Public</span><span className="stat-value">{counts.pub}</span></div>
         <div className="stat-card amber"><span className="stat-label">Private</span><span className="stat-value">{counts.priv}</span></div>
-        <div className="stat-card"><span className="stat-label">Externally funded</span><span className="stat-value">{counts.external}</span></div>
+        <div className="stat-card"><span className="stat-label">Externally Funded Research</span><span className="stat-value">{counts.external}</span></div>
       </div>
 
       {candidates.length > 0 && (
@@ -244,7 +244,7 @@ const AdminRepositoryPage = () => {
                 <span className="ac-sub">{[c.author, c.college].filter(Boolean).join(' · ') || '—'}</span>
               </div>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => askStore(c)}>
-                Store (private)
+                Store as Private
               </button>
             </div>
           ))}
@@ -257,23 +257,23 @@ const AdminRepositoryPage = () => {
             <input className="search-input" placeholder="Search title, author or keywords..."
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <select className="search-input" value={access} onChange={(e) => setAccess(e.target.value)} aria-label="Access">
-              <option value="all">All access</option>
+              <option value="all">All Access</option>
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
             <select className="search-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source">
-              <option value="all">All sources</option>
+              <option value="all">All Sources</option>
               <option value="proposal">Proposal</option>
-              <option value="external">Externally funded</option>
+              <option value="external">Externally Funded Research</option>
             </select>
             <select className="search-input" value={college} onChange={(e) => setCollege(e.target.value)} aria-label="College">
-              <option value="all">All colleges</option>
+              <option value="all">All Colleges</option>
               {colleges.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             {filtersOn && (
               <button type="button" className="btn btn-outline btn-sm"
                 onClick={() => { setSearch(''); setAccess('all'); setSource('all'); setCollege('all'); }}>
-                Clear filters
+                Clear Filters
               </button>
             )}
           </div>
@@ -283,7 +283,7 @@ const AdminRepositoryPage = () => {
         <div className="am-scroll">
           <table className="data-table">
             <thead>
-              <tr><th>Title</th><th>Source</th><th>Access</th><th>Stored</th><th>Actions</th></tr>
+              <tr><th>Research Title</th><th>Source</th><th>Access</th><th>Date Stored</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {pageRows.map(i => (
@@ -297,9 +297,9 @@ const AdminRepositoryPage = () => {
                   <td className="am-muted" style={{ whiteSpace: 'nowrap' }}>{fmtDate(i.store_date)}</td>
                   <td>
                     <div className="am-actions">
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelected(i)}>Details</button>
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelected(i)}>View Details</button>
                       <button type="button" className="btn btn-outline btn-sm" onClick={() => askToggle(i)}>
-                        Make {i.access_type === 'public' ? 'private' : 'public'}
+                        Make {i.access_type === 'public' ? 'Private' : 'Public'}
                       </button>
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => askRemove(i)}>Remove</button>
                     </div>
@@ -323,7 +323,7 @@ const AdminRepositoryPage = () => {
         <Pager page={page} pageSize={PAGE_SIZE} total={filtered.length} onPage={setPage} />
 
         <div className="am-legend">
-          Public = shown to every researcher in their Repository page. Private = only MSRIC offices and Admin can see it.
+          Public = shown to every researcher in their Repository page. Private = only MSIRC offices and the Administrator can see it.
         </div>
       </div>
 

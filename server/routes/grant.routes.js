@@ -4,6 +4,7 @@ const supabase = require('../config/supabase');
 const { notifyUser } = require('../utils/notify');
 const { notifyRole, fullName } = require('../utils/roleNotify');
 const { logAudit } = require('../utils/audit');
+const { typeLabel } = require('../utils/terms');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 /* ── POST apply for a grant ── */
@@ -77,11 +78,11 @@ router.post('/', verifyToken, authorizeRoles('researcher'), async (req, res) => 
       proposal_id,
       notif_type:  'submission',
       title:       'Grant Application Submitted',
-      message:     `Your ${grant_type.replace(/_/g,' ')} application for "${proposal.title}" has been submitted.`,
+      message:     `Your ${typeLabel(grant_type)} application for "${proposal.title}" has been submitted.`,
     });
 
     /* tell the offices that decide on grants (in-app only; never blocks the application) */
-    const label = grant_type.replace(/_/g, ' ');
+    const label = typeLabel(grant_type);
     const alert = {
       proposal_id,
       notif_type: 'submission',
@@ -183,7 +184,7 @@ router.patch('/:id/status', verifyToken,
         proposal_id: grant.research_proposals.proposal_id,
         notif_type:  status === 'approved' ? 'approval' : 'rejection',
         title:       `Grant Application ${status === 'approved' ? 'Approved' : 'Rejected'}`,
-        message:     `Your ${grant.grant_type.replace(/_/g,' ')} application for "${grant.research_proposals.title}" has been ${status}.`,
+        message:     `Your ${typeLabel(grant.grant_type)} application for "${grant.research_proposals.title}" has been ${status}.`,
       });
 
       return res.status(200).json({ message: `Grant ${status}.` });

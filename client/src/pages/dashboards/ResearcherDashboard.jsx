@@ -9,8 +9,9 @@ import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
 import ResubmitModal from '../../components/ResubmitModal';
 import '../../components/Resubmit.css';
-import ProposalTracker, { ROLE_LABEL, whereNow } from '../../components/ProposalTracker';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge } from 'react-icons/fa6';
+import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL } from '../../utils/terms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -18,8 +19,8 @@ const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
   { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
-  { path: '/researcher/grants',      label: 'Grant & Incentives',icon: <FaHandHoldingDollar /> },
-  { path: '/researcher/repository',  label: 'Repository',        icon: <FaBoxArchive /> },
+  { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
+  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
   { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
   
@@ -33,34 +34,22 @@ const PROPOSAL_TYPES = [
   { value: 'externally_funded',     label: 'Externally Funded Research' },
 ];
 
-const STATUS_BADGE = {
-  draft:        'badge-gray',
-  for_endorsement: 'badge-amber',
-  submitted:    'badge-blue',
-  under_review: 'badge-amber',
-  returned:     'badge-red',
-  endorsed:     'badge-purple',
-  approved:     'badge-green',
-  rejected:     'badge-red',
-};
-
-const statusLabel = (s) => s?.replace(/_/g, ' ');
 
 /* ─────────── Overview ─────────── */
 const Overview = ({ proposals, user }) => {
   const counts = {
     total:       proposals.length,
-    submitted:   proposals.filter(p => ['for_endorsement', 'submitted'].includes(p.status)).length,
+    in_progress: proposals.filter(p => ['for_endorsement', 'submitted', 'under_review', 'endorsed'].includes(p.status)).length,
+    returned:    proposals.filter(p => p.status === 'returned').length,
     approved:    proposals.filter(p => p.status === 'approved').length,
-    under_review:proposals.filter(p => p.status === 'under_review').length,
     rejected:     proposals.filter(p => p.status === 'rejected').length,
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>Welcome, {user?.first_name}!</h1>
-        <p>Here's an overview of your research activities in AYON.</p>
+        <h1>Researcher Dashboard</h1>
+        <p>Welcome, {user?.first_name}. Here is an overview of your research activities in AYON.</p>
       </div>
 
       <div className="stats-grid">
@@ -69,12 +58,12 @@ const Overview = ({ proposals, user }) => {
           <span className="stat-value">{counts.total}</span>
         </div>
         <div className="stat-card blue">
-          <span className="stat-label">Submitted</span>
-          <span className="stat-value">{counts.submitted}</span>
+          <span className="stat-label">In Progress</span>
+          <span className="stat-value">{counts.in_progress}</span>
         </div>
         <div className="stat-card amber">
-          <span className="stat-label">Under Review</span>
-          <span className="stat-value">{counts.under_review}</span>
+          <span className="stat-label">Returned for Revision</span>
+          <span className="stat-value">{counts.returned}</span>
         </div>
         <div className="stat-card green">
           <span className="stat-label">Approved</span>
@@ -93,8 +82,8 @@ const Overview = ({ proposals, user }) => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>Status</th>
               <th>Date Submitted</th>
             </tr>
@@ -107,7 +96,7 @@ const Overview = ({ proposals, user }) => {
                   {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
+                  <span className={`badge ${statusBadge(p.status)}`}>
                     {statusLabel(p.status)}
                   </span>
                 </td>
@@ -204,7 +193,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
       </div>
 
       {justSubmitted && (
-        <div className="alert alert-success">Proposal submitted successfully!</div>
+        <div className="alert alert-success">Proposal submitted successfully.</div>
       )}
 
       {notice && (
@@ -214,7 +203,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
       {returnedCount > 0 && (
         <div className="rs-banner">
           <span>
-            ⚠ {returnedCount} proposal{returnedCount === 1 ? ' was' : 's were'} returned and
+            <FaTriangleExclamation className="ic" />{returnedCount} proposal{returnedCount === 1 ? ' was' : 's were'} returned and
             {returnedCount === 1 ? ' needs' : ' need'} your changes.
           </span>
           {filter !== 'returned' && (
@@ -233,15 +222,9 @@ const MyProposals = ({ proposals, onRefresh }) => {
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="for_endorsement">For Endorsement</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="returned">Returned</option>
-              <option value="endorsed">Endorsed</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">All Statuses</option>
+              <option value="draft">{STATUS_LABEL.draft}</option>
+              {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
           </div>
         </div>
@@ -250,10 +233,10 @@ const MyProposals = ({ proposals, onRefresh }) => {
           <thead>
             <tr>
               <th>#</th>
-              <th>Title</th>
-              <th>Type</th>
+              <th>Research Title</th>
+              <th>Proposal Type</th>
               <th>Status</th>
-              <th>Submitted</th>
+              <th>Date Submitted</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -273,7 +256,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
                   {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
                 </td>
                 <td>
-                  <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
+                  <span className={`badge ${statusBadge(p.status)}`}>
                     {statusLabel(p.status)}
                   </span>
                   {p.status !== 'draft' && p.status !== 'approved' && p.status !== 'rejected' && (
@@ -287,7 +270,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
                   <button
                     className={`btn btn-sm ${p.status === 'returned' ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => setSelected(p)}>
-                    {p.status === 'returned' ? 'Edit and resubmit' : 'View Details'}
+                    {p.status === 'returned' ? 'Edit and Resubmit' : 'View Details'}
                   </button>
                 </td>
               </tr>
@@ -309,12 +292,12 @@ const MyProposals = ({ proposals, onRefresh }) => {
             {selected.status !== 'draft' && <ProposalTracker proposal={selected} showReturn={false} />}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: 16 }}>
               {[
-                { label: 'Type',        value: PROPOSAL_TYPES.find(t => t.value === selected.proposal_type)?.label },
+                { label: 'Proposal Type', value: PROPOSAL_TYPES.find(t => t.value === selected.proposal_type)?.label },
                 { label: 'Status',      value: statusLabel(selected.status) },
-                { label: 'Submitted',   value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
+                { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
                 ...(Number(selected.revision_count) > 0
-                  ? [{ label: 'Revisions sent', value: String(selected.revision_count) }]
+                  ? [{ label: 'Revisions Sent', value: String(selected.revision_count) }]
                   : []),
               ].map(item => (
                 <div key={item.label}>
@@ -326,7 +309,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
             {selected.status === 'returned' && (
               <div className="rs-returned">
                 <strong>
-                  Returned{selected.returned_by_role ? ` by the ${ROLE_LABEL[selected.returned_by_role] || 'office'}` : ''}: changes needed
+                  Returned for Revision{selected.returned_by_role ? ` by the ${ROLE_LABEL[selected.returned_by_role] || 'office'}` : ''}
                 </strong>
                 {selected.returned_at && (
                   <small>{new Date(selected.returned_at).toLocaleString()}</small>
@@ -339,12 +322,12 @@ const MyProposals = ({ proposals, onRefresh }) => {
             )}
             {selected.description && (
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Description</p>
+                <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Abstract</p>
                 <p style={{ color: '#2d3748', lineHeight: 1.6, margin: 0, fontSize: '0.9rem' }}>{selected.description}</p>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className={`badge ${STATUS_BADGE[selected.status] || 'badge-gray'}`} style={{ fontSize: '0.85rem', padding: '5px 14px' }}>
+              <span className={`badge ${statusBadge(selected.status)}`} style={{ fontSize: '0.85rem', padding: '5px 14px' }}>
                 {statusLabel(selected.status)}
               </span>
             </div>
@@ -353,7 +336,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
               {selected.status === 'returned' && (
                 <button className="btn btn-primary"
                   onClick={() => { setEditing(selected); setSelected(null); }}>
-                  Edit and resubmit
+                  Edit and Resubmit
                 </button>
               )}
             </div>
@@ -490,12 +473,12 @@ const SubmitProposal = ({ onRefresh }) => {
             {step === 2 && (
               <>
                 <div className="form-group">
-                  <label>Proposal Title</label>
+                  <label>Research Title</label>
                   <input name="title" value={form.title} onChange={handleChange}
                     placeholder="Enter your research title" required />
                 </div>
                 <div className="form-group">
-                  <label>Description / Abstract</label>
+                  <label>Abstract</label>
                   <textarea name="description" value={form.description} onChange={handleChange}
                     rows={5} placeholder="Briefly describe your research proposal..."
                     style={{ resize: 'vertical' }} />
@@ -527,9 +510,9 @@ const SubmitProposal = ({ onRefresh }) => {
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #e8edf2', marginBottom: 20 }}>
                   <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 10px' }}>Review your submission:</p>
                   {[
-                    { label: 'Type',  value: PROPOSAL_TYPES.find(t => t.value === form.proposal_type)?.label },
-                    { label: 'Title', value: form.title },
-                    { label: 'File',  value: file ? file.name : 'No file attached' },
+                    { label: 'Proposal Type',  value: PROPOSAL_TYPES.find(t => t.value === form.proposal_type)?.label },
+                    { label: 'Research Title', value: form.title },
+                    { label: 'Document',  value: file ? file.name : 'No file attached' },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
                       <span style={{ fontSize: '0.8rem', color: '#718096', minWidth: 50 }}>{item.label}:</span>
@@ -599,7 +582,7 @@ const Repository = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Research Title</th>
                 <th>Author</th>
                 <th>College</th>
                 <th>Access</th>
@@ -615,7 +598,7 @@ const Repository = () => {
                   <td>{r.college || '—'}</td>
                   <td>
                     <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.access_type}
+                      {r.access_type === 'public' ? 'Public' : 'Private'}
                     </span>
                   </td>
                   <td>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
@@ -624,7 +607,7 @@ const Repository = () => {
                       <a href={fileHref(r.file_path)}
                         target="_blank" rel="noreferrer"
                         className="btn btn-outline btn-sm">
-                        View
+                        View Document
                       </a>
                     ) : <span style={{ color: '#a0aec0', fontSize: '0.82rem' }}>No file</span>}
                   </td>

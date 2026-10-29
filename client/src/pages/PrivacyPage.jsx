@@ -46,7 +46,7 @@ const SECTIONS = [
     list: [
       'you can see your own account, proposals, grant applications, and notifications;',
       'Research Coordinators, Chairpersons, and College Deans can see submissions from their own college or department so they can endorse them;',
-      'the MSRIC Special Assistant, Director, staff, and OVCRED can see submissions that reach their step of the process;',
+      'the Special Assistant, the MSIRC Director, MSIRC Staff, and OVCRED can see submissions that reach their step of the process;',
       'system administrators can manage accounts and see system records;',
       'items marked Public in the repository can be viewed by others, while items marked Private are limited to authorized AYON users.',
     ],

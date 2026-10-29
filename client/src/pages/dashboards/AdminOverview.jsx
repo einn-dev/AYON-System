@@ -4,6 +4,8 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminOverview.css';
 import { ROLE_LABELS, roleBadge, userStatus, STATUS_META, errText } from './adminShared';
+import { FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { STATUS_LABEL, STATUS_ORDER, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 const RANGES = [
   { value: 'all',  label: 'All time'     },
@@ -12,20 +14,8 @@ const RANGES = [
   { value: '30',   label: 'Last 30 days' },
 ];
 
-const STATUS_ORDER  = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
-const STATUS_LABELS = {
-  for_endorsement: 'For endorsement', submitted: 'Submitted', under_review: 'Under review', endorsed: 'Endorsed',
-  returned: 'Returned', approved: 'Approved', rejected: 'Rejected',
-};
-const STATUS_BADGE = { for_endorsement: 'badge-gray', submitted: 'badge-amber', under_review: 'badge-blue', endorsed: 'badge-green' };
-
-const TYPE_LABELS = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel (Oral Presentation)',
-  externally_funded:     'Externally Funded',
-};
+const STATUS_LABELS = STATUS_LABEL;
+const TYPE_LABELS   = TYPE_LABEL;
 
 const WAIT_OPTIONS = [3, 7, 14, 30];
 const SHOWN_IN_LIST = 8;
@@ -158,7 +148,7 @@ const AdminOverview = ({ users }) => {
     <>
       <div className="ao-top">
         <div className="page-header">
-          <h1>Admin Dashboard</h1>
+          <h1>Administrator Dashboard</h1>
           <p>How research proposals are moving through AYON, and what needs attention.</p>
         </div>
         <label className="ao-field">
@@ -179,17 +169,17 @@ const AdminOverview = ({ users }) => {
       <div className={loading && data ? 'ao-loading' : undefined}>
         <div className="ao-kpis">
           <div className="ao-tile">
-            <div className="ao-tile-label">Total proposals</div>
+            <div className="ao-tile-label">Total Proposals</div>
             <div className="ao-tile-value">{kpis ? kpis.total : '—'}</div>
             <div className="ao-tile-sub">submitted in this period</div>
           </div>
           <div className="ao-tile">
-            <div className="ao-tile-label">In progress</div>
+            <div className="ao-tile-label">In Progress</div>
             <div className="ao-tile-value">{kpis ? kpis.in_progress : '—'}</div>
             <div className="ao-tile-sub">at the college, submitted, under review or endorsed</div>
           </div>
           <div className="ao-tile">
-            <div className="ao-tile-label">Approval rate</div>
+            <div className="ao-tile-label">Approval Rate</div>
             <div className="ao-tile-value">
               {kpis && kpis.approval_rate !== null ? `${kpis.approval_rate}%` : '—'}
             </div>
@@ -198,7 +188,7 @@ const AdminOverview = ({ users }) => {
             </div>
           </div>
           <div className="ao-tile">
-            <div className="ao-tile-label">Average days to decision</div>
+            <div className="ao-tile-label">Average Days to Decision</div>
             <div className="ao-tile-value">
               {kpis && kpis.avg_decision_days !== null ? kpis.avg_decision_days : '—'}
             </div>
@@ -208,12 +198,12 @@ const AdminOverview = ({ users }) => {
 
         <div className="ao-grid">
           <div className="ao-card">
-            <h2>Proposals by status</h2>
+            <h2>Proposals by Status</h2>
             <div className="ao-card-sub">Where every proposal in this period stands right now</div>
             <HBars rows={statusRows} total={total} onTip={showTip} onTipEnd={hideTip} />
           </div>
           <div className="ao-card">
-            <h2>Submissions per month</h2>
+            <h2>Submissions per Month</h2>
             <div className="ao-card-sub">New proposals submitted, last 6 months</div>
             {data
               ? <MonthColumns months={data.months || []} onTip={showTip} onTipEnd={hideTip} />
@@ -223,12 +213,12 @@ const AdminOverview = ({ users }) => {
 
         <div className="ao-grid">
           <div className="ao-card">
-            <h2>Proposals by college</h2>
+            <h2>Proposals by College</h2>
             <div className="ao-card-sub">Top 6 colleges, the rest grouped as “Other colleges”</div>
             <HBars rows={collegeRows} total={total} onTip={showTip} onTipEnd={hideTip} />
           </div>
           <div className="ao-card">
-            <h2>Proposals by type</h2>
+            <h2>Proposals by Type</h2>
             <div className="ao-card-sub">The five proposal types</div>
             <HBars rows={typeRows} total={total} onTip={showTip} onTipEnd={hideTip} />
           </div>
@@ -237,7 +227,7 @@ const AdminOverview = ({ users }) => {
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h2>Needs attention</h2>
+              <h2>Needs Attention</h2>
               <div className="ao-sub">Open proposals that haven't moved for a while — oldest first</div>
             </div>
             <label className="ao-field">
@@ -251,7 +241,7 @@ const AdminOverview = ({ users }) => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Proposal</th>
+                  <th>Research Title</th>
                   <th>Researcher</th>
                   <th>College</th>
                   <th>Stage</th>
@@ -269,13 +259,13 @@ const AdminOverview = ({ users }) => {
                     <td>{p.researcher}</td>
                     <td style={{ color: '#6b5e61' }}>{shortCollege(p.college) || '—'}</td>
                     <td>
-                      <span className={`badge ${STATUS_BADGE[p.status] || 'badge-gray'}`}>
+                      <span className={`badge ${statusBadge(p.status)}`}>
                         {STATUS_LABELS[p.status] || p.status}
                       </span>
                     </td>
                     <td>
                       <span className={`ao-wait ${p.waiting_days >= 30 ? 'hot' : p.waiting_days >= 14 ? 'warm' : ''}`}>
-                        {p.waiting_days >= 30 ? '⚠ ' : ''}{p.waiting_days} day{p.waiting_days === 1 ? '' : 's'}
+                        {p.waiting_days >= 30 ? <FaTriangleExclamation className="ic" /> : ''}{p.waiting_days} day{p.waiting_days === 1 ? '' : 's'}
                       </span>
                     </td>
                     <td>
@@ -286,7 +276,7 @@ const AdminOverview = ({ users }) => {
                 ))}
                 {data && waiting.length === 0 && (
                   <tr><td colSpan={6}>
-                    <div className="empty-state"><p>Nothing is waiting longer than {waitMin} days. 🎉</p></div>
+                    <div className="empty-state"><p><FaCircleCheck className="ic" style={{ color: '#276749' }} />Nothing is waiting longer than {waitMin} days.</p></div>
                   </td></tr>
                 )}
                 {!data && (
@@ -298,29 +288,29 @@ const AdminOverview = ({ users }) => {
           <div className="ao-note">
             {waiting.length > SHOWN_IN_LIST && <>Showing the {SHOWN_IN_LIST} longest of {waiting.length}. </>}
             “Waiting” counts from the proposal's last recorded action (submission, endorsement, checklist,
-            review or status change). Admin can't approve proposals; this list is for spotting a stuck step
+            review or status change). The Administrator can't approve proposals; this list is for spotting a stuck step
             and following up with the person responsible.
           </div>
         </div>
 
         <div className="ao-health">
           <div className="ao-h">
-            <span className="ao-tile-label">Failed emails (7 days)</span>
+            <span className="ao-tile-label">Failed Emails (7 Days)</span>
             <span className={`ao-h-value ${healthClass(health.failed_emails_7d, 'bad')}`}>{show(health.failed_emails_7d)}</span>
             <Link to="/admin/emails">Open Email Log →</Link>
           </div>
           <div className="ao-h">
-            <span className="ao-tile-label">Failed logins (7 days)</span>
+            <span className="ao-tile-label">Failed Logins (7 Days)</span>
             <span className={`ao-h-value ${healthClass(health.failed_logins_7d, 'warn')}`}>{show(health.failed_logins_7d)}</span>
             <Link to="/admin/audit">Open Audit Log →</Link>
           </div>
           <div className="ao-h">
-            <span className="ao-tile-label">Pending verification</span>
+            <span className="ao-tile-label">Pending Verification</span>
             <span className={`ao-h-value ${healthClass(health.pending_verification, 'warn')}`}>{show(health.pending_verification)}</span>
             <Link to="/admin/users">Open User Accounts →</Link>
           </div>
           <div className="ao-h">
-            <span className="ao-tile-label">Active accounts</span>
+            <span className="ao-tile-label">Active Accounts</span>
             <span className="ao-h-value ok">{show(health.active_accounts)}</span>
             <Link to="/admin/users">Open User Accounts →</Link>
           </div>
@@ -328,7 +318,7 @@ const AdminOverview = ({ users }) => {
       </div>
 
       <div className="panel">
-        <div className="panel-header"><h2>Newest accounts</h2></div>
+        <div className="panel-header"><h2>Newest Accounts</h2></div>
         <div className="ao-scroll">
           <table className="data-table">
             <thead>

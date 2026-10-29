@@ -4,6 +4,7 @@ import API from '../services/authService';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import '../components/PasswordPages.css';
+import { FaArrowLeft, FaEnvelope } from 'react-icons/fa6';
 
 const WAIT_SECONDS = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,7 +58,7 @@ const ForgotPasswordPage = () => {
 
         {!sentTo ? (
           <form className="auth-form" onSubmit={send} noValidate>
-            <h2 style={{ marginBottom: 0 }}>Forgot your password?</h2>
+            <h2 style={{ marginBottom: 0 }}>Forgot Your Password?</h2>
             <p style={{ textAlign: 'center', color: '#8a7a7d', fontSize: '0.88rem', lineHeight: 1.55 }}>
               Enter the email you registered with. We will send you a link to
               choose a new password.
@@ -75,17 +76,17 @@ const ForgotPasswordPage = () => {
             </div>
 
             <button type="submit" className="auth-btn" disabled={busy}>
-              {busy ? 'Sending...' : 'Send reset link'}
+              {busy ? 'Sending...' : 'Send Reset Link'}
             </button>
 
             <p className="auth-footer" style={{ marginTop: 4 }}>
-              <Link to="/login">← Back to sign in</Link>
+              <Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link>
             </p>
           </form>
         ) : (
           <div className="pw-done">
-            <div className="pw-done-icon">📧</div>
-            <h2>Check your email</h2>
+            <div className="pw-done-icon"><FaEnvelope style={{ color: '#8d1b2d' }} /></div>
+            <h2>Check Your Email</h2>
             <p>
               If <strong>{sentTo}</strong> has an AYON account, we sent a link to
               reset your password. The link works for <strong>1 hour</strong>.
@@ -95,10 +96,10 @@ const ForgotPasswordPage = () => {
             {error && <p className="auth-error" role="alert" style={{ marginTop: 12, textAlign: 'left' }}>{error}</p>}
 
             <button type="button" className="pw-outline-btn" disabled={busy || wait > 0} onClick={() => send()}>
-              {busy ? 'Sending...' : wait > 0 ? `Send again in ${wait}s` : 'Send again'}
+              {busy ? 'Sending...' : wait > 0 ? `Send Again in ${wait}s` : 'Send Again'}
             </button>
 
-            <p className="auth-footer"><Link to="/login">← Back to sign in</Link></p>
+            <p className="auth-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>
           </div>
         )}
       </div>
