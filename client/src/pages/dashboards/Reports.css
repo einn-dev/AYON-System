@@ -1,0 +1,54 @@
+/* Reports page (maroon AYON style) */
+.rp-filters {
+  background: #fff; border: 1px solid #efe5e6; border-radius: 12px;
+  padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px;
+}
+.rp-f label {
+  display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.7px;
+  color: #8a7a7d; font-weight: 600; margin-bottom: 4px;
+}
+.rp-f select, .rp-f input {
+  padding: 8px 10px; border: 1px solid #e3d6d8; border-radius: 8px; font-size: 0.85rem;
+  font-family: inherit; background: #fff; min-width: 150px; color: #3d3235;
+}
+.rp-dates { display: flex; gap: 6px; flex-wrap: wrap; }
+.rp-dates input { min-width: 140px; }
+
+.rp-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.rp-chip { background: #f7e6e9; color: #8d1b2d; border-radius: 20px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; }
+.rp-loading { font-size: 0.74rem; color: #8a7a7d; }
+
+.rp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.rp-tile { background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 14px 16px; }
+.rp-tile-l { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px; color: #8a7a7d; font-weight: 600; }
+.rp-tile-v { font-size: 1.7rem; font-weight: 700; color: #8d1b2d; margin-top: 4px; line-height: 1.1; }
+.rp-tile-s { font-size: 0.72rem; color: #8a7a7d; margin-top: 2px; }
+
+.rp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+.rp-grid2 .rp-panel { margin-bottom: 0; }
+.rp-panel { margin-bottom: 18px; }
+.rp-panel .panel-header small { color: #8a7a7d; font-size: 0.74rem; font-weight: 400; }
+.rp-scroll { overflow-x: auto; }
+
+.rp-bars { padding: 12px 18px 16px; display: grid; gap: 8px; }
+.rp-bar { display: grid; grid-template-columns: 140px 1fr 32px; align-items: center; gap: 10px; font-size: 0.8rem; color: #5e5155; }
+.rp-track { background: #f3e9ea; border-radius: 5px; height: 10px; overflow: hidden; display: block; }
+.rp-track i { display: block; height: 10px; background: #8d1b2d; border-radius: 5px; }
+.rp-bar b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.rp-n { text-align: right !important; font-variant-numeric: tabular-nums; }
+
+.rp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 8px; }
+.rp-card { background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.rp-card-ic { font-size: 1.4rem; color: #8d1b2d; }
+.rp-card h3 { margin: 0; font-size: 0.95rem; color: #5e1420; }
+.rp-card p { margin: 0; font-size: 0.8rem; color: #8a7a7d; line-height: 1.5; flex: 1; }
+.rp-card-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.rp-note { font-size: 0.78rem; color: #8a7a7d; margin: 0 0 18px; }
+.rp-hist-f { font-size: 0.78rem; color: #6b5e61; max-width: 320px; }
+
+@media (max-width: 900px) { .rp-grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .rp-f, .rp-f select, .rp-f input { width: 100%; min-width: 0; }
+  .rp-bar { grid-template-columns: 110px 1fr 28px; }
+}
