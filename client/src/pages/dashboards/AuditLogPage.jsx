@@ -20,6 +20,10 @@ const ACTIONS = {
   proposal_returned:  { label: 'Proposal Returned',   badge: 'badge-red'    },
   proposal_endorsed:  { label: 'Proposal Endorsed',   badge: 'badge-green'  },
   proposal_resubmitted: { label: 'Proposal Resubmitted', badge: 'badge-blue' },
+  proposal_signed:    { label: 'Proposal Signed',     badge: 'badge-green'  },
+  signature_saved:    { label: 'Signature Saved',     badge: 'badge-blue'   },
+  signature_replaced: { label: 'Signature Replaced',  badge: 'badge-blue'   },
+  signature_removed:  { label: 'Signature Removed',   badge: 'badge-gray'   },
   password_changed:   { label: 'Password Changed',    badge: 'badge-gray'   },
   password_reset_requested: { label: 'Reset Link Requested', badge: 'badge-amber' },
   password_reset_completed: { label: 'Password Reset by Link', badge: 'badge-green' },
@@ -73,8 +77,15 @@ const detailsText = (log) => {
     case 'proposal_returned':
       return `Returned to the researcher${d.stage ? ` at the college level (${ROLE_LABEL[d.stage] || d.stage})` : ''}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
     case 'proposal_endorsed':
-      return `Endorsed as ${ROLE_LABEL[d.role] || d.role || '—'}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
+      return `Endorsed${d.signed ? ' and signed' : ''} as ${ROLE_LABEL[d.role] || d.role || '—'}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
         + `${d.next ? ` · now with: ${ROLE_LABEL[d.next] || d.next}` : ''}${d.note ? ` · Note: ${d.note}` : ''}`;
+    case 'proposal_signed':
+      return `Signed as ${d.signed_as || ROLE_LABEL[d.role] || d.role || '—'}${d.step ? ` · ${d.step}` : ''}${Number(d.round) > 1 ? ` · round ${d.round}` : ''}`;
+    case 'signature_saved':
+    case 'signature_replaced':
+      return 'Saved a signature in My Signature';
+    case 'signature_removed':
+      return 'Removed the signature from My Signature';
     case 'proposal_resubmitted': {
       const did = [d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'file'].filter(Boolean);
       return `Revision ${show(d.revision)}${did.length ? ` · changed: ${did.join(', ')}` : ''}`;

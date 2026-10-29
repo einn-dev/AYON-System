@@ -6,7 +6,7 @@ const supabase = require('../config/supabase');
 const {
   getMyProposals, submitProposal, getAllProposals,
   getProposalById, updateProposalStatus, resubmitProposal,
-  endorseProposal, getMyEndorsements,
+  endorseProposal, getMyEndorsements, getProposalSignatures,
 } = require('../controllers/proposal.controller');
 
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
@@ -76,6 +76,7 @@ router.get('/',             verifyToken, authorizeRoles(...VIEW_ROLES), getAllPr
 router.post('/:id/resubmit', verifyToken, authorizeRoles('researcher'), uploadOne, uploadToSupabase, resubmitProposal);
 router.get('/endorsements/mine', verifyToken,
   authorizeRoles('research_coordinator', 'chairperson', 'college_dean'), getMyEndorsements);
+router.get('/:id/signatures', verifyToken, getProposalSignatures);
 router.get('/:id',          verifyToken, getProposalById);
 router.patch('/:id/status', verifyToken, authorizeRoles(...REVIEW_ROLES), updateProposalStatus);
 

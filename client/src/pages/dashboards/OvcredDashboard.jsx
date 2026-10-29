@@ -7,6 +7,7 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
+import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
@@ -142,6 +143,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [saving,   setSaving]   = useState(false);
   const [storeToRepo, setStoreToRepo] = useState(true);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
+  const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const hl = useOpenHighlight(proposals.length > 0);
 
   const endorsed = proposals.filter(p => p.status === 'endorsed');
@@ -163,10 +165,15 @@ const ForApproval = ({ proposals, onRefresh }) => {
     if (decision === 'rejected' && !remarks.trim()) {
       return setAlert({ type: 'error', msg: 'Please provide remarks before rejecting.' });
     }
+    if (decision === 'approve' && !signReady) {
+      return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature first.' });
+    }
     setSaving(true);
     try {
       const newStatus = decision === 'approve' ? 'approved' : 'rejected';
-      await API.patch(`/proposals/${selected.proposal_id}/status`, { status: newStatus });
+      /* final approval signs; rejecting never signs */
+      await API.patch(`/proposals/${selected.proposal_id}/status`,
+        decision === 'approve' ? { status: newStatus, attest: true } : { status: newStatus });
 
       await API.post(`/proposals/${selected.proposal_id}/review`, {
         decision: decision === 'approve' ? 'approve' : 'reject',
@@ -189,13 +196,13 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
       setAlert({
         type: 'success',
-        msg: `Proposal ${newStatus === 'approved' ? 'approved' : 'rejected'}.${decision === 'approve' && storeToRepo ? ' It was stored in the Research Repository.' : ''}`,
+        msg: `Proposal ${newStatus === 'approved' ? 'signed and approved' : 'rejected'}.${decision === 'approve' && storeToRepo ? ' It was stored in the Research Repository.' : ''}`,
       });
       setSelected(null);
       setRemarks('');
       onRefresh();
-    } catch {
-      setAlert({ type: 'error', msg: 'The decision could not be saved. Please try again.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The decision could not be saved. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -281,6 +288,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
               </div>
               <div className="panel-body">
                 <ProposalTracker proposal={selected} />
+                <ProposalSignatures proposal={selected} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
                   gap: '12px 28px', marginBottom: 20 }}>
                   {[
@@ -383,9 +391,11 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     </div>
                   </div>
 
+                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="grant final approval to" disabled={saving} />
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <button className="btn btn-success"
-                      disabled={saving}
+                      disabled={saving || !signReady}
                       onClick={() => handleDecision('approve')}>
                       {saving ? 'Processing...' : <><FaCheck className="ic" />Grant Final Approval</>}
                     </button>
@@ -406,7 +416,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     borderRadius: 8, border: '1px solid #9ae6b4',
                     fontSize: '0.78rem', color: '#276749',
                   }}>
-                    <strong>Final approval</strong> will notify the researcher and the MSIRC Director.
+                    <strong>Final approval</strong> places your signature on the proposal and notifies the researcher and the MSIRC Director.
                     If "Store to Repository" is checked, the research will be archived automatically.
                   </div>
                 </div>

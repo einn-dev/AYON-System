@@ -6,6 +6,7 @@ import { COLLEGES, getDepartments } from '../data/Colleges';
 import { checkAvatarFile, prepareAvatar, AVATAR_MAX_MB } from '../utils/avatar';
 import Avatar from './Avatar';
 import ChangePasswordBox from './ChangePasswordBox';
+import { MySignature, SIGNER_ROLES } from './Signature';
 import { FaCamera, FaTrashCan, FaXmark } from 'react-icons/fa6';
 import './Account.css';
 
@@ -231,6 +232,14 @@ const ProfileModal = ({ onClose }) => {
                   placeholder="09XXXXXXXXX" inputMode="numeric" maxLength={11} autoComplete="off"
                   onChange={e => setForm({ ...form, contact_number: cleanPhone(e.target.value) })} />
               </div>
+
+              {/* only the officials who sign (Coordinator, Chairperson, Dean, Special Assistant, Director, OVCRED) */}
+              {SIGNER_ROLES.includes(user?.role) && (
+                <>
+                  <hr className="pm-sep" />
+                  <MySignature />
+                </>
+              )}
 
               <hr className="pm-sep" />
               <ChangePasswordBox />

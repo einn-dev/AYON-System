@@ -10,6 +10,7 @@ import NotificationsPage from './NotificationsPage';
 import ResubmitModal from '../../components/ResubmitModal';
 import '../../components/Resubmit.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
+import { ProposalSignatures } from '../../components/Signature';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL } from '../../utils/terms';
 
@@ -290,6 +291,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
           <div className="modal" style={{ maxWidth: 680 }} onClick={e => e.stopPropagation()}>
             <h3>{selected.title}</h3>
             {selected.status !== 'draft' && <ProposalTracker proposal={selected} showReturn={false} />}
+            {selected.status !== 'draft' && <ProposalSignatures proposal={selected} />}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: 16 }}>
               {[
                 { label: 'Proposal Type', value: PROPOSAL_TYPES.find(t => t.value === selected.proposal_type)?.label },

@@ -8,6 +8,18 @@ const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, inScope, notifyIds, roundOf, attachTrail,
 } = require('../utils/endorsementChain');
+const {
+  officeAction, requireSignature, recordSignature, signaturesOf, ACTION_LABEL,
+} = require('../utils/signatures');
+
+/* One audit line per signature: who signed, as what, for which round */
+const auditSignature = (req, proposalId, title, role, action, round) => logAudit(req, {
+  action:     'proposal_signed',
+  targetType: 'proposal',
+  targetId:   proposalId,
+  targetName: title,
+  details:    { role, signed_as: ROLE_LABEL[role] || role, step: ACTION_LABEL[action] || action, round },
+});
 
 const REASON_MIN = 10;
 const REASON_MAX = 500;
@@ -297,7 +309,7 @@ const updateProposalStatus = async (req, res) => {
   try {
     const { data: proposal } = await supabase
       .from('research_proposals')
-      .select('user_id, title, status')
+      .select('*')
       .eq('proposal_id', id)
       .single();
 
@@ -346,12 +358,42 @@ const updateProposalStatus = async (req, res) => {
       return res.status(200).json({ message: 'Proposal returned to the researcher.' });
     }
 
-    const { error } = await supabase
+    /* Validate and Forward, Endorse to OVCRED, Approve and Grant Final Approval are signed */
+    const signAs  = officeAction(req.user.role, status);
+    let signature = null;
+    if (signAs) {
+      const FROM = { validate: 'submitted', endorse_to_ovcred: 'under_review', approve: 'under_review', final_approval: 'endorsed' };
+      if (proposal.status !== FROM[signAs]) {
+        return res.status(409).json({
+          message: `This proposal is not at your stage. It is now: ${statusLabel(proposal.status)}.`,
+          code: 'NOT_YOUR_STAGE',
+        });
+      }
+      const sign = await requireSignature(req);
+      if (!sign.ok) return res.status(sign.status).json(sign.body);
+      signature = sign.signature;
+    }
+
+    /* only if nobody changed it in the meantime (a double click signs once) */
+    const { data: changed, error } = await supabase
       .from('research_proposals')
       .update({ status })
-      .eq('proposal_id', id);
+      .eq('proposal_id', id)
+      .eq('status', proposal.status)
+      .select('proposal_id');
 
     if (error) throw error;
+    if (!changed || !changed.length) {
+      return res.status(409).json({ message: 'This proposal was just handled. Please reload the page.', code: 'ALREADY_HANDLED' });
+    }
+
+    if (signAs) {
+      const round = roundOf(proposal);
+      await recordSignature({
+        proposalId: id, user: req.user, role: req.user.role, action: signAs, round, image: signature.image_data,
+      });
+      await auditSignature(req, id, proposal.title, req.user.role, signAs, round);
+    }
 
     await supabase.from('notifications').insert({
       user_id:     proposal.user_id,
@@ -379,7 +421,7 @@ const updateProposalStatus = async (req, res) => {
       }, { exclude: [req.user.user_id] });
     }
 
-    return res.status(200).json({ message: 'Status updated.' });
+    return res.status(200).json({ message: signAs ? 'Status updated and signed.' : 'Status updated.', signed: !!signAs });
   } catch (err) {
     console.error('updateProposalStatus error:', err);
     return res.status(500).json({ message: 'Server error.' });
@@ -583,6 +625,14 @@ const endorseProposal = async (req, res) => {
       });
     }
 
+    /* endorsing is signing: a saved signature and the ticked box are needed (returning never signs) */
+    let signature = null;
+    if (decision === 'endorsed') {
+      const sign = await requireSignature(req);
+      if (!sign.ok) return res.status(sign.status).json(sign.body);
+      signature = sign.signature;
+    }
+
     const now   = new Date().toISOString();
     const round = roundOf(proposal);
     const by    = fullName(owner) || 'the researcher';
@@ -619,6 +669,10 @@ const endorseProposal = async (req, res) => {
       });
       if (insErr) console.error('endorsement row failed:', insErr.message || insErr);
 
+      await recordSignature({
+        proposalId: id, user: req.user, role, action: 'endorse', round, image: signature.image_data,
+      });
+
       const whereTo = next ? `the ${ROLE_LABEL[next.role]}` : 'the Special Assistant for document validation';
       await notifyUser({
         user_id:     proposal.user_id,
@@ -649,13 +703,14 @@ const endorseProposal = async (req, res) => {
         targetType: 'proposal',
         targetId:   id,
         targetName: proposal.title,
-        details:    { role, round, note, next: next ? next.role : 'special_assistant' },
+        details:    { role, round, note, signed: true, next: next ? next.role : 'special_assistant' },
       });
+      await auditSignature(req, id, proposal.title, role, 'endorse', round);
 
       return res.status(200).json({
         message: next
-          ? `Proposal endorsed. It is now with the ${ROLE_LABEL[next.role]}.`
-          : 'Proposal endorsed. It completed the college endorsements and is now with the Special Assistant.',
+          ? `Proposal endorsed and signed. It is now with the ${ROLE_LABEL[next.role]}.`
+          : 'Proposal endorsed and signed. It completed the college endorsements and is now with the Special Assistant.',
         status:            next ? 'for_endorsement' : 'submitted',
         endorsement_stage: next ? next.role : null,
         by:                actor,
@@ -709,6 +764,44 @@ const endorseProposal = async (req, res) => {
     });
   } catch (err) {
     console.error('endorseProposal error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* ── GET the signatures on a proposal ──
+   The researcher who owns it, the college endorsers in scope, and the office.
+   MSIRC Staff see the list of proposals only, not their contents.          */
+const getProposalSignatures = async (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(String(id))) return res.status(400).json({ message: 'Invalid proposal.' });
+  try {
+    const { data: proposal, error } = await supabase
+      .from('research_proposals')
+      .select('proposal_id, user_id, title, status, revision_count, users ( college, department )')
+      .eq('proposal_id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
+
+    const role = req.user.role;
+    if (role === 'msric_staff') {
+      return res.status(403).json({ message: 'MSIRC Staff can see the list of proposals but not their contents.' });
+    }
+    if (role === 'researcher' && Number(proposal.user_id) !== Number(req.user.user_id)) {
+      return res.status(403).json({ message: 'This is not your proposal.' });
+    }
+    if (COLLEGE_SCOPED_ROLES.includes(role) || DEPARTMENT_SCOPED_ROLES.includes(role)) {
+      const me = await ownerOf(req.user.user_id);
+      const field = COLLEGE_SCOPED_ROLES.includes(role) ? 'college' : 'department';
+      if (!me?.[field] || me[field] !== proposal.users?.[field]) {
+        return res.status(403).json({ message: `This proposal is outside your ${field}.` });
+      }
+    }
+
+    const signatures = await signaturesOf(id);
+    return res.status(200).json({ signatures, round: roundOf(proposal) });
+  } catch (err) {
+    console.error('getProposalSignatures error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -777,5 +870,6 @@ module.exports = {
   updateProposalStatus,
   resubmitProposal,
   endorseProposal,
+  getProposalSignatures,
   getMyEndorsements,
 };

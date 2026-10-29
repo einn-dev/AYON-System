@@ -8,6 +8,7 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaFileLines, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -242,6 +243,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [remarks,    setRemarks]    = useState('');
   const [alert,      setAlert]      = useState(null);
   const [saving,     setSaving]     = useState(false);
+  const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
 
   const pending = proposals.filter(p => p.status === 'submitted');
   const hl = useOpenHighlight(proposals.length > 0 && !selected);
@@ -268,20 +270,24 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
     if (!allComplete) {
       return setAlert({ type: 'error', msg: 'Please mark all requirements as complete before forwarding.' });
     }
+    if (!signReady) {
+      return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature before forwarding.' });
+    }
     setSaving(true);
     try {
       await API.patch(`/proposals/${selected.proposal_id}/status`, {
         status: 'under_review',
+        attest: true,
       });
       await API.post(`/proposals/${selected.proposal_id}/checklist`, {
         requirements: checklist,
         remarks,
       });
-      setAlert({ type: 'success', msg: 'Documents validated and forwarded to the MSIRC Director.' });
+      setAlert({ type: 'success', msg: 'Documents validated, signed and forwarded to the MSIRC Director.' });
       setSelected(null);
       onRefresh();
-    } catch {
-      setAlert({ type: 'error', msg: 'The proposal could not be forwarded. Please try again.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The proposal could not be forwarded. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -448,6 +454,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     If you return this proposal, these remarks are sent to the researcher as the reason.
                   </span>
                 </div>
+
+                <ProposalSignatures proposal={selected} />
               </div>
             </div>
 
@@ -487,16 +495,17 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               <div className="panel">
                 <div className="panel-header"><h2>Actions</h2></div>
                 <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="validate and forward" disabled={saving} />
                   <button
                     className="btn btn-success"
                     onClick={handleForward}
-                    disabled={saving || !allComplete}
-                    style={{ opacity: allComplete ? 1 : 0.5 }}>
+                    disabled={saving || !allComplete || !signReady}
+                    style={{ opacity: allComplete && signReady ? 1 : 0.5 }}>
                     {saving ? 'Forwarding...' : <><FaPaperPlane className="ic" />Validate and Forward</>}
                   </button>
-                  {!allComplete && (
+                  {(!allComplete || !signReady) && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
-                      Check all requirements to enable forwarding.
+                      {!allComplete ? 'Check all requirements' : 'Tick the box under your signature'} to enable forwarding.
                     </p>
                   )}
                   <button

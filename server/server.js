@@ -12,6 +12,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const grantRoutes        = require('./routes/grant.routes');
 const externalRoutes     = require('./routes/external.routes');
 const reportRoutes       = require('./routes/report.routes');
+const signatureRoutes    = require('./routes/signature.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -43,7 +44,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.use(express.json());
+// 2 MB: enough for a signature image (1 MB at most) sent as text
+app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/auth',          authRoutes);
 app.use('/api/admin',         adminRoutes);
@@ -53,6 +55,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/grants',        grantRoutes);
 app.use('/api/external',      externalRoutes);
 app.use('/api/reports',       reportRoutes);
+app.use('/api/signatures',    signatureRoutes);
 
 app.get('/', (req, res) => res.send('AYON API is running.'));
 

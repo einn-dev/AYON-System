@@ -3,6 +3,7 @@ import API from '../services/authService';
 import ProposalTracker, { COLLEGE_CHAIN, roundOf, whereNow } from './ProposalTracker';
 import { FaArrowLeft, FaCheck, FaFileLines, FaRotateLeft } from 'react-icons/fa6';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/terms';
+import { SignConfirm, ProposalSignatures } from './Signature';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -93,6 +94,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
   const [alert,      setAlert]      = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [confirming, setConfirming] = useState(false);   // asking "return it?" before sending
+  const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
 
   const queue = proposals.filter(p => isMyTurn(p, role));
   const clean = note.trim();
@@ -110,12 +112,16 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           : `Please write what the researcher needs to fix (at least ${NOTE_MIN} characters).`,
       });
     }
+    if (decision === 'endorsed' && !signReady) {
+      return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature before endorsing.' });
+    }
     setSaving(true);
     setAlert(null);
     try {
       const res = await API.post(`/proposals/${selected.proposal_id}/endorse`, {
         decision,
         remarks: clean,
+        ...(decision === 'endorsed' ? { attest: true } : {}),
       });
       setSelected(null);
       setNote('');
@@ -205,6 +211,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           </div>
           <div className="panel-body">
             <ProposalTracker proposal={selected} />
+            <ProposalSignatures proposal={selected} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
               {[
@@ -276,10 +283,13 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               </div>
             </div>
 
+            <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="endorse" disabled={saving} />
+
             {!confirming ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-                <button className="btn btn-success" disabled={saving} onClick={() => send('endorsed')}>
-                  {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse</>}
+                <button className="btn btn-success" disabled={saving || !signReady} onClick={() => send('endorsed')}
+                  title={signReady ? undefined : 'Tick the box under your signature first'}>
+                  {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse and Sign</>}
                 </button>
                 <button className="btn btn-danger" disabled={saving}
                   onClick={() => (noteOk ? setConfirming(true) : send('returned'))}>
@@ -306,7 +316,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
             <div style={{ marginTop: 12, padding: 10, background: '#f0f6ff', borderRadius: 8, border: '1px solid #bee3f8', fontSize: '0.78rem', color: '#2c5282' }}>
               Endorsing sends it to the <b>{nextLabel(role)}</b>
               {nextLabel(role) !== 'Special Assistant' ? ' (or the next available level if that office has no account)' : ''}.
-              Returning sends it back to the researcher.
+              Returning sends it back to the researcher and does not sign.
             </div>
           </div>
         </div>

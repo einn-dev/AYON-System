@@ -7,6 +7,7 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
+import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
@@ -138,6 +139,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
+  const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const hl = useOpenHighlight(proposals.length > 0);
 
   const filtered = proposals.filter(p => p.status === statusFilter);
@@ -159,9 +161,13 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
     if (!remarks.trim() && decision === 'rejected') {
       return setAlert({ type: 'error', msg: 'Please provide remarks before rejecting.' });
     }
+    const signs = decision === 'approved' || decision === 'endorsed';   // rejecting never signs
+    if (signs && !signReady) {
+      return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature first.' });
+    }
     setSaving(true);
     try {
-      await API.patch(`/proposals/${proposalId}/status`, { status: decision });
+      await API.patch(`/proposals/${proposalId}/status`, signs ? { status: decision, attest: true } : { status: decision });
 
       if (decision === 'approved' || decision === 'endorsed') {
         /* the review record only knows approve / reject / return: endorsing to OVCRED is an approval */
@@ -178,12 +184,12 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         });
       }
 
-      setAlert({ type: 'success', msg: { endorsed: 'Proposal endorsed to OVCRED.', approved: 'Proposal approved.', rejected: 'Proposal rejected.' }[decision] || 'Decision saved.' });
+      setAlert({ type: 'success', msg: { endorsed: 'Proposal signed and endorsed to OVCRED.', approved: 'Proposal signed and approved.', rejected: 'Proposal rejected.' }[decision] || 'Decision saved.' });
       setSelected(null);
       setRemarks('');
       onRefresh();
-    } catch {
-      setAlert({ type: 'error', msg: 'The decision could not be saved. Please try again.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.response?.data?.message || 'The decision could not be saved. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -283,6 +289,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               </div>
               <div className="panel-body">
                 <ProposalTracker proposal={selected} />
+                <ProposalSignatures proposal={selected} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
                   {[
                     { label: 'Researcher',   value: `${selected.first_name} ${selected.last_name}` },
@@ -355,17 +362,19 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                         style={{ resize: 'vertical' }} />
                     </div>
 
+                    <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="approve" disabled={saving} />
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-                      {/* Approve + Endorse to OVCRED */}
+                      {/* Approve + Endorse to OVCRED (signs) */}
                       <button className="btn btn-success"
-                        disabled={saving}
+                        disabled={saving || !signReady}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
                         {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to OVCRED</>}
                       </button>
 
-                      {/* Approve only */}
+                      {/* Approve only (signs) */}
                       <button className="btn btn-primary"
-                        disabled={saving}
+                        disabled={saving || !signReady}
                         onClick={() => handleDecision(selected.proposal_id, 'approved')}>
                         {saving ? 'Processing...' : <><FaCheck className="ic" />Approve</>}
                       </button>
@@ -390,8 +399,9 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
                       <strong>Note:</strong> "Endorse to OVCRED" approves the proposal and forwards it to OVCRED
                       for final approval. "Approve" keeps it within MSIRC.
+                      Both place your signature on the proposal.
                       "Return to Researcher" sends it back for changes; after resubmission it
-                      starts again from the Research Coordinator.
+                      starts again from the Research Coordinator. Returning or rejecting does not sign.
                     </div>
                   </div>
                 </div>
