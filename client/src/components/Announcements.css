@@ -1,0 +1,57 @@
+/* ── Announcements (top of every dashboard page) ── */
+.ann-wrap { margin-bottom: 18px; }
+.ann {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 10px; margin-bottom: 10px;
+  font-size: 0.86rem; line-height: 1.5;
+  border: 1px solid; border-left-width: 5px;
+}
+.ann:last-child { margin-bottom: 0; }
+.ann-info     { background: #f3f8ff; border-color: #bee3f8; border-left-color: #2c5282; color: #1e3a5f; }
+.ann-reminder { background: #fffaeb; border-color: #f3e1a6; border-left-color: #b7791f; color: #6b4e0a; }
+.ann-urgent   { background: #fff5f5; border-color: #fed7d7; border-left-color: #c53030; color: #822727; }
+.ann-ic {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.07); font-size: 0.8rem;
+}
+.ann-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ann-text strong { display: block; }
+.ann-text p { margin: 2px 0 0; white-space: pre-wrap; }
+.ann-x {
+  background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer;
+  padding: 4px; display: inline-flex; font-size: 0.95rem; border-radius: 6px;
+}
+.ann-x:hover, .ann-x:focus-visible { opacity: 1; background: rgba(0, 0, 0, 0.06); }
+.ann-more {
+  background: none; border: none; padding: 0; margin-top: 6px; cursor: pointer;
+  color: #8d1b2d; font-weight: 600; font-size: 0.8rem; font-family: inherit;
+}
+
+/* ── Admin: Announcements page ── */
+.ann-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.ann-seg button {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid #e3d6d8; background: #fff;
+  font-family: inherit; font-size: 0.82rem; cursor: pointer; color: #5e1420;
+}
+.ann-seg button.on { background: #8d1b2d; color: #fff; border-color: #8d1b2d; }
+.ann-check,
+.form-group label.ann-check {
+  display: flex; gap: 8px; align-items: center; justify-content: flex-start;
+  font-size: 0.85rem; color: #3d3235; cursor: pointer; margin: 0;
+  text-transform: none; letter-spacing: 0; font-weight: 400; text-align: left;
+}
+.ann-check input,
+.form-group .ann-check input,
+.modal .form-group .ann-check input { width: auto; flex: 0 0 auto; margin: 0; padding: 0; }
+.ann-roles {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  margin-top: 8px; padding: 10px; border: 1px solid #efe5e6; border-radius: 8px;
+}
+.ann-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ann-hint { font-size: 0.76rem; color: #8a7a7d; margin-top: 4px; }
+.ann-row-msg { font-size: 0.8rem; color: #6b5e61; margin-top: 3px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.ann-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .ann-roles, .ann-dates { grid-template-columns: 1fr; }
+}

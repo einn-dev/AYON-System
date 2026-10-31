@@ -12,7 +12,8 @@ import AuditLogPage from './AuditLogPage';
 import EmailLogPage from './EmailLogPage';
 import AdminRepositoryPage from './AdminRepositoryPage';
 import AdminGrantsPage from './AdminGrantsPage';
-import { FaBoxArchive, FaChartColumn, FaEnvelope, FaFileLines, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from 'react-icons/fa6';
+import AdminAnnouncementsPage from './AdminAnnouncementsPage';
+import { FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLines, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from 'react-icons/fa6';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard',  label: 'Dashboard',             icon: <FaTableCellsLarge /> },
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { path: '/admin/proposals',  label: 'All Proposals',         icon: <FaFileLines /> },
   { path: '/admin/repository', label: 'Research Repository',   icon: <FaBoxArchive /> },
   { path: '/admin/grants',     label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
+  { path: '/admin/announcements', label: 'Announcements',      icon: <FaBullhorn /> },
   { path: '/admin/reports',    label: 'Reports',               icon: <FaChartColumn /> },
   { path: '/admin/audit',      label: 'Audit Log',             icon: <FaShieldHalved /> },
   { path: '/admin/emails',     label: 'Email Log',             icon: <FaEnvelope /> },
@@ -59,6 +61,7 @@ const AdminDashboard = () => {
         <Route path="proposals" element={<AllProposalsPage />} />
         <Route path="repository" element={<AdminRepositoryPage />} />
         <Route path="grants"     element={<AdminGrantsPage />} />
+        <Route path="announcements" element={<AdminAnnouncementsPage />} />
         <Route path="audit"     element={<AuditLogPage />} />
         <Route path="emails"    element={<EmailLogPage />} />
         <Route path="reports"   element={<ReportsPage />} />

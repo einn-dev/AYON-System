@@ -7,6 +7,7 @@ import './OfficeNotifications.css';
 import API from '../services/authService';
 import Avatar from './Avatar';
 import ProfileModal from './ProfileModal';
+import AnnouncementBanner from './Announcements';
 import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 
 const Layout = ({ children, navItems, role }) => {
@@ -102,6 +103,7 @@ const Layout = ({ children, navItems, role }) => {
 
       {/* ── Main Content ── */}
       <main className="main-content">
+        <AnnouncementBanner />
         {children}
       </main>
 

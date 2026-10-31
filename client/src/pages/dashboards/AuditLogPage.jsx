@@ -24,6 +24,11 @@ const ACTIONS = {
   signature_saved:    { label: 'Signature Saved',     badge: 'badge-blue'   },
   signature_replaced: { label: 'Signature Replaced',  badge: 'badge-blue'   },
   signature_removed:  { label: 'Signature Removed',   badge: 'badge-gray'   },
+  announcement_created: { label: 'Announcement Posted', badge: 'badge-blue' },
+  announcement_updated: { label: 'Announcement Edited', badge: 'badge-gray' },
+  announcement_hidden:  { label: 'Announcement Hidden', badge: 'badge-gray' },
+  announcement_shown:   { label: 'Announcement Shown Again', badge: 'badge-blue' },
+  announcement_deleted: { label: 'Announcement Deleted', badge: 'badge-red' },
   password_changed:   { label: 'Password Changed',    badge: 'badge-gray'   },
   password_reset_requested: { label: 'Reset Link Requested', badge: 'badge-amber' },
   password_reset_completed: { label: 'Password Reset by Link', badge: 'badge-green' },
@@ -79,6 +84,10 @@ const detailsText = (log) => {
     case 'proposal_endorsed':
       return `Endorsed${d.signed ? ' and signed' : ''} as ${ROLE_LABEL[d.role] || d.role || '—'}${Number(d.round) > 1 ? `, round ${d.round}` : ''}`
         + `${d.next ? ` · now with: ${ROLE_LABEL[d.next] || d.next}` : ''}${d.note ? ` · Note: ${d.note}` : ''}`;
+    case 'announcement_created':
+      return `Shown to: ${d.shown_to || 'everyone'}${d.type ? ` · ${d.type}` : ''}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
+    case 'announcement_updated':
+      return `${Array.isArray(d.changed) && d.changed.length ? `Changed: ${d.changed.map(c => c.replace(/_/g, ' ')).join(', ')}` : 'No changes'}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
     case 'proposal_signed':
       return `Signed as ${d.signed_as || ROLE_LABEL[d.role] || d.role || '—'}${d.step ? ` · ${d.step}` : ''}${Number(d.round) > 1 ? ` · round ${d.round}` : ''}`;
     case 'signature_saved':
