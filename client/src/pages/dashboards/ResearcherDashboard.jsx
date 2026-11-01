@@ -318,7 +318,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
                 )}
                 <p>{selected.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
                 <small style={{ marginTop: 8 }}>
-                  After you edit and resubmit, it starts again from the college level (Research Coordinator, Chairperson, Dean) and then the office.
+                  After you edit and resubmit, it starts again from the college level (Chairperson, Research Coordinator, Dean) and then the office.
                 </small>
               </div>
             )}

@@ -175,7 +175,7 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
   }
 );
 
-/* ── Endorse or return at the college level (Coordinator → Chairperson → Dean) ──
+/* ── Endorse or return at the college level (Chairperson → Research Coordinator → Dean) ──
    The rules (whose turn, same college/department, required note) are in the controller. */
 router.post('/:id/endorse', verifyToken,
   authorizeRoles('research_coordinator', 'chairperson', 'college_dean'),

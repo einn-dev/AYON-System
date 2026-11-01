@@ -12,7 +12,7 @@ import './Signature.css';
      SignConfirm        : "your signature + I confirm" box on a signing action
      ProposalSignatures : the signature lines on a proposal's details
    Who signs, and when:
-     Research Coordinator, Chairperson, College Dean → Endorse and Sign
+     Chairperson, Research Coordinator, College Dean → Endorse and Sign
      Special Assistant → Validate and Forward
      MSIRC Director    → Endorse to OVCRED / Approve
      OVCRED            → Grant Final Approval
@@ -443,7 +443,7 @@ export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => 
 };
 
 /* ── Signature lines on a proposal ── */
-const LINE_ORDER = ['research_coordinator', 'chairperson', 'college_dean', 'special_assistant', 'msric_director', 'ovcred'];
+const LINE_ORDER = ['chairperson', 'research_coordinator', 'college_dean', 'special_assistant', 'msric_director', 'ovcred'];
 const OFFICE_HOLDER = { submitted: 'special_assistant', under_review: 'msric_director', endorsed: 'ovcred' };
 const roundOf = (p) => Number(p?.round) || (Number(p?.revision_count) || 0) + 1;
 

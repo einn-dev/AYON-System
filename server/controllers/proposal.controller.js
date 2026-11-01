@@ -6,7 +6,7 @@ const { notifyUser } = require('../utils/notify');
 const { statusLabel } = require('../utils/terms');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
-  ownerOf, nextStage, inScope, notifyIds, roundOf, attachTrail,
+  ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
 } = require('../utils/endorsementChain');
 const {
   officeAction, requireSignature, recordSignature, signaturesOf, ACTION_LABEL,
@@ -54,7 +54,7 @@ const submitProposal = async (req, res) => {
   }
 
   try {
-    /* it goes to the college first (Coordinator → Chairperson → Dean);
+    /* it goes to the college first (Chairperson → Research Coordinator → Dean);
        a role with no account for this college/department is skipped */
     const owner = await ownerOf(req.user.user_id);
     const stage = await nextStage(owner);
@@ -566,7 +566,7 @@ const resubmitProposal = async (req, res) => {
 };
 
 /* ── POST endorse or return at the college level ──
-   Coordinator → Chairperson → Dean, in that order. Only the role whose turn it is
+   Chairperson → Research Coordinator → Dean, in that order. Only the role whose turn it is
    can act, and only for a researcher in their own college/department.
    A note (10–500 characters) is required both to endorse and to return.
    body: { decision: 'endorsed' | 'returned', remarks }
@@ -647,7 +647,10 @@ const endorseProposal = async (req, res) => {
       .select('proposal_id');
 
     if (decision === 'endorsed') {
-      const next = await nextStage(owner, CHAIN.indexOf(role) + 1);
+      /* the next college role that has not endorsed yet in this round
+         (so a proposal that was mid-way when the order changed is not asked twice) */
+      const done = await endorsedRoles(id, round);
+      const next = await nextStage(owner, 0, [...done, role]);
       const { data: changed, error: updErr } = await guarded(
         next
           ? { endorsement_stage: next.role, updated_at: now }

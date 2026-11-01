@@ -5,6 +5,8 @@ const { activeHolders } = require('./roleNotify');
    College endorsement chain.
    A submitted (or resubmitted) proposal goes through these college roles,
    in this order, before it reaches the Special Assistant.
+   The order follows the MSIRC forms: Step 1. Department (Chairperson),
+   Step 2. College/Unit (Research Coordinator, then Dean).
 
    To change the order later, only change CHAIN below.
    SCOPE says how each role is matched to the researcher:
@@ -12,7 +14,7 @@ const { activeHolders } = require('./roleNotify');
      department → same department as the researcher
    A role with no active account for that college/department is skipped.
    ───────────────────────────────────────────────────────────── */
-const CHAIN = ['research_coordinator', 'chairperson', 'college_dean'];
+const CHAIN = ['chairperson', 'research_coordinator', 'college_dean'];
 
 const SCOPE = {
   research_coordinator: 'college',
@@ -52,13 +54,26 @@ const endorsersFor = async (role, owner) => {
 };
 
 /* The first college step, starting at position `from`, that has somebody to act.
+   Roles in `skip` (for example, the ones that already endorsed this round) are passed over.
    Returns { role, ids } or null when every remaining step is skipped. */
-const nextStage = async (owner, from = 0) => {
+const nextStage = async (owner, from = 0, skip = []) => {
   for (let i = from; i < CHAIN.length; i += 1) {
+    if (skip.includes(CHAIN[i])) continue;
     const ids = await endorsersFor(CHAIN[i], owner);
     if (ids.length) return { role: CHAIN[i], ids };
   }
   return null;
+};
+
+/* College roles that already endorsed this proposal in this round */
+const endorsedRoles = async (proposalId, round) => {
+  const { data, error } = await supabase
+    .from('endorsements').select('endorser_role, endorse_status, round')
+    .eq('proposal_id', proposalId);
+  if (error) throw error;
+  return [...new Set((data || [])
+    .filter(r => r.endorse_status === 'endorsed' && (Number(r.round) || 1) === Number(round))
+    .map(r => r.endorser_role))];
 };
 
 /* Is this endorser in the same college/department as the researcher? */
@@ -144,5 +159,5 @@ const attachTrail = async (proposals) => {
 
 module.exports = {
   CHAIN, SCOPE, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
-  ownerOf, endorsersFor, nextStage, inScope, notifyIds, roundOf, attachTrail,
+  ownerOf, endorsersFor, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
 };

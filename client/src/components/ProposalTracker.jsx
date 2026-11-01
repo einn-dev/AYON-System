@@ -5,7 +5,7 @@ import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from 'react-icons/
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:
-     College:  Research Coordinator → Chairperson → College Dean
+     College:  Chairperson → Research Coordinator → College Dean
      Office:   Special Assistant → MSIRC Director → OVCRED → Decision
    and the endorsement history (every round), with the notes.
 
@@ -14,7 +14,7 @@ import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from 'react-icons/
      return_reason, returned_at
    ───────────────────────────────────────────────────────────── */
 
-export const COLLEGE_CHAIN = ['research_coordinator', 'chairperson', 'college_dean'];
+export const COLLEGE_CHAIN = ['chairperson', 'research_coordinator', 'college_dean'];
 const OFFICE_CHAIN = ['special_assistant', 'msric_director', 'ovcred'];
 
 export { ROLE_LABEL };
@@ -134,7 +134,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
           <b>Returned for Revision{proposal.returned_by_role ? ` by the ${ROLE_LABEL[proposal.returned_by_role] || 'office'}` : ''}</b>
           {proposal.returned_at && <small> · {fmt(proposal.returned_at)}</small>}
           <p>{proposal.return_reason}</p>
-          <small>After the researcher edits and resubmits, it starts again from the Research Coordinator.</small>
+          <small>After the researcher edits and resubmits, it starts again from the Department Chairperson.</small>
         </div>
       )}
 

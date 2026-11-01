@@ -47,7 +47,7 @@ const STATS = [
 
 const STEPS = [
   [FaUserGraduate,    'Researcher',        'Uploads the proposal',      'Pick the proposal type, fill in the details and attach the requirements. Nothing to print or carry around.', 'Submitted'],
-  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Research Coordinator, Chairperson and College Dean of your college review and endorse it, or return it with remarks.', 'Endorsed'],
+  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Department Chairperson, Research Coordinator and College Dean of your college review and endorse it, or return it with remarks.', 'Endorsed'],
   [FaUserCheck,       'Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded or returned for correction.', 'Validated'],
   [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal and makes the institute’s decision.', 'Under Review'],
   [FaStamp,           'OVCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs off.', 'Approved'],

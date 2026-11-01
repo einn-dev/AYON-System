@@ -7,7 +7,7 @@ import { SignConfirm, ProposalSignatures } from './Signature';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
-   (Research Coordinator, Chairperson, College Dean):
+   (Chairperson, Research Coordinator, College Dean):
      EndorsementQueue : proposals waiting for THIS role, endorse or return
      EndorsedHistory  : what THIS person endorsed or returned
      EndorserStats    : the four numbers on the dashboard
@@ -28,10 +28,15 @@ const statusText = statusLabel;
 /* Is it this role's turn on this proposal? */
 export const isMyTurn = (p, role) => p.status === 'for_endorsement' && p.endorsement_stage === role;
 
-/* The next college role after `role`, for the "Endorse to ..." label (a role with no account is skipped by the server) */
-const nextLabel = (role) => {
-  const i = COLLEGE_CHAIN.indexOf(role);
-  return i >= 0 && i < COLLEGE_CHAIN.length - 1 ? ROLE_LABEL[COLLEGE_CHAIN[i + 1]] : 'Special Assistant';
+/* The next college role for the "Endorsing sends it to ..." note: the first one in the order
+   that has not endorsed yet in this round (a role with no account is skipped by the server) */
+const nextLabel = (role, p) => {
+  const round = roundOf(p);
+  const done = (p?.endorsements || [])
+    .filter(e => e.endorse_status === 'endorsed' && Number(e.round || 1) === round)
+    .map(e => e.endorser_role);
+  const next = COLLEGE_CHAIN.find(r => r !== role && !done.includes(r));
+  return next ? ROLE_LABEL[next] : 'Special Assistant';
 };
 
 const fmt = (d) => (d ? new Date(d).toLocaleDateString() : '—');
@@ -300,7 +305,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               <div style={{ background: '#fff8e6', border: '1px solid #e9d98a', borderRadius: 8, padding: 12, fontSize: '0.84rem', color: '#6e5c0e' }}>
                 <p style={{ margin: '0 0 10px' }}>
                   Return this proposal to the researcher? Your note will be shown as the reason.
-                  After they resubmit, it starts again from the Research Coordinator.
+                  After they resubmit, it starts again from the Department Chairperson.
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-danger btn-sm" disabled={saving} onClick={() => send('returned')}>
@@ -314,8 +319,8 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
             )}
 
             <div style={{ marginTop: 12, padding: 10, background: '#f0f6ff', borderRadius: 8, border: '1px solid #bee3f8', fontSize: '0.78rem', color: '#2c5282' }}>
-              Endorsing sends it to the <b>{nextLabel(role)}</b>
-              {nextLabel(role) !== 'Special Assistant' ? ' (or the next available level if that office has no account)' : ''}.
+              Endorsing sends it to the <b>{nextLabel(role, selected)}</b>
+              {nextLabel(role, selected) !== 'Special Assistant' ? ' (or the next available level if that office has no account)' : ''}.
               Returning sends it back to the researcher and does not sign.
             </div>
           </div>

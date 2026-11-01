@@ -153,7 +153,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
     setReturning(null);
     setSelected(null);
     setRemarks('');
-    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Research Coordinator.' });
+    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Department Chairperson.' });
     onRefresh();
   };
 
@@ -401,7 +401,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       for final approval. "Approve" keeps it within MSIRC.
                       Both place your signature on the proposal.
                       "Return to Researcher" sends it back for changes; after resubmission it
-                      starts again from the Research Coordinator. Returning or rejecting does not sign.
+                      starts again from the Department Chairperson. Returning or rejecting does not sign.
                     </div>
                   </div>
                 </div>

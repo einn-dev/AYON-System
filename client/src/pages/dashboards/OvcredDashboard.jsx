@@ -157,7 +157,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
     setReturning(null);
     setSelected(null);
     setRemarks('');
-    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Research Coordinator.' });
+    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Department Chairperson.' });
     onRefresh();
   };
 
