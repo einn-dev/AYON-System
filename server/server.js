@@ -14,6 +14,7 @@ const externalRoutes     = require('./routes/external.routes');
 const reportRoutes       = require('./routes/report.routes');
 const signatureRoutes    = require('./routes/signature.routes');
 const announcementRoutes = require('./routes/announcement.routes');
+const searchRoutes       = require('./routes/search.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -58,6 +59,7 @@ app.use('/api/external',      externalRoutes);
 app.use('/api/reports',       reportRoutes);
 app.use('/api/signatures',    signatureRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/search',        searchRoutes);
 
 app.get('/', (req, res) => res.send('AYON API is running.'));
 

@@ -8,6 +8,8 @@ import API from '../services/authService';
 import Avatar from './Avatar';
 import ProfileModal from './ProfileModal';
 import AnnouncementBanner from './Announcements';
+import TopBar from './TopBar';
+import HelpPage from '../pages/HelpPage';
 import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 
 const Layout = ({ children, navItems, role }) => {
@@ -17,6 +19,7 @@ const Layout = ({ children, navItems, role }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const helpBase = `/${String(navItems?.[0]?.path || '').split('/')[1] || ''}`;
 
   /* unread count for the Notifications item: on each page change, every minute,
      and right away when the Notifications page marks something as read */
@@ -103,8 +106,10 @@ const Layout = ({ children, navItems, role }) => {
 
       {/* ── Main Content ── */}
       <main className="main-content">
+        <TopBar navItems={navItems} unread={unread} />
         <AnnouncementBanner />
-        {children}
+        {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
+        {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage /> : children}
       </main>
 
       {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}

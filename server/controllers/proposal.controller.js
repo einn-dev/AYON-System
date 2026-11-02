@@ -247,6 +247,10 @@ const getProposalById = async (req, res) => {
     if (role === 'msric_staff') {
       return res.status(403).json({ message: 'MSIRC Staff can see the list of proposals but not their contents.' });
     }
+    /* a researcher may only open their own proposals */
+    if (role === 'researcher' && Number(data.user_id) !== Number(req.user.user_id)) {
+      return res.status(403).json({ message: 'This is not your proposal.' });
+    }
     if (COLLEGE_SCOPED_ROLES.includes(role) || DEPARTMENT_SCOPED_ROLES.includes(role)) {
       const { data: me } = await supabase
         .from('users')
@@ -875,4 +879,5 @@ module.exports = {
   endorseProposal,
   getProposalSignatures,
   getMyEndorsements,
+  staffCanSee,
 };
