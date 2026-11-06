@@ -4,14 +4,15 @@
    Change the wording here; the Help page and the search box both read it.
    ───────────────────────────────────────────────────────────── */
 
-/* MSIRC contact details shown on the Help page. Replace the placeholders. */
+/* MSIRC contact details shown on the Help page.
+   Source: the official MSIRC page, msumain.edu.ph/msirc/ */
 export const CONTACT = {
   office:   'Mamitua Saber Institute of Research and Creation',
   campus:   'MSU – Main Campus, Marawi City',
-  location: 'Office location (to be filled in)',
-  email:    'msirc@msumain.edu.ph (to be confirmed)',
-  phone:    'Phone number (to be filled in)',
-  hours:    'Monday to Friday, 8:00 AM to 5:00 PM (to be confirmed)',
+  location: 'MSIRC Building, 2nd Street',
+  email:    'msirc@msumain.edu.ph',
+  phone:    '+63 970 6998 199',
+  hours:    'Monday to Friday, 8:00 AM to 5:00 PM',
 };
 
 const SIGNATURE = {
