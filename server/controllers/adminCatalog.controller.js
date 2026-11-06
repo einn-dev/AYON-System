@@ -2,6 +2,7 @@ const supabase = require('../config/supabase');
 const { typeLabel } = require('../utils/terms');
 const { logAudit, fullName } = require('../utils/audit');
 const { notifyUser } = require('../utils/notify');
+const { notifyStaff } = require('../utils/roleNotify');
 
 /* ─────────────────────────────────────────────────────────────
    Admin: Repository and Grants.
@@ -123,6 +124,10 @@ const storeToRepository = async (req, res) => {
       targetId:   created?.repo_id,
       targetName: p.title,
       details:    { access_type: access, source_type: 'proposal', by: 'admin' },
+    });
+    await notifyStaff({
+      title:   'New research in the Repository',
+      message: `"${p.title}"${fullName(p.users) ? ` by ${fullName(p.users)}` : ''} was added to the Research Repository.`,
     });
 
     return res.status(201).json({ message: 'Stored in the repository.' });

@@ -3,6 +3,7 @@ const router   = express.Router();
 const multer   = require('multer');
 const supabase = require('../config/supabase');
 const { notifyUser } = require('../utils/notify');
+const { notifyStaff } = require('../utils/roleNotify');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 const upload = multer({
@@ -83,6 +84,11 @@ router.post('/', verifyToken, authorizeRoles('researcher'),
         file_path,
         access_type: 'private',
         source_type: 'external',
+      });
+
+      await notifyStaff({
+        title:   'New research in the Repository',
+        message: `"${title}" (externally funded)${user ? ` by ${user.first_name} ${user.last_name}` : ''} was added to the Research Repository.`,
       });
 
       await notifyUser({

@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
-const { notifyRole, fullName } = require('../utils/roleNotify');
+const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/roleNotify');
 const { notifyUser } = require('../utils/notify');
 const { statusLabel } = require('../utils/terms');
 const {
@@ -110,6 +110,12 @@ const submitProposal = async (req, res) => {
         title:       'New submission to validate',
         message:     `"${title}" was submitted by ${by}.`,
       }, { exclude: [req.user.user_id] });
+      await notifyStaff({
+        proposal_id: proposal.proposal_id,
+        notif_type:  'submission',
+        title:       'New proposal at MSIRC',
+        message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the Special Assistant.`,
+      });
     }
 
     return res.status(201).json({
@@ -425,6 +431,21 @@ const updateProposalStatus = async (req, res) => {
       }, { exclude: [req.user.user_id] });
     }
 
+    /* MSIRC Staff hear about final decisions (not each step inside the office) */
+    if (proposal.status !== status && ['approved', 'rejected'].includes(status)) {
+      const { data: owner } = await supabase
+        .from('users').select('first_name, last_name, college').eq('user_id', proposal.user_id).maybeSingle();
+      const decidedBy = ROLE_LABEL[req.user.role] || 'the office';
+      await notifyStaff({
+        proposal_id: id,
+        notif_type:  status === 'approved' ? 'approval' : 'rejection',
+        title:       status === 'approved' ? 'Proposal approved' : 'Proposal rejected',
+        message:     status === 'approved'
+          ? `"${proposal.title}" by ${nameAndCollege(owner)} was ${req.user.role === 'ovcred' ? 'given final approval by OVCRED' : `approved by the ${decidedBy}`}.`
+          : `"${proposal.title}" by ${nameAndCollege(owner)} was rejected by the ${decidedBy}.`,
+      });
+    }
+
     return res.status(200).json({ message: signAs ? 'Status updated and signed.' : 'Status updated.', signed: !!signAs });
   } catch (err) {
     console.error('updateProposalStatus error:', err);
@@ -544,6 +565,12 @@ const resubmitProposal = async (req, res) => {
         notif_type:  'submission',
         title:       'Returned proposal resubmitted',
         message:     `"${finalTitle}" was edited and resubmitted by the researcher (revision ${revision}). It is in your queue again.`,
+      });
+      await notifyStaff({
+        proposal_id: proposal.proposal_id,
+        notif_type:  'submission',
+        title:       'Resubmitted proposal at MSIRC',
+        message:     `"${finalTitle}" by ${nameAndCollege(owner, 'the researcher')} was resubmitted and is with the Special Assistant again.`,
       });
     }
 
@@ -702,6 +729,12 @@ const endorseProposal = async (req, res) => {
           notif_type:  'submission',
           title:       'New submission to validate',
           message:     `"${proposal.title}" by ${by} completed the college endorsements and is ready for validation.`,
+        });
+        await notifyStaff({
+          proposal_id: Number(id),
+          notif_type:  'submission',
+          title:       'New proposal at MSIRC',
+          message:     `"${proposal.title}" by ${nameAndCollege(owner, by)} completed the college endorsements. It is now with the Special Assistant.`,
         });
       }
 

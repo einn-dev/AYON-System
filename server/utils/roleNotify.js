@@ -41,4 +41,15 @@ const notifyRole = async (roleType, { proposal_id = null, notif_type, title, mes
 
 const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
 
-module.exports = { activeHolders, notifyRole, fullName };
+/* MSIRC Staff: in-app notices only (no email), and only what staff may already see:
+   the title, the researcher, the college and the status. Never throws. */
+const notifyStaff = ({ proposal_id = null, notif_type = 'general', title, message }) =>
+  notifyRole('msric_staff', { proposal_id: proposal_id ? Number(proposal_id) : null, notif_type, title, message });
+
+/* "Maria Santos (College of Engineering)" */
+const nameAndCollege = (u, fallback = 'a researcher') => {
+  const n = fullName(u) || fallback;
+  return u?.college ? `${n} (${u.college})` : n;
+};
+
+module.exports = { activeHolders, notifyRole, fullName, notifyStaff, nameAndCollege };

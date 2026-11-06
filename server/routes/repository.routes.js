@@ -3,6 +3,7 @@ const router   = express.Router();
 const supabase = require('../config/supabase');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 const { logAudit } = require('../utils/audit');
+const { notifyStaff } = require('../utils/roleNotify');
 
 /* Who may see what:
      ?access=public  -> anyone (this is the public repository)
@@ -84,6 +85,10 @@ router.post('/', verifyToken, authorizeRoles('ovcred', 'admin'),
         targetId:   created?.repo_id,
         targetName: title,
         details:    { access_type: access_type || 'private', source_type: source_type || 'proposal' },
+      });
+      await notifyStaff({
+        title:   'New research in the Repository',
+        message: `"${title}"${author ? ` by ${author}` : ''} was added to the Research Repository.`,
       });
 
       return res.status(201).json({ message: 'Research stored in repository.' });

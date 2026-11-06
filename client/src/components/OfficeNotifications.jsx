@@ -5,8 +5,11 @@ import './Layout.css';
 import './OfficeNotifications.css';
 import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
-/* Notifications page for the Special Assistant, MSIRC Director and OVCRED.
-     queuePath: where "Open" goes (their queue), for example "/director/for-review"   */
+/* Notifications page for the Special Assistant, MSIRC Director, OVCRED and MSIRC Staff.
+     queuePath:   where "Open" goes (their queue), for example "/director/for-review"
+     openLabel:   the button text (default "Review")
+     filters:     the filter list, [value, label, test(n)] (default: the office filters)
+     repoPath:    where a "New research in the Repository" notice opens (optional)       */
 
 const ICONS = {
   submission:  <FaPaperPlane />,
@@ -20,11 +23,19 @@ const ICONS = {
 const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
 const isReminder = (n) => /^reminder/i.test(n.title || '');
 const isWaiting  = (n) => !!n.proposal_id && !isReminder(n);
+const isRepoNews = (n) => /^new research in the repository/i.test(n.title || '');
+
+const OFFICE_FILTERS = [
+  ['all',      'All Notifications',                () => true],
+  ['unread',   'Unread Only',                      (n) => !n.is_read],
+  ['waiting',  'Proposals Waiting for Me',         isWaiting],
+  ['reminder', 'Reminders from the Administrator', isReminder],
+];
 
 /* tells the sidebar to refresh its unread count */
 const announce = () => { try { window.dispatchEvent(new Event('ayon:notifs-changed')); } catch { /* ignore */ } };
 
-const OfficeNotifications = ({ queuePath, intro }) => {
+const OfficeNotifications = ({ queuePath, intro, openLabel = 'Review', filters = OFFICE_FILTERS, repoPath }) => {
   const navigate = useNavigate();
   const [notifs,  setNotifs]  = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,16 +86,13 @@ const OfficeNotifications = ({ queuePath, intro }) => {
 
   const openIt = async (n) => {
     if (!n.is_read) await markRead(n.notif_id);
+    if (isRepoNews(n) && repoPath) { navigate(repoPath); return; }
     navigate(isGrantAlert(n) ? grantsPath : `${queuePath}?open=${n.proposal_id}`);
   };
 
   const unread  = notifs.filter((n) => !n.is_read).length;
-  const shown = notifs.filter((n) => {
-    if (filter === 'unread')   return !n.is_read;
-    if (filter === 'waiting')  return isWaiting(n);
-    if (filter === 'reminder') return isReminder(n);
-    return true;
-  });
+  const test  = (filters.find(([v]) => v === filter) || filters[0])[2];
+  const shown = notifs.filter((n) => test(n));
 
   return (
     <>
@@ -99,10 +107,7 @@ const OfficeNotifications = ({ queuePath, intro }) => {
         <div className="panel-header">
           <div className="on-toolbar">
             <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter notifications">
-              <option value="all">All Notifications</option>
-              <option value="unread">Unread Only</option>
-              <option value="waiting">Proposals Waiting for Me</option>
-              <option value="reminder">Reminders from the Administrator</option>
+              {filters.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
             </select>
             {unread > 0
               ? <span className="badge badge-blue">{unread} unread</span>
@@ -140,10 +145,10 @@ const OfficeNotifications = ({ queuePath, intro }) => {
               </div>
               <div className="on-act">
                 {!n.is_read && <span className="badge badge-blue">New</span>}
-                {n.proposal_id && (
-                  <button type="button" className="btn btn-primary btn-sm"
+                {(n.proposal_id || (repoPath && isRepoNews(n))) && (
+                  <button type="button" className={`btn ${n.proposal_id ? 'btn-primary' : 'btn-outline'} btn-sm`}
                     onClick={(e) => { e.stopPropagation(); openIt(n); }}>
-                    Review
+                    {openLabel}
                   </button>
                 )}
               </div>

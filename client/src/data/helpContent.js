@@ -171,6 +171,15 @@ export const GUIDES = {
         '**Reject** ends the proposal; write your remarks first. Neither one signs.',
       ],
     },
+    {
+      id: 'reports',
+      title: 'Make a report',
+      steps: [
+        'Go to **Reports** and choose the filters (period, college, status, type).',
+        'Click **Download PDF** or **Download CSV** on the report you need: Proposals, Grants and Incentives, Research Repository or Summary.',
+        'The list at the bottom shows the reports you made.',
+      ],
+    },
     PROFILE,
   ],
   ovcred: [
@@ -194,6 +203,15 @@ export const GUIDES = {
       title: 'Add research to the Repository',
       steps: ['Go to **Research Repository** and choose **From Approved Proposals**, or add one by hand.'],
     },
+    {
+      id: 'reports',
+      title: 'Make a report',
+      steps: [
+        'Go to **Reports** and choose the filters (period, college, status, type).',
+        'Click **Download PDF** or **Download CSV** on the report you need: Proposals, Grants and Incentives, Research Repository or Summary.',
+        'The list at the bottom shows the reports you made.',
+      ],
+    },
     PROFILE,
   ],
   msric_staff: [
@@ -209,6 +227,15 @@ export const GUIDES = {
       id: 'repository',
       title: 'Browse the Research Repository',
       steps: ['Go to **Research Repository** and search by title, author or keyword.'],
+    },
+    {
+      id: 'notifications',
+      title: 'Your notifications',
+      steps: [
+        'AYON tells you when a proposal **reaches MSIRC**, when a proposal is **approved or rejected**, and when research is **added to the Repository**.',
+        'Click the bell at the top, or **Notifications** in the sidebar. Use the filter to show only one kind.',
+        'Click **Open** to see that proposal in **All Proposals** (it is highlighted), or the Repository.',
+      ],
     },
     PROFILE,
   ],

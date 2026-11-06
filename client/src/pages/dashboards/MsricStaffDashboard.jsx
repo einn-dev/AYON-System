@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
+import OfficeNotifications from '../../components/OfficeNotifications';
+import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaBell, FaBoxArchive, FaInbox, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
@@ -93,6 +95,7 @@ const Overview = ({ proposals }) => {
 const AllSubmissions = ({ proposals }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const hl = useOpenHighlight(proposals.length > 0);   // "Open" from a notification
 
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
@@ -107,6 +110,7 @@ const AllSubmissions = ({ proposals }) => {
         <h1>All Proposals</h1>
         <p>Proposals that passed the college level and reached the Special Assistant.</p>
       </div>
+      <OpenNotice state={hl} where="this list" />
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
@@ -130,7 +134,7 @@ const AllSubmissions = ({ proposals }) => {
           </thead>
           <tbody>
             {filtered.map((p, i) => (
-              <tr key={p.proposal_id}>
+              <tr key={p.proposal_id} data-pid={p.proposal_id}>
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td>
                   <strong>{p.first_name} {p.last_name}</strong>
@@ -227,60 +231,15 @@ const Repository = () => {
   );
 };
 
-const Notifications = () => {
-  const [notifs,  setNotifs]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    API.get('/notifications')
-      .then(res => setNotifs(res.data.notifications || []))
-      .catch(() => setNotifs([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const markRead = async (id) => {
-    try {
-      await API.patch(`/notifications/${id}/read`);
-      setNotifs(prev => prev.map(n => n.notif_id === id ? { ...n, is_read: 1 } : n));
-    } catch {}
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Notifications</h1>
-        <p>Updates and alerts from MSIRC.</p>
-      </div>
-      <div className="panel">
-        {loading ? <div className="empty-state"><p>Loading...</p></div>
-          : notifs.length === 0 ? <div className="empty-state"><p>No notifications yet.</p></div>
-          : notifs.map(n => (
-            <div key={n.notif_id}
-              onClick={() => !n.is_read && markRead(n.notif_id)}
-              style={{
-                padding: '14px 20px', borderBottom: '1px solid #f0f4f8',
-                background: n.is_read ? '#fff' : '#f0f6ff',
-                display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer',
-              }}>
-              <div style={{
-                width: 10, height: 10, borderRadius: '50%',
-                flexShrink: 0, marginTop: 5,
-                background: n.is_read ? '#e8edf2' : '#2e6da4',
-              }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 3px', fontSize: '0.9rem' }}>{n.title}</p>
-                <p style={{ color: '#718096', margin: '0 0 4px', fontSize: '0.85rem' }}>{n.message}</p>
-                <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }}>
-                  {new Date(n.date_sent).toLocaleString()}
-                </p>
-              </div>
-              {!n.is_read && <span className="badge badge-blue" style={{ flexShrink: 0 }}>New</span>}
-            </div>
-          ))}
-      </div>
-    </>
-  );
-};
+/* What MSIRC Staff are told about (in AYON only): proposals arriving at MSIRC,
+   final decisions, and new research in the Repository. */
+const STAFF_FILTERS = [
+  ['all',       'All Notifications',  () => true],
+  ['unread',    'Unread Only',        (n) => !n.is_read],
+  ['arrived',   'Arrived at MSIRC',   (n) => n.notif_type === 'submission' && !!n.proposal_id],
+  ['decisions', 'Decisions',          (n) => n.notif_type === 'approval' || n.notif_type === 'rejection'],
+  ['repository','Repository',         (n) => /^new research in the repository/i.test(n.title || '')],
+];
 
 const MsricStaffDashboard = () => {
   const [proposals, setProposals] = useState([]);
@@ -308,7 +267,14 @@ const MsricStaffDashboard = () => {
         <Route path="dashboard"     element={<Overview proposals={proposals} />} />
         <Route path="submissions"   element={<AllSubmissions proposals={proposals} />} />
         <Route path="repository"    element={<Repository />} />
-        <Route path="notifications" element={<Notifications />} />
+        <Route path="notifications" element={
+          <OfficeNotifications
+            queuePath="/msric-staff/submissions"
+            repoPath="/msric-staff/repository"
+            openLabel="Open"
+            filters={STAFF_FILTERS}
+            intro="Proposals arriving at MSIRC, final decisions, and new research in the Repository." />
+        } />
       </Routes>
     </Layout>
   );
