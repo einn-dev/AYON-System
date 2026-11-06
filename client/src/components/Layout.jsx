@@ -92,7 +92,7 @@ const Layout = ({ children, navItems, role }) => {
         <div className="sidebar-footer">
           <button type="button" className="user-info user-info-link" title="View my profile"
             onClick={() => setProfileOpen(true)}>
-            <Avatar user={user} size={36} />
+            <Avatar user={user} size={40} />
             <div className="user-details">
               <p className="user-name">{user?.first_name} {user?.last_name}</p>
               <p className="user-email">{user?.email}</p>
