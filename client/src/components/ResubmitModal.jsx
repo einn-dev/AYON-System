@@ -2,23 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import API from '../services/authService';
 import './Resubmit.css';
+import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';
 
-const MAX_MB    = 10;
-const ALLOWED   = ['pdf', 'doc', 'docx'];
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
 
-const extOf = (name) => String(name || '').split('?')[0].split('.').pop().toLowerCase();
-
 /* The researcher fixes what the office asked for, then sends the proposal back.
-   Nothing is sent until "Resubmit to MSIRC". Without a new file the old one is kept. */
+   Nothing is sent until "Resubmit Proposal". Documents that are not touched are kept. */
 const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const [title,  setTitle]  = useState(proposal.title || '');
   const [desc,   setDesc]   = useState(proposal.description || '');
-  const [file,   setFile]   = useState(null);
+  const [docs,   setDocs]   = useState(() => docsFromFiles(filesOf(proposal)));
   const [error,  setError]  = useState('');
   const [saving, setSaving] = useState(false);
-  const fileRef   = useRef(null);
   const dialogRef = useRef(null);
 
   /* Esc closes (unless it is sending), the page behind does not scroll */
@@ -41,24 +37,15 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const changes = [];
   if (titleChanged) changes.push('Title changed');
   if (descChanged)  changes.push('Description changed');
-  if (file)         changes.push('New file attached');
+  changes.push(...docsChanges(docs));
 
   const titleProblem =
     !cleanTitle ? 'Title cannot be empty.'
     : cleanTitle.length > TITLE_MAX ? `Title must be ${TITLE_MAX} characters or fewer.`
     : '';
   const descProblem = cleanDesc.length > DESC_MAX ? `Description must be ${DESC_MAX} characters or fewer.` : '';
-  const canSend = changes.length > 0 && !titleProblem && !descProblem && !saving;
-
-  const pickFile = (e) => {
-    const f = e.target.files?.[0];
-    e.target.value = '';                       // lets the same file be chosen again
-    if (!f) return;
-    if (!ALLOWED.includes(extOf(f.name))) return setError('Only PDF, DOC or DOCX files are allowed.');
-    if (f.size > MAX_MB * 1024 * 1024)    return setError(`That file is too large. The limit is ${MAX_MB} MB.`);
-    setError('');
-    setFile(f);
-  };
+  const docsIssue = docsProblem(docs, { needMain: true });
+  const canSend = changes.length > 0 && !titleProblem && !descProblem && !docsIssue && !saving;
 
   const send = async () => {
     if (!canSend) return;
@@ -68,7 +55,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
       const data = new FormData();
       data.append('title', cleanTitle);
       data.append('description', cleanDesc);
-      if (file) data.append('file', file);
+      appendDocs(data, docs);
       const res = await API.post(`/proposals/${proposal.proposal_id}/resubmit`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -86,8 +73,6 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
     }
     setSaving(false);
   };
-
-  const hasOldFile = !!proposal.file_path;
 
   return createPortal(
     <div className="modal-overlay"
@@ -125,39 +110,9 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         </div>
 
         <div className="rs-field">
-          <span className="rs-label">Document</span>
-          <div className="rs-file">
-            <div className="rs-file-main">
-              {file ? (
-                <>
-                  <b title={file.name}>{file.name}</b>
-                  <small>New file · {(file.size / 1024 / 1024).toFixed(2)} MB · replaces the old one</small>
-                </>
-              ) : hasOldFile ? (
-                <>
-                  <b>Current file ({extOf(proposal.file_path).toUpperCase().slice(0, 5)})</b>
-                  <small>
-                    Kept unless you replace it ·{' '}
-                    <a href={proposal.file_path} target="_blank" rel="noreferrer">Open</a>
-                  </small>
-                </>
-              ) : (
-                <>
-                  <b>No file attached</b>
-                  <small>You can attach one now</small>
-                </>
-              )}
-            </div>
-            {file ? (
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setFile(null)}>Undo</button>
-            ) : (
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => fileRef.current?.click()}>
-                {hasOldFile ? 'Replace File' : 'Attach File'}
-              </button>
-            )}
-            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={pickFile} hidden />
-          </div>
-          <div className="rs-hint">PDF, DOC or DOCX, up to {MAX_MB} MB. Leave it alone to keep the file you already sent.</div>
+          <span className="rs-label">Documents</span>
+          <DocumentsEditor value={docs} onChange={setDocs} disabled={saving} onError={setError} />
+          <div className="rs-hint">Documents you leave alone are kept. Replace the Main Proposal Document, or add or remove supporting documents.</div>
         </div>
 
         <div className="rs-changes">
@@ -167,8 +122,9 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
               <ul>{changes.map(c => <li key={c}>{c}</li>)}</ul>
             </>
           ) : (
-            <><b>No changes yet.</b> Edit something, or replace the file, before you can resubmit.</>
+            <><b>No changes yet.</b> Edit something, or change the documents, before you can resubmit.</>
           )}
+          {changes.length > 0 && docsIssue && <div className="rs-hint err" style={{ marginTop: 6 }}>{docsIssue}</div>}
         </div>
 
         <div className="modal-footer">

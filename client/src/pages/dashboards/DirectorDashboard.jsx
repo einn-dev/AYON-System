@@ -8,11 +8,11 @@ import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
-import { FaArrowLeft, FaBell, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { ProposalFiles } from '../../components/ProposalFiles';
+import ReportsPage from './ReportsPage';
+import { FaArrowLeft, FaBell, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
-/* Files are stored as full web addresses; older records may hold a server path */
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { path: '/director/endorsed',      label: 'Endorsed to OVCRED', icon: <FaPaperPlane /> },
   { path: '/director/approved',      label: 'Approved Proposals', icon: <FaCircleCheck /> },
   { path: '/director/rejected',      label: 'Rejected Proposals', icon: <FaCircleXmark /> },
+  { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
   { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
 
@@ -337,14 +338,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                   </div>
                 )}
 
-                {selected.file_path && (
-                  <a className="btn btn-outline"
-                    style={{ display: 'inline-block', textDecoration: 'none' }}
-                    href={fileHref(selected.file_path)}
-                    target="_blank" rel="noreferrer">
-                    <FaFileLines className="ic" />View Document
-                  </a>
-                )}
+                <ProposalFiles proposal={selected} />
               </div>
             </div>
 
@@ -474,6 +468,7 @@ const DirectorDashboard = () => {
           element={<ProposalTable proposals={proposals} statusFilter="rejected" onRefresh={fetchProposals} />} />
         <Route path="endorsed"
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
             intro="Proposals the Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />

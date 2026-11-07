@@ -6,11 +6,12 @@ const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole } = require('../utils/roleNotify');
 const { endorsersFor, ownerOf } = require('../utils/endorsementChain');
 const { STATUS_LABEL, roleLabel } = require('../utils/terms');
+const { attachFiles } = require('../utils/proposalFiles');
 const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
-} = require('../utils/verification');
+} = require('./utils/verification');
 
 const VALID_ROLES = [
   'researcher','msric_staff','research_coordinator',
@@ -1001,7 +1002,7 @@ const listProposals = async (req, res) => {
 
     const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
       fetchAll('research_proposals',
-        'proposal_id, title, description, file_path, proposal_type, status, endorsement_stage, revision_count, submitted_at, created_at, updated_at, users ( first_name, last_name, email, college, department )',
+        '*, users ( first_name, last_name, email, college, department )',
         'proposal_id'),
       fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
       fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
@@ -1038,6 +1039,7 @@ const listProposals = async (req, res) => {
         };
       })
       .sort((a, b) => b.days_waiting - a.days_waiting);
+    await attachFiles(rows);
 
     /* how many people each office has (shown on the Remind button) */
     const office_counts = {};

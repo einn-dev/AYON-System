@@ -6,7 +6,8 @@ import '../../components/Layout.css';
 import './AdminModule.css';
 import './ProposalOversight.css';
 import { errText, fmtWhen, Pager } from './adminShared';
-import { FaFileLines, FaLock } from 'react-icons/fa6';
+import { ProposalFiles } from '../../components/ProposalFiles';
+import { FaLock } from 'react-icons/fa6';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
@@ -146,12 +147,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
           </div>
 
           {proposal.description && <p className="po-desc">{proposal.description}</p>}
-          {proposal.file_path && (
-            <p style={{ margin: '0 0 12px' }}>
-              <a className="btn btn-outline btn-sm" href={proposal.file_path} target="_blank" rel="noreferrer"
-                style={{ textDecoration: 'none' }}><FaFileLines className="ic" />View Document</a>
-            </p>
-          )}
+          <ProposalFiles proposal={proposal} compact />
 
           {isOpen(proposal) && (
             <div className="po-with">

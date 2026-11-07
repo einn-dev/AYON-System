@@ -8,11 +8,11 @@ import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
-import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaFileLines, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { ProposalFiles } from '../../components/ProposalFiles';
+import ReportsPage from './ReportsPage';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 
-/* Files are stored as full web addresses; older records may hold a server path */
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { path: '/ovcred/approved',        label: 'Approved Proposals',  icon: <FaCircleCheck /> },
   { path: '/ovcred/rejected',        label: 'Rejected Proposals',  icon: <FaCircleXmark /> },
   { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive /> },
+  { path: '/ovcred/reports',         label: 'Reports',             icon: <FaChartColumn /> },
   { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
 ];
 
@@ -340,14 +341,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                   </div>
                 )}
 
-                {selected.file_path && (
-                  <a className="btn btn-outline"
-                    style={{ display: 'inline-block', textDecoration: 'none' }}
-                    href={fileHref(selected.file_path)}
-                    target="_blank" rel="noreferrer">
-                    <FaFileLines className="ic" />View Document
-                  </a>
-                )}
+                <ProposalFiles proposal={selected} />
               </div>
             </div>
 
@@ -773,6 +767,7 @@ const OvcredDashboard = () => {
           element={<FilteredList proposals={proposals} statusFilter="rejected" />} />
         <Route path="repository"
           element={<StoreToRepository proposals={proposals} />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/ovcred/for-endorsement"
             intro="Proposals the MSIRC Director endorsed to you, and reminders from the MSIRC Administrator." />} />

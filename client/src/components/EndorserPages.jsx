@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/authService';
 import ProposalTracker, { COLLEGE_CHAIN, roundOf, whereNow } from './ProposalTracker';
-import { FaArrowLeft, FaCheck, FaFileLines, FaRotateLeft } from 'react-icons/fa6';
+import { FaArrowLeft, FaCheck, FaRotateLeft } from 'react-icons/fa6';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
+import { ProposalFiles } from './ProposalFiles';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -20,8 +21,6 @@ export const NOTE_MAX = 500;
 const PROPOSAL_TYPES = TYPE_LABEL;
 export const ENDORSER_BADGE = STATUS_BADGE;
 
-/* Files are stored as full web addresses; older records may hold a server path */
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const statusText = statusLabel;
 
@@ -262,12 +261,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               </div>
             )}
 
-            {selected.file_path && (
-              <a className="btn btn-outline" style={{ display: 'inline-block', textDecoration: 'none' }}
-                href={fileHref(selected.file_path)} target="_blank" rel="noreferrer">
-                <FaFileLines className="ic" />View Document
-              </a>
-            )}
+            <ProposalFiles proposal={selected} />
           </div>
         </div>
 

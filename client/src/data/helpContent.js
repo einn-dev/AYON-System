@@ -78,8 +78,18 @@ export const GUIDES = {
         'Go to **My Proposals** and click **Submit Proposal**.',
         'Choose the **proposal type**, then click **Next**.',
         'Type the **research title** and the **abstract**, then click **Next**.',
-        'Attach your proposal file (PDF, DOC or DOCX, up to 10 MB).',
+        'Attach the **Main Proposal Document** (required). Click **Add Supporting Document** for up to 4 more (for example the Line-Item Budget), and choose a label for each. PDF, DOC or DOCX, up to 10 MB each.',
         'Check the summary and click **Submit Proposal**. It goes first to your **Department Chairperson**.',
+      ],
+    },
+    {
+      id: 'draft',
+      title: 'Save a draft and finish it later',
+      steps: [
+        'On any step of **Submit Proposal**, click **Save as Draft**. Only the proposal type is needed; the title can wait.',
+        'Only you can see a draft. Nobody is notified and nothing is signed.',
+        'To continue, open **My Proposals** and click **Continue Editing** next to the draft.',
+        'When it is ready, go to the last step and click **Submit Proposal**. To throw a draft away, click **Delete**.',
       ],
     },
     {
@@ -98,7 +108,7 @@ export const GUIDES = {
       steps: [
         'A returned proposal shows a red **Returned for Revision** badge and a banner at the top of My Proposals.',
         'Click **Edit and Resubmit**. The reason from the person who returned it is shown at the top.',
-        'Change the title or the abstract, or attach a new file.',
+        'Change the title or the abstract, replace the Main Proposal Document, or add or remove supporting documents.',
         'Click **Resubmit**. It starts again from the **Department Chairperson** (a new round).',
       ],
     },
@@ -311,6 +321,7 @@ export const FAQ = [
   ['Why can\'t I endorse this proposal?', 'It is not your turn yet (the tracker shows who has it), you have not set up **My Signature**, or the box under your signature is not ticked.'],
   ['Why is the Endorse and Sign button grey?', 'Write your remarks (at least 10 characters) and tick the box under your signature.'],
   ['My proposal was returned. What now?', 'Open it from **My Proposals**, read the reason, click **Edit and Resubmit**, fix it, and resubmit.'],
+  ['Can I stop in the middle of the form?', 'Yes. Click **Save as Draft** on any step. Continue later from **My Proposals** with **Continue Editing**.'],
   ['Can I change my college or department?', 'Yes, in your profile. If your role depends on your college (Coordinator, Chairperson, Dean), ask the Administrator first.'],
   ['Who can see my proposal?', 'You, the endorsers of your college or department, the MSIRC office, OVCRED and the Administrator. MSIRC Staff see only the title, status and dates.'],
 ];

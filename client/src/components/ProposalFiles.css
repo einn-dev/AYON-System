@@ -1,0 +1,61 @@
+/* ═══ AYON — The documents of a proposal ═══ */
+
+.pf { margin: 4px 0 14px; }
+.pf-title {
+  font-size: 0.72rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 0 0 6px; font-weight: 600;
+}
+.pf-title span { font-weight: 400; }
+.pf-none { margin: 0; color: #a0aec0; font-size: 0.85rem; }
+.pf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pf-list li {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid #efe5e6; border-radius: 9px; padding: 8px 10px; background: #fff;
+}
+.pf-ic { color: #8d1b2d; flex-shrink: 0; }
+.pf-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pf-text b { font-size: 0.86rem; color: #3d3235; }
+.pf-text small { font-size: 0.76rem; color: #8a7a7d; overflow-wrap: anywhere; }
+.pf-list .btn { flex-shrink: 0; text-decoration: none; }
+.pf-compact .pf-list li { padding: 6px 8px; }
+
+/* editor */
+.pf-edit { margin-bottom: 18px; }
+.pf-rows { border: 1px solid #efe5e6; border-radius: 10px; overflow: hidden; background: #fff; }
+.pf-row {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.6fr) auto;
+  gap: 10px; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid #f6f0f0; font-size: 0.86rem;
+}
+.pf-row:last-child { border-bottom: none; }
+.pf-cell-label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pf-cell-label b { color: #3d3235; }
+.pf-cell-file { min-width: 0; overflow-wrap: anywhere; color: #3d3235; }
+.pf-cell-file a { color: #8d1b2d; font-weight: 600; }
+.pf-cell-file small { color: #8a7a7d; }
+.pf-cell-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pf-select { width: 100%; min-width: 0; }
+.pf-req { color: #c53030; font-weight: 700; }
+.pf-empty { color: #b3a5a8; font-style: italic; }
+.pf-remove { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+.pf-remove:hover { background: #ffe9e9; }
+.pf-foot {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 10px; font-size: 0.78rem; color: #8a7a7d;
+}
+
+/* shared by the researcher pages */
+.btn-danger-soft { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+.btn-danger-soft:hover { background: #ffe9e9; }
+.saved-at { font-size: 0.8rem; color: #276749; font-weight: 600; }
+.mp-count { font-size: 0.8rem; color: #8a7a7d; margin-left: auto; }
+.mp-untitled { color: #8a7a7d; font-style: italic; }
+
+@media (max-width: 720px) {
+  .pf-row { grid-template-columns: 1fr; }
+  .pf-cell-acts { justify-content: flex-start; }
+}
+
+/* inside the narrower Edit and Resubmit window: label and buttons, then the file */
+.rs-modal .pf-row { grid-template-columns: minmax(0, 1fr) auto; }
+.rs-modal .pf-cell-file { grid-column: 1 / -1; order: 3; }

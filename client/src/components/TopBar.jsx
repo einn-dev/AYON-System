@@ -7,6 +7,7 @@ import { ROLE_LABEL, STATUS_LABEL, statusBadge, typeLabel } from '../utils/terms
 import { helpIndex } from '../data/helpContent';
 import ProposalTracker from './ProposalTracker';
 import { ProposalSignatures } from './Signature';
+import { ProposalFiles } from './ProposalFiles';
 import {
   FaMagnifyingGlass, FaCircleQuestion, FaBell, FaXmark, FaFileLines, FaBoxArchive,
   FaUser, FaArrowRight, FaBookOpen,
@@ -115,11 +116,7 @@ const Summary = ({ item, role, base, onClose }) => {
                 <ProposalSignatures proposal={full} />
               </>
             )}
-            {full && full.file_path && (
-              <a className="btn btn-outline btn-sm" href={fileHref(full.file_path)} target="_blank" rel="noreferrer">
-                <FaFileLines className="ic" />View Document
-              </a>
-            )}
+            {full && <ProposalFiles proposal={full} compact />}
           </>
         )}
 

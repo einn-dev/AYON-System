@@ -96,7 +96,11 @@ const detailsText = (log) => {
     case 'signature_removed':
       return 'Removed the signature from My Signature';
     case 'proposal_resubmitted': {
-      const did = [d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'file'].filter(Boolean);
+      const did = [
+        d.title_changed && 'title', d.description_changed && 'description', d.file_replaced && 'main document',
+        Number(d.files_added) > 0 && `${d.files_added} document${Number(d.files_added) === 1 ? '' : 's'} added`,
+        Number(d.files_removed) > 0 && `${d.files_removed} removed`,
+      ].filter(Boolean);
       return `Revision ${show(d.revision)}${did.length ? ` · changed: ${did.join(', ')}` : ''}`;
     }
     case 'proposal_reminder_sent':

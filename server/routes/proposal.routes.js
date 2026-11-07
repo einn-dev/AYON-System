@@ -4,62 +4,36 @@ const multer   = require('multer');
 const supabase = require('../config/supabase');
 
 const {
-  getMyProposals, submitProposal, getAllProposals,
+  getMyProposals, submitProposal, updateDraft, deleteDraft, getAllProposals,
   getProposalById, updateProposalStatus, resubmitProposal,
   endorseProposal, getMyEndorsements, getProposalSignatures,
 } = require('../controllers/proposal.controller');
+const { MAX_MB, MAX_FILES, MAX_SUPPORTING, ALLOWED_MIME } = require('../utils/proposalFiles');
 
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
-/* ── Multer — memory storage (files go to Supabase, not disk) ── */
+/* ── Multer — memory storage (files go to Supabase, not disk; the controller uploads them
+   only after the form passed its checks) ── */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits:  { fileSize: 10 * 1024 * 1024 },
+  limits:  { fileSize: MAX_MB * 1024 * 1024, files: MAX_FILES },
   fileFilter: (req, file, cb) => {
-    const allowed = ['application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    allowed.includes(file.mimetype)
+    ALLOWED_MIME.includes(file.mimetype)
       ? cb(null, true)
-      : cb(new Error('Only PDF/DOC/DOCX files allowed.'));
+      : cb(new Error('Only PDF, DOC or DOCX files are allowed.'));
   },
 });
 
-/* ── Supabase Storage upload middleware ── */
-const uploadToSupabase = async (req, res, next) => {
-  if (!req.file) return next();
-  try {
-    const ext      = req.file.originalname.split('.').pop();
-    const fileName = `proposals/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from(process.env.SUPABASE_BUCKET)
-      .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert:      false,
-      });
-
-    if (error) throw error;
-
-    const { data: urlData } = supabase.storage
-      .from(process.env.SUPABASE_BUCKET)
-      .getPublicUrl(fileName);
-
-    req.filePath = urlData?.publicUrl || fileName;
-    next();
-  } catch (err) {
-    console.error('Supabase upload error:', err);
-    return res.status(500).json({ message: 'File upload failed.' });
-  }
-};
-
-/* Runs multer, but answers file problems (wrong type, too big) as clear JSON errors */
-const uploadOne = (req, res, next) => {
-  upload.single('file')(req, res, (err) => {
+/* Runs multer for the Main Proposal Document ("file") and the supporting documents
+   ("supporting"), and answers file problems (wrong type, too big, too many) as clear JSON */
+const uploadDocs = (req, res, next) => {
+  upload.fields([{ name: 'file', maxCount: 1 }, { name: 'supporting', maxCount: MAX_SUPPORTING }])(req, res, (err) => {
     if (!err) return next();
     const message = err.code === 'LIMIT_FILE_SIZE'
-      ? 'The file is too large. The limit is 10 MB.'
-      : (err.message || 'The file could not be uploaded.');
+      ? `A file is too large. The limit is ${MAX_MB} MB per file.`
+      : (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_FILE_COUNT')
+        ? `You can attach one Main Proposal Document and at most ${MAX_SUPPORTING} supporting documents.`
+        : (err.message || 'The file could not be uploaded.');
     return res.status(400).json({ message });
   });
 };
@@ -71,9 +45,11 @@ const VIEW_ROLES   = ['admin','msric_staff','special_assistant','msric_director'
 
 /* ── Routes ── */
 router.get('/my',           verifyToken, authorizeRoles('researcher'),  getMyProposals);
-router.post('/',            verifyToken, authorizeRoles('researcher'),  uploadOne, uploadToSupabase, submitProposal);
+router.post('/',            verifyToken, authorizeRoles('researcher'),  uploadDocs, submitProposal);
 router.get('/',             verifyToken, authorizeRoles(...VIEW_ROLES), getAllProposals);
-router.post('/:id/resubmit', verifyToken, authorizeRoles('researcher'), uploadOne, uploadToSupabase, resubmitProposal);
+router.post('/:id/resubmit', verifyToken, authorizeRoles('researcher'), uploadDocs, resubmitProposal);
+router.put('/:id',          verifyToken, authorizeRoles('researcher'),  uploadDocs, updateDraft);      // edit, save or submit a draft
+router.delete('/:id',       verifyToken, authorizeRoles('researcher'),  deleteDraft);                  // drafts only
 router.get('/endorsements/mine', verifyToken,
   authorizeRoles('research_coordinator', 'chairperson', 'college_dean'), getMyEndorsements);
 router.get('/:id/signatures', verifyToken, getProposalSignatures);

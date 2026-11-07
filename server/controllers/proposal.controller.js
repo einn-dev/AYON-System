@@ -3,11 +3,14 @@ const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/roleNotify');
 const { notifyUser } = require('../utils/notify');
-const { statusLabel } = require('../utils/terms');
+const { statusLabel, TYPE_LABEL } = require('../utils/terms');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
 } = require('../utils/endorsementChain');
+const {
+  readUpload, readIds, uploadAll, listFiles, attachFiles, planChange, applyChange, removeKeys, keyFromPath,
+} = require('../utils/proposalFiles');
 const {
   officeAction, requireSignature, recordSignature, signaturesOf, ACTION_LABEL,
 } = require('../utils/signatures');
@@ -37,6 +40,7 @@ const getMyProposals = async (req, res) => {
 
     if (error) throw error;
     await attachTrail(data || []);
+    await attachFiles(data || []);
     return res.status(200).json({ proposals: data || [] });
   } catch (err) {
     console.error('getMyProposals error:', err);
@@ -44,89 +48,278 @@ const getMyProposals = async (req, res) => {
   }
 };
 
-/* ── POST submit proposal ── */
+/* ── POST submit proposal, or save it as a draft ──
+   multipart body:
+     proposal_type, title, description
+     save_as            'draft' | 'submit' (default 'submit')
+     file               the Main Proposal Document (required to submit, optional for a draft)
+     supporting[]       up to 4 supporting documents
+     supporting_labels  JSON array, one label per supporting document, in the same order
+   A draft is seen only by the researcher: nobody is notified and nothing is signed. */
 const submitProposal = async (req, res) => {
-  const { proposal_type, title, description } = req.body;
-  const file_path = req.filePath || null;
+  const body    = req.body || {};
+  const asDraft = String(body.save_as || '').trim().toLowerCase() === 'draft';
+  const type    = String(body.proposal_type || '').trim();
+  const title   = String(body.title ?? '').trim();
+  const desc    = String(body.description ?? '').trim();
 
-  if (!proposal_type || !title) {
-    return res.status(400).json({ message: 'Proposal type and title are required.' });
+  if (!TYPE_LABEL[type]) return res.status(400).json({ message: 'Please choose a proposal type.' });
+  const textProblem = checkText({ title, desc, needTitle: !asDraft });
+  if (textProblem) return res.status(400).json(textProblem);
+
+  const up = readUpload(req);
+  if (up.error) return res.status(400).json({ message: up.error });
+  if (!asDraft && !up.main) {
+    return res.status(400).json({ message: 'Please attach the Main Proposal Document before you submit.', code: 'MAIN_REQUIRED' });
   }
 
+  let rows;
   try {
-    /* it goes to the college first (Chairperson → Research Coordinator → Dean);
-       a role with no account for this college/department is skipped */
-    const owner = await ownerOf(req.user.user_id);
-    const stage = await nextStage(owner);
+    rows = await uploadAll(up, req.user.user_id);
+  } catch (err) {
+    console.error('Supabase upload error:', err);
+    return res.status(500).json({ message: 'File upload failed. Please try again.' });
+  }
+  const main = rows.find(r => r.kind === 'main');
 
-    const base = {
-      user_id: req.user.user_id,
-      proposal_type,
-      title,
-      description: description || null,
-      file_path,
-      status:       stage ? 'for_endorsement' : 'submitted',
-      submitted_at: new Date().toISOString(),
-    };
-    const { data: proposal, error: propError } = stage
-      ? await supabase.from('research_proposals')
-          .insert({ ...base, endorsement_stage: stage.role })
-          .select('proposal_id').single()
-      : await supabase.from('research_proposals')
-          .insert(base)
-          .select('proposal_id').single();
-
+  try {
+    /* saved as a draft first; submitting then moves it on (so a failed step never loses the work) */
+    const now = new Date().toISOString();
+    const { data: proposal, error: propError } = await supabase.from('research_proposals')
+      .insert({
+        user_id: req.user.user_id,
+        proposal_type: type,
+        title,
+        description: desc || null,
+        file_path:   main ? main.file_path : null,
+        status:      'draft',
+        created_at:  now,
+        updated_at:  now,
+      })
+      .select('proposal_id').single();
     if (propError) throw propError;
 
-    await supabase.from('submissions').insert({
-      proposal_id:       proposal.proposal_id,
-      submission_status: 'pending',
-    });
+    if (rows.length) {
+      const { error: fErr } = await supabase.from('proposal_files')
+        .insert(rows.map(r => ({ ...r, proposal_id: proposal.proposal_id })));
+      if (fErr) {
+        await supabase.from('research_proposals').delete().eq('proposal_id', proposal.proposal_id);
+        throw fErr;
+      }
+    }
 
-    await supabase.from('notifications').insert({
-      user_id:     req.user.user_id,
-      proposal_id: proposal.proposal_id,
-      notif_type:  'submission',
-      title:       'Proposal Submitted',
-      message:     stage
-        ? `Your proposal "${title}" has been submitted. It is now waiting for endorsement by the ${ROLE_LABEL[stage.role]}.`
-        : `Your proposal "${title}" has been submitted successfully.`,
-    });
-
-    const by = fullName(owner) || fullName(req.user) || 'a researcher';
-    if (stage) {
-      /* the first college endorser has it */
-      await notifyIds(stage.ids.filter(id => Number(id) !== Number(req.user.user_id)), {
+    if (asDraft) {
+      return res.status(201).json({
+        message:     'Draft saved. You can finish it later from My Proposals.',
         proposal_id: proposal.proposal_id,
-        notif_type:  'endorsement',
-        title:       'Proposal waiting for your endorsement',
-        message:     `"${title}" by ${by} is waiting for your endorsement.`,
-      });
-    } else {
-      /* no college endorsers for this researcher: the Special Assistants have it */
-      await notifyRole('special_assistant', {
-        proposal_id: proposal.proposal_id,
-        notif_type:  'submission',
-        title:       'New submission to validate',
-        message:     `"${title}" was submitted by ${by}.`,
-      }, { exclude: [req.user.user_id] });
-      await notifyStaff({
-        proposal_id: proposal.proposal_id,
-        notif_type:  'submission',
-        title:       'New proposal at MSIRC',
-        message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the Special Assistant.`,
+        status:      'draft',
       });
     }
 
-    return res.status(201).json({
-      message:     stage
-        ? `Proposal submitted. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
-        : 'Proposal submitted successfully.',
-      proposal_id: proposal.proposal_id,
-      status:      stage ? 'for_endorsement' : 'submitted',
-    });
+    const started = await startReview(req, { proposal_id: proposal.proposal_id, user_id: req.user.user_id, title });
+    return res.status(201).json({ ...started, proposal_id: proposal.proposal_id });
   } catch (err) {
+    await removeKeys(rows.map(r => r.storage_key));
     console.error('submitProposal error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* Title and abstract limits. Returns an error body, or null. */
+const checkText = ({ title, desc, needTitle }) => {
+  if (needTitle && !title) return { message: 'Please enter the research title.', code: 'TITLE_REQUIRED' };
+  if (title && title.length > TITLE_MAX) return { message: `Title must be ${TITLE_MAX} characters or fewer.` };
+  if (desc && desc.length > DESC_MAX) return { message: `Description must be ${DESC_MAX} characters or fewer.` };
+  return null;
+};
+
+/* Moves a draft into the review: to the first college endorser who has an account,
+   or straight to the Special Assistant. Tells the researcher and whoever has it now. */
+const startReview = async (req, proposal) => {
+  const owner = await ownerOf(proposal.user_id);
+  const stage = await nextStage(owner);
+  const now   = new Date().toISOString();
+  const patch = { status: stage ? 'for_endorsement' : 'submitted', submitted_at: now, updated_at: now };
+  if (stage) patch.endorsement_stage = stage.role;
+
+  /* only if it is still a draft: a double click submits once */
+  const { data: changed, error } = await supabase.from('research_proposals')
+    .update(patch)
+    .eq('proposal_id', proposal.proposal_id)
+    .eq('status', 'draft')
+    .select('proposal_id');
+  if (error) throw error;
+  if (!changed || !changed.length) {
+    return { message: 'This proposal was already submitted.', status: null, already: true };
+  }
+
+  const { data: sub } = await supabase.from('submissions')
+    .select('submission_id').eq('proposal_id', proposal.proposal_id).maybeSingle();
+  if (!sub) {
+    await supabase.from('submissions').insert({ proposal_id: proposal.proposal_id, submission_status: 'pending' });
+  }
+
+  const title = proposal.title;
+  await supabase.from('notifications').insert({
+    user_id:     proposal.user_id,
+    proposal_id: proposal.proposal_id,
+    notif_type:  'submission',
+    title:       'Proposal Submitted',
+    message:     stage
+      ? `Your proposal "${title}" has been submitted. It is now waiting for endorsement by the ${ROLE_LABEL[stage.role]}.`
+      : `Your proposal "${title}" has been submitted successfully.`,
+  });
+
+  const by = fullName(owner) || fullName(req.user) || 'a researcher';
+  if (stage) {
+    /* the first college endorser has it */
+    await notifyIds(stage.ids.filter(id => Number(id) !== Number(proposal.user_id)), {
+      proposal_id: proposal.proposal_id,
+      notif_type:  'endorsement',
+      title:       'Proposal waiting for your endorsement',
+      message:     `"${title}" by ${by} is waiting for your endorsement.`,
+    });
+  } else {
+    /* no college endorsers for this researcher: the Special Assistants have it */
+    await notifyRole('special_assistant', {
+      proposal_id: proposal.proposal_id,
+      notif_type:  'submission',
+      title:       'New submission to validate',
+      message:     `"${title}" was submitted by ${by}.`,
+    }, { exclude: [proposal.user_id] });
+    await notifyStaff({
+      proposal_id: proposal.proposal_id,
+      notif_type:  'submission',
+      title:       'New proposal at MSIRC',
+      message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the Special Assistant.`,
+    });
+  }
+
+  return {
+    message: stage
+      ? `Proposal submitted. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
+      : 'Proposal submitted successfully.',
+    status: stage ? 'for_endorsement' : 'submitted',
+  };
+};
+
+/* The researcher's own draft, or an error to send */
+const ownDraft = async (req) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(String(id))) return { fail: [400, { message: 'Invalid proposal.' }] };
+  const { data: proposal, error } = await supabase
+    .from('research_proposals').select('*').eq('proposal_id', id).maybeSingle();
+  if (error) throw error;
+  /* somebody else's proposal looks the same as one that does not exist */
+  if (!proposal || Number(proposal.user_id) !== Number(req.user.user_id)) {
+    return { fail: [404, { message: 'Proposal not found.' }] };
+  }
+  if (proposal.status !== 'draft') {
+    return { fail: [409, { message: 'This proposal was already submitted, so it is no longer a draft.', code: 'NOT_DRAFT' }] };
+  }
+  return { proposal };
+};
+
+/* ── PUT edit a draft, and save it again or submit it ──
+   Same multipart body as submitting, plus:
+     remove_files   JSON array of file_id values to remove (supporting documents only)
+   Fields that are not sent keep their saved value.                              */
+const updateDraft = async (req, res) => {
+  const body    = req.body || {};
+  const submit  = String(body.save_as || '').trim().toLowerCase() === 'submit';
+  try {
+    const found = await ownDraft(req);
+    if (found.fail) return res.status(found.fail[0]).json(found.fail[1]);
+    const draft = found.proposal;
+
+    const type  = body.proposal_type !== undefined ? String(body.proposal_type).trim() : draft.proposal_type;
+    const title = body.title !== undefined ? String(body.title).trim() : String(draft.title || '').trim();
+    const desc  = body.description !== undefined ? String(body.description).trim() : String(draft.description || '').trim();
+    if (!TYPE_LABEL[type]) return res.status(400).json({ message: 'Please choose a proposal type.' });
+    const textProblem = checkText({ title, desc, needTitle: submit });
+    if (textProblem) return res.status(400).json(textProblem);
+
+    const up = readUpload(req);
+    if (up.error) return res.status(400).json({ message: up.error });
+    const removeIds = readIds(body.remove_files);
+    const current   = await listFiles(draft.proposal_id);
+    const kinds     = [...(up.main ? [{ kind: 'main' }] : []), ...up.supporting.map(() => ({ kind: 'supporting' }))];
+    const plan      = planChange(withLegacy(current, draft), { add: kinds, removeIds });
+    if (!plan.ok) return res.status(400).json({ message: plan.error });
+    if (submit && !plan.hasMain) {
+      return res.status(400).json({ message: 'Please attach the Main Proposal Document before you submit.', code: 'MAIN_REQUIRED' });
+    }
+
+    let rows;
+    try {
+      rows = await uploadAll(up, req.user.user_id);
+    } catch (err) {
+      console.error('Supabase upload error:', err);
+      return res.status(500).json({ message: 'File upload failed. Please try again.' });
+    }
+
+    const newMain = rows.find(r => r.kind === 'main');
+    const keptMain = plan.keep.find(f => f.kind === 'main');
+    const { data: changed, error: updErr } = await supabase.from('research_proposals')
+      .update({
+        proposal_type: type,
+        title,
+        description: desc || null,
+        file_path:   newMain ? newMain.file_path : (keptMain ? keptMain.file_path : null),
+        updated_at:  new Date().toISOString(),
+      })
+      .eq('proposal_id', draft.proposal_id)
+      .eq('status', 'draft')
+      .select('proposal_id');
+    if (updErr) { await removeKeys(rows.map(r => r.storage_key)); throw updErr; }
+    if (!changed || !changed.length) {
+      await removeKeys(rows.map(r => r.storage_key));
+      return res.status(409).json({ message: 'This proposal was already submitted, so it is no longer a draft.', code: 'NOT_DRAFT' });
+    }
+    await applyChange(draft.proposal_id, { ...plan, removed: plan.removed.filter(f => f.file_id) }, rows);
+
+    if (!submit) {
+      return res.status(200).json({ message: 'Draft saved.', proposal_id: draft.proposal_id, status: 'draft' });
+    }
+    const started = await startReview(req, { proposal_id: draft.proposal_id, user_id: draft.user_id, title });
+    return res.status(200).json({ ...started, proposal_id: draft.proposal_id });
+  } catch (err) {
+    console.error('updateDraft error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+/* an older proposal whose single file (file_path) has no proposal_files row yet:
+   that file counts as its Main Proposal Document */
+const withLegacy = (current, p) => (current.some(f => f.kind === 'main') || !p.file_path
+  ? current
+  : [{ file_id: null, kind: 'main', label: 'Main Proposal Document', file_path: p.file_path }, ...current]);
+
+/* ── DELETE a draft (owner only) ── */
+const deleteDraft = async (req, res) => {
+  try {
+    const found = await ownDraft(req);
+    if (found.fail) return res.status(found.fail[0]).json(found.fail[1]);
+    const draft = found.proposal;
+
+    const files = await listFiles(draft.proposal_id).catch(() => []);
+    const { data: gone, error } = await supabase.from('research_proposals')
+      .delete()
+      .eq('proposal_id', draft.proposal_id)
+      .eq('status', 'draft')
+      .select('proposal_id');
+    if (error) throw error;
+    if (gone && !gone.length) {
+      return res.status(409).json({ message: 'This proposal was already submitted, so it is no longer a draft.', code: 'NOT_DRAFT' });
+    }
+    await supabase.from('proposal_files').delete().eq('proposal_id', draft.proposal_id);
+    await removeKeys([
+      ...files.map(f => f.storage_key || keyFromPath(f.file_path)),
+      ...(files.length ? [] : [keyFromPath(draft.file_path)]),
+    ]);
+    return res.status(200).json({ message: 'Draft deleted.' });
+  } catch (err) {
+    console.error('deleteDraft error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -214,7 +407,8 @@ const getAllProposals = async (req, res) => {
     const { data, error } = await query;
     if (error) throw error;
 
-    const proposals = data.map(p => ({
+    /* drafts belong to the researcher only */
+    const proposals = data.filter(p => p.status !== 'draft').map(p => ({
       ...p,
       first_name: p.users?.first_name,
       last_name:  p.users?.last_name,
@@ -230,6 +424,7 @@ const getAllProposals = async (req, res) => {
       return res.status(200).json({ proposals: proposals.filter(staffCanSee).map(staffFields) });
     }
 
+    await attachFiles(proposals);
     return res.status(200).json({ proposals });
   } catch (err) {
     console.error('getAllProposals error:', err);
@@ -257,6 +452,10 @@ const getProposalById = async (req, res) => {
     if (role === 'researcher' && Number(data.user_id) !== Number(req.user.user_id)) {
       return res.status(403).json({ message: 'This is not your proposal.' });
     }
+    /* a draft is seen only by the researcher who is writing it */
+    if (data.status === 'draft' && Number(data.user_id) !== Number(req.user.user_id)) {
+      return res.status(404).json({ message: 'Proposal not found.' });
+    }
     if (COLLEGE_SCOPED_ROLES.includes(role) || DEPARTMENT_SCOPED_ROLES.includes(role)) {
       const { data: me } = await supabase
         .from('users')
@@ -273,6 +472,7 @@ const getProposalById = async (req, res) => {
     }
 
     await attachTrail([data]);
+    await attachFiles([data]);
     return res.status(200).json({
       proposal: {
         ...data,
@@ -324,6 +524,10 @@ const updateProposalStatus = async (req, res) => {
       .single();
 
     if (!proposal) return res.status(404).json({ message: 'Proposal not found.' });
+
+    if (proposal.status === 'draft') {
+      return res.status(400).json({ message: 'This proposal is still a draft. The researcher has not submitted it yet.' });
+    }
 
     /* the college has it: the office acts only after the last college endorsement */
     if (proposal.status === 'for_endorsement') {
@@ -454,8 +658,11 @@ const updateProposalStatus = async (req, res) => {
 };
 
 /* ── POST edit and resubmit a returned proposal (owner only) ──
-   Title / description / file are optional, but something has to change.
-   Without a new file the old one is kept.                                  */
+   Title / description / documents are optional, but something has to change.
+     file               a new Main Proposal Document (replaces the old one)
+     supporting[]       new supporting documents, with supporting_labels
+     remove_files       JSON array of supporting file_id values to remove
+   Documents that are not touched are kept.                                  */
 const resubmitProposal = async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(String(id))) return res.status(400).json({ message: 'Invalid proposal.' });
@@ -463,7 +670,9 @@ const resubmitProposal = async (req, res) => {
   const body       = req.body || {};
   const hasTitle   = body.title !== undefined;
   const hasDesc    = body.description !== undefined;
-  const newFile    = req.filePath || null;
+  const up         = readUpload(req);
+  if (up.error) return res.status(400).json({ message: up.error });
+  const removeIds  = readIds(body.remove_files);
 
   const titleIn = hasTitle ? String(body.title).trim() : null;
   const descIn  = hasDesc  ? (String(body.description).trim() || null) : undefined;
@@ -497,12 +706,33 @@ const resubmitProposal = async (req, res) => {
 
     const titleChanged = hasTitle && titleIn !== proposal.title;
     const descChanged  = hasDesc  && descIn !== (proposal.description || null);
-    if (!titleChanged && !descChanged && !newFile) {
+    const filesChanged = !!up.main || up.supporting.length > 0 || removeIds.length > 0;
+    if (!titleChanged && !descChanged && !filesChanged) {
       return res.status(400).json({
-        message: 'Nothing has changed yet. Edit the title or description, or attach a new file.',
+        message: 'Nothing has changed yet. Edit the title or description, or change the documents.',
         code: 'NO_CHANGES',
       });
     }
+
+    /* the document limits, checked before anything is uploaded */
+    const current = await listFiles(proposal.proposal_id).catch(() => []);
+    const kinds   = [...(up.main ? [{ kind: 'main' }] : []), ...up.supporting.map(() => ({ kind: 'supporting' }))];
+    const plan    = planChange(withLegacy(current, proposal), { add: kinds, removeIds });
+    if (!plan.ok) return res.status(400).json({ message: plan.error });
+    if (!plan.hasMain) {
+      return res.status(400).json({ message: 'Please attach the Main Proposal Document before you resubmit.', code: 'MAIN_REQUIRED' });
+    }
+
+    let rows = [];
+    if (up.main || up.supporting.length) {
+      try {
+        rows = await uploadAll(up, req.user.user_id);
+      } catch (err) {
+        console.error('Supabase upload error:', err);
+        return res.status(500).json({ message: 'File upload failed. Please try again.' });
+      }
+    }
+    const newFile = (rows.find(r => r.kind === 'main') || {}).file_path || null;
 
     const now      = new Date().toISOString();
     const revision = (Number(proposal.revision_count) || 0) + 1;
@@ -525,12 +755,18 @@ const resubmitProposal = async (req, res) => {
       base,
       { revision_count: revision, endorsement_stage: stage ? stage.role : null },
     );
-    if (updErr) throw updErr;
+    if (updErr) { await removeKeys(rows.map(r => r.storage_key)); throw updErr; }
     if (!changed || !changed.length) {
+      await removeKeys(rows.map(r => r.storage_key));
       return res.status(409).json({
         message: 'This proposal was just changed. Please reload the page.',
         code: 'NOT_RETURNED',
       });
+    }
+
+    /* the documents (an old single file without a row is simply replaced by file_path above) */
+    if (filesChanged) {
+      await applyChange(proposal.proposal_id, { ...plan, removed: plan.removed.filter(f => f.file_id) }, rows);
     }
 
     const finalTitle = titleChanged ? titleIn : proposal.title;
@@ -541,7 +777,7 @@ const resubmitProposal = async (req, res) => {
     if (subErr) console.error('resubmit submissions reset failed:', subErr.message || subErr);
 
     /* tell the researcher, and whoever now has it in their queue */
-    const rows = [{
+    const notes = [{
       user_id:     proposal.user_id,
       proposal_id: proposal.proposal_id,
       notif_type:  'submission',
@@ -550,7 +786,7 @@ const resubmitProposal = async (req, res) => {
         ? `Your revised proposal "${finalTitle}" starts again from the college level. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
         : `Your revised proposal "${finalTitle}" is back with MSIRC for validation.`,
     }];
-    const { error: nErr } = await supabase.from('notifications').insert(rows);
+    const { error: nErr } = await supabase.from('notifications').insert(notes);
     if (nErr) console.error('resubmit notification failed:', nErr.message || nErr);
     if (stage) {
       await notifyIds(stage.ids.filter(uid => Number(uid) !== Number(proposal.user_id)), {
@@ -579,7 +815,11 @@ const resubmitProposal = async (req, res) => {
       targetType: 'proposal',
       targetId:   proposal.proposal_id,
       targetName: finalTitle,
-      details:    { revision, title_changed: !!titleChanged, description_changed: !!descChanged, file_replaced: !!newFile, next: stage ? stage.role : 'special_assistant' },
+      details:    {
+        revision, title_changed: !!titleChanged, description_changed: !!descChanged,
+        file_replaced: !!newFile, files_added: up.supporting.length, files_removed: removeIds.length,
+        next: stage ? stage.role : 'special_assistant',
+      },
     });
 
     return res.status(200).json({
@@ -905,6 +1145,8 @@ const getMyEndorsements = async (req, res) => {
 module.exports = {
   getMyProposals,
   submitProposal,
+  updateDraft,
+  deleteDraft,
   getAllProposals,
   getProposalById,
   updateProposalStatus,

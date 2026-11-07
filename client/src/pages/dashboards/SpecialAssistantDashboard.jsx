@@ -6,9 +6,10 @@ import '../../components/Layout.css';
 import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModal';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
-import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaFileLines, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
+import { ProposalFiles } from '../../components/ProposalFiles';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -481,14 +482,9 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Research Title</p>
                     <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{selected.title}</p>
                   </div>
-                  {selected.file_path && (
-                    <a className="btn btn-outline btn-sm"
-                      style={{ display: 'block', textAlign: 'center', marginTop: 14, textDecoration: 'none' }}
-                      href={fileHref(selected.file_path)}
-                      target="_blank" rel="noreferrer">
-                      <FaFileLines className="ic" />View Document
-                    </a>
-                  )}
+                  <div style={{ marginTop: 14 }}>
+                    <ProposalFiles proposal={selected} compact />
+                  </div>
                 </div>
               </div>
 
