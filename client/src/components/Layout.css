@@ -135,7 +135,10 @@
   white-space: nowrap; overflow: hidden;
 }
 .logout-btn:hover { background: rgba(176,149,25,0.35); color: #fff; }
+.logout-btn .ic { margin-right: 7px; vertical-align: -2px; }
+/* Collapsed: hide the word, keep the icon */
 .layout.collapsed .logout-btn { font-size: 0; padding: 9px 0; }
+.layout.collapsed .logout-btn .ic { font-size: 1.05rem; margin-right: 0; vertical-align: middle; }
 
 /* ── Main ── */
 .main-content { flex: 1; padding: 28px; overflow-y: auto; }
