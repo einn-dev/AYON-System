@@ -11,7 +11,7 @@ const { sendEmail } = require('../utils/mailer');
 const { forgetUser } = require('../middleware/authMiddleware');
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
-} = require('./utils/verification');
+} = require('../utils/verification');
 
 const VALID_ROLES = [
   'researcher','msric_staff','research_coordinator',
