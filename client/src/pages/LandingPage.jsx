@@ -6,21 +6,27 @@ import {
   FaBuildingColumns, FaUserCheck, FaUserTie, FaStamp, FaDatabase,
 } from 'react-icons/fa6';
 import logo from '../assets/ayon-logo.png';
+import { CONTACT } from '../data/helpContent';
 import photoTeam       from '../assets/msirc-team.jpg';
 import photoSpotlight  from '../assets/research-spotlight.jpg';
 import photoConference from '../assets/msirc-conference.jpg';
 import './LandingPage.css';
 
 /* ───────────── data ───────────── */
-const STAGES = ['Submitted', 'Endorsed', 'Validated', 'Under Review', 'Approved', 'Archived'];
+/* the sample proposal in the hero: the same path and status names as in AYON */
+const STAGES = ['Submitted', 'College', 'Validation', 'Director', 'OVCRED', 'Approved'];
+const STAGE_STATUS = [
+  'Submitted', 'For College Endorsement', 'For Validation',
+  'For Director Review', 'For OVCRED Approval', 'Approved',
+];
 
 const FEED = [
-  'Researcher uploaded the proposal and requirements.',
-  'College level endorsed the proposal.',
-  'Special Assistant checked the documents against the checklist.',
+  'The researcher submitted the proposal and its documents.',
+  'The Chairperson, Research Coordinator and College Dean are endorsing it.',
+  'The Special Assistant is checking the documents against the checklist.',
   'The MSIRC Director is reviewing the proposal.',
-  'OVCRED gave the final approval.',
-  'Saved to the repository. Everyone was notified.',
+  'Waiting for the final approval of OVCRED.',
+  'Approved and signed. Everyone involved was notified.',
 ];
 
 const PHOTOS = [
@@ -45,13 +51,14 @@ const STATS = [
   [1, 'digital repository', 'for all approved research'],
 ];
 
+/* [icon, who, what, details, the status while it is at this step] */
 const STEPS = [
-  [FaUserGraduate,    'Researcher',        'Uploads the proposal',      'Pick the proposal type, fill in the details and attach the requirements. Nothing to print or carry around.', 'Submitted'],
-  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Department Chairperson, Research Coordinator and College Dean of your college review and endorse it, or return it with remarks.', 'Endorsed'],
-  [FaUserCheck,       'Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded or returned for correction.', 'Validated'],
-  [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal and makes the institute’s decision.', 'Under Review'],
-  [FaStamp,           'OVCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs off.', 'Approved'],
-  [FaDatabase,        'System',            'Archives and notifies',     'Approved research is saved to the repository and every person involved gets an alert.', 'Archived'],
+  [FaUserGraduate,    'Researcher',        'Uploads the proposal',      'Pick the proposal type, fill in the details, and attach the Main Proposal Document plus any supporting documents. Save it as a draft anytime and submit when it is ready.', 'Draft, then Submitted'],
+  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Department Chairperson, then the Research Coordinator, then the College Dean endorse it with their e-signature, or return it with remarks.', 'For College Endorsement'],
+  [FaUserCheck,       'Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded to the Director or returned for correction.', 'For Validation'],
+  [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal, then endorses it to OVCRED, approves it, or returns it.', 'For Director Review'],
+  [FaStamp,           'OVCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs the final approval.', 'For OVCRED Approval'],
+  [FaDatabase,        'Repository',        'Shared with the campus',    'OVCRED or the Administrator adds the approved research to the Research Repository, where it can be searched later.', 'Approved'],
 ];
 
 const TYPES = [
@@ -68,11 +75,15 @@ const FAQ = [
   ['Why do I need to verify my email?',
    'After you register we send a link to your email. Click it to activate your account. The link is valid for 24 hours, and you can ask for a new one if it expires.'],
   ['What files can I upload?',
-   'PDF, DOC and DOCX files, up to 10MB each.'],
+   'One Main Proposal Document (required) and up to 4 supporting documents, such as the Line-Item Budget or an endorsement letter. Each can be a PDF, DOC or DOCX file of up to 10 MB.'],
+  ['Can I save my proposal and finish it later?',
+   'Yes. Click Save as Draft on any step of the form. Only you can see a draft, and you can continue it from My Proposals.'],
   ['How will I know what happened to my proposal?',
    'The status on your dashboard updates at every stage, and you get an in-app notification and an email at each decision point.'],
   ['Where do approved proposals go?',
-   'They are archived in the digital repository, where they can be searched later.'],
+   'OVCRED or the Administrator adds them to the Research Repository, where they can be searched later.'],
+  ['Who do I contact for help?',
+   `The Mamitua Saber Institute of Research and Creation (MSIRC): ${CONTACT.email}, ${CONTACT.hours}.`],
 ];
 
 /* ───────────── small helpers ───────────── */
@@ -194,7 +205,7 @@ const TrackerDemo = () => {
           <p className="lp-demo-type">Internally Funded Research</p>
           <h3>Community Water Quality Monitoring</h3>
           <div className="lp-demo-status">
-            <span className={`lp-pill lp-pill-${at}`} key={at}>{STAGES[at]}</span>
+            <span className={`lp-pill lp-pill-${at}`} key={at}>{STAGE_STATUS[at]}</span>
             <span className="lp-demo-time">Updated just now</span>
           </div>
 
@@ -212,7 +223,7 @@ const TrackerDemo = () => {
         </div>
       </div>
       <div className="lp-float lp-float-a" key={`n${at}`}><FaBell /> Notification sent</div>
-      <div className="lp-float lp-float-b"><FaBoxArchive /> Saved to repository</div>
+      {at === STAGES.length - 1 && <div className="lp-float lp-float-b"><FaBoxArchive /> Saved to repository</div>}
     </div>
   );
 };
@@ -396,6 +407,9 @@ const LandingPage = () => {
           <p>
             Web-Based Integrated Research Services Management System<br />
             Mamitua Saber Institute of Research and Creation · MSU Main Campus, Marawi City
+          </p>
+          <p className="lp-contact">
+            <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · {CONTACT.hours}
           </p>
           <p className="lp-credit">
             A Capstone Project · Pumbaya, Zainab A. &amp; Tocalo, Norhidaya A. · {new Date().getFullYear()}

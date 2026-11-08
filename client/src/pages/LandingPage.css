@@ -188,6 +188,8 @@ html { scroll-behavior: smooth; }
 .lp-stat strong { display: block; font-size: 3.4rem; font-weight: 800; color: var(--maroon); line-height: 1; }
 .lp-stat span { display: block; margin-top: 10px; font-weight: 700; font-size: 1.2rem; color: var(--ink); }
 .lp-stat small { display: block; margin-top: 6px; font-size: 0.95rem; color: var(--faint); }
+/* the counting number is a span inside <strong>: keep it big (the label rule above is for the other span) */
+.lp-stat strong span { display: inline; margin: 0; font: inherit; color: inherit; }
 
 /* ── Sections ── */
 .lp-section { max-width: var(--wrap); margin: 0 auto; padding: 112px var(--gutter); }
@@ -299,6 +301,8 @@ html { scroll-behavior: smooth; }
 .lp-footer p { margin: 0 0 8px; font-size: 0.95rem; line-height: 1.7; color: var(--faint); }
 .lp-credit { font-size: 0.85rem !important; color: #c4b8bb !important; }
 .lp-legal a { color: var(--faint); text-decoration: none; }
+.lp-contact a { color: var(--maroon); font-weight: 600; text-decoration: none; }
+.lp-contact a:hover { text-decoration: underline; }
 .lp-legal a:hover { color: var(--maroon); text-decoration: underline; }
 
 .lp a:focus-visible, .lp button:focus-visible { outline: 2px solid var(--maroon); outline-offset: 3px; border-radius: 8px; }
@@ -387,4 +391,28 @@ html { scroll-behavior: smooth; }
 }
 @media (max-width: 640px) {
   .lp-nav:not(.is-scrolled) .lp-logo { height: 32px; }
+}
+
+/* ═══ Small screens: menu row, the hero card badges, the number cards ═══ */
+@media (max-width: 960px) {
+  /* the three menu links move to a second row under the top bar */
+  .lp-nav-inner { height: auto; min-height: 68px; flex-wrap: wrap; row-gap: 0; padding-top: 10px; padding-bottom: 10px; }
+  .lp-nav-links { display: flex; order: 3; width: 100%; justify-content: center; gap: 28px; padding-top: 6px; }
+  .lp-nav-links a { font-size: 0.95rem; }
+  .lp-hero-inner { padding-top: 150px; }
+}
+@media (max-width: 640px) {
+  .lp-nav-links { gap: 22px; }
+  .lp-nav-links a { font-size: 0.9rem; }
+  /* the badge sits above the card instead of on its title bar */
+  .lp-float { padding: 9px 14px; font-size: 0.82rem; }
+  .lp-float-a { top: -44px; right: 6px; }
+  .lp-demo-status { flex-wrap: wrap; gap: 6px 12px; }
+  .lp-pill { font-size: 0.82rem; padding: 6px 13px; }
+  /* tighter number cards */
+  .lp-stats { gap: 12px; }
+  .lp-stat { padding: 18px 12px; border-radius: 14px; }
+  .lp-stat strong { font-size: 2.4rem; }
+  .lp-stat span { margin-top: 6px; font-size: 1rem; }
+  .lp-stat small { font-size: 0.8rem; line-height: 1.35; }
 }
