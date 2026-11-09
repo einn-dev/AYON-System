@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa6';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import logo from '../assets/ayon-logo.png';
@@ -19,13 +20,14 @@ import './AuthSlider.css';
 let lastShownMode = null;
 let forgetTimer = null;
 
+/* the logo goes back to the home page */
 const Brand = () => (
-  <div className="reg-brand-top">
+  <Link to="/" className="reg-brand-top as-home-link" aria-label="AYON home page">
     <div className="reg-logo-chip">
       <img src={logo} alt="AYON logo" />
     </div>
     <span className="reg-wordmark">AYON</span>
-  </div>
+  </Link>
 );
 
 const AuthPage = ({ mode }) => {
@@ -52,7 +54,8 @@ const AuthPage = ({ mode }) => {
   }, [mode]);
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper as-wrapper">
+      <Link to="/" className="as-back-home"><FaArrowLeft className="ic" />Back to home</Link>
       <div className={`reg-card as-card is-${shown}`}>
 
         {/* The sliding maroon panel */}
@@ -72,6 +75,7 @@ const AuthPage = ({ mode }) => {
                 <li>Apply for grants and incentives</li>
                 <li>Keep your research in one archive</li>
               </ul>
+              <Link to="/login" className="as-ghost-btn">Sign in</Link>
             </div>
             <p className="reg-brand-foot">MSIRC · MSU Main Campus</p>
           </div>
@@ -90,7 +94,7 @@ const AuthPage = ({ mode }) => {
                 <li>See your proposal status</li>
                 <li>Get notified at every stage</li>
               </ul>
-              <Link to="/register" className="as-ghost-btn">Sign up</Link>
+              <Link to="/register" className="as-ghost-btn">Create an account</Link>
             </div>
             <p className="reg-brand-foot">MSIRC · MSU Main Campus</p>
           </div>

@@ -27,7 +27,6 @@ const RegisterForm = () => {
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed,  setAgreed]  = useState(false);
-  const [agreedLegal, setAgreedLegal] = useState(false);   // Terms of Service + Privacy Policy
   const [done,    setDone]    = useState(null);   // { email, emailSent } after sign-up
 
   const formRef  = useRef(null);
@@ -38,7 +37,6 @@ const RegisterForm = () => {
   const clearFields = useCallback(() => {
     setForm(EMPTY_FORM);
     setAgreed(false);
-    setAgreedLegal(false);
     setError('');
     if (formRef.current) {
       formRef.current.querySelectorAll('input, select').forEach((el) => {
@@ -125,9 +123,7 @@ const RegisterForm = () => {
     if (form.password !== form.confirm_password)
       return 'Passwords do not match.';
     if (!agreed)
-      return 'Please agree to the terms to continue.';
-    if (!agreedLegal)
-      return 'Please agree to the Terms of Service and Privacy Policy to continue.';
+      return 'Please confirm your information and agree to the Terms of Service and Privacy Policy to continue.';
     return null;
   };
 
@@ -169,10 +165,10 @@ const RegisterForm = () => {
       {/* the normal registration form (kept mounted, just hidden, after sign-up
           so "Typed the wrong email?" brings back what was typed) */}
       <div className={`as-form-wrap${done ? ' is-hidden' : ''}`} aria-hidden={done ? 'true' : undefined}>
-        <div className="reg-mobile-head">
+        <Link to="/" className="reg-mobile-head as-home-link" aria-label="AYON home page">
           <img src={logo} alt="AYON logo" />
           <span>AYON</span>
-        </div>
+        </Link>
 
         <h2>Researcher Registration</h2>
         <p className="reg-sub">
@@ -203,7 +199,7 @@ const RegisterForm = () => {
           <div className="form-group reg-half">
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
+              onChange={handleChange} placeholder="yourname@gmail.com" autoComplete="off" />
           </div>
 
           <div className="form-group reg-half">
@@ -268,16 +264,7 @@ const RegisterForm = () => {
               <input type="checkbox" checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)} />
               <span>
-                I confirm that the information provided is accurate and I agree to the
-                AYON research data policies of MSIRC – MSU Main Campus.
-              </span>
-            </label>
-
-            <label className="reg-terms">
-              <input type="checkbox" checked={agreedLegal}
-                onChange={(e) => setAgreedLegal(e.target.checked)} />
-              <span>
-                By creating an account, you agree to our{' '}
+                I confirm that my information is accurate, and I agree to the{' '}
                 <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
                 {' '}and{' '}
                 <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
@@ -328,7 +315,7 @@ const RegisterForm = () => {
             Typed the wrong email? Go back and fix it
           </button>
 
-          <p className="reg-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>
+          <p className="reg-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to sign in</Link></p>
         </div>
       )}
     </section>

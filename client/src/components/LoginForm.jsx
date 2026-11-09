@@ -110,13 +110,13 @@ const LoginForm = () => {
 
   return (
     <section className="reg-form-side as-login-side">
-      <div className="reg-mobile-head">
+      <Link to="/" className="reg-mobile-head as-home-link" aria-label="AYON home page">
         <img src={logo} alt="AYON logo" />
         <span>AYON</span>
-      </div>
+      </Link>
 
       <div className="as-login-inner">
-        <h2>Sign In</h2>
+        <h2>Sign in</h2>
         <p className="reg-sub">Welcome back! Enter your details to continue.</p>
 
         {notice && <p role="status" style={NOTICE_STYLE}>{notice}</p>}
@@ -137,7 +137,7 @@ const LoginForm = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="you@msumain.edu.ph"
+              placeholder="yourname@gmail.com"
               autoComplete="off"
             />
           </div>
@@ -163,12 +163,15 @@ const LoginForm = () => {
           )}
 
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <p className="reg-footer">
-          Don&apos;t have an account? <Link to="/register">Register here</Link>
+          Don&apos;t have an account? <Link to="/register">Create an account</Link>
+        </p>
+        <p className="reg-note as-legal">
+          <Link to="/terms">Terms of Service</Link> · <Link to="/privacy">Privacy Policy</Link>
         </p>
       </div>
     </section>

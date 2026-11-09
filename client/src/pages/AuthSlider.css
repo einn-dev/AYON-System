@@ -189,4 +189,34 @@
 @media (prefers-reduced-motion: reduce) {
   .as-overlay, .as-face.reg-brand, .as-panel { transition: none !important; }
 }
-.as-done-icon { color: #8d1b2d; }
+
+/* ── Back to the home page ── */
+.as-wrapper { position: relative; }
+.as-back-home {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.as-back-home:hover { color: #fff; text-decoration: underline; }
+.as-back-home .ic { margin: 0; }
+.as-home-link { text-decoration: none; color: inherit; }
+.as-home-link:hover .reg-wordmark,
+.as-home-link:hover span { text-decoration: none; opacity: 0.9; }
+
+/* small Terms · Privacy line under the Sign in form */
+.as-legal { margin-top: 10px; }
+.as-legal a { color: #a08a8e; text-decoration: none; }
+.as-legal a:hover { color: #8d1b2d; text-decoration: underline; }
+
+@media (max-width: 900px) {
+  .as-wrapper { flex-direction: column; justify-content: flex-start; gap: 12px; }
+  .as-back-home { position: static; align-self: flex-start; }
+}
