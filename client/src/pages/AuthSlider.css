@@ -220,3 +220,24 @@
   .as-wrapper { flex-direction: column; justify-content: flex-start; gap: 12px; }
   .as-back-home { position: static; align-self: flex-start; }
 }
+
+/* ── Bigger Sign in form on computers (phones keep the normal size) ── */
+@media (min-width: 901px) {
+  .as-login-side {
+    --reg-field-h: 56px;
+    --reg-font:    1.08rem;
+    --reg-label:   0.84rem;
+    --reg-title:   2.2rem;
+    --reg-gap-y:   22px;
+  }
+  .as-login-inner { max-width: 520px; }
+  .as-login-side .reg-sub     { font-size: 1rem; }
+  .as-login-side .reg-footer  { font-size: 0.95rem; }
+  .as-login-side .as-forgot a { font-size: 0.95rem; }
+}
+
+/* the outlined button on the maroon panel stays on one line, also on short laptop screens */
+.as-ghost-btn { white-space: nowrap; }
+@media (max-height: 760px) {
+  .as-ghost-btn { padding: 10px 26px; }
+}
