@@ -9,7 +9,11 @@
 /* ── Sidebar ── */
 .sidebar {
   width: 256px;
-  min-height: 100vh;
+  /* exactly the window's height, and it stays put while the page scrolls,
+     so the name and Logout button are always visible at the bottom */
+  height: 100vh;
+  height: 100dvh;
+  align-self: flex-start;
   background: #5e1420;
   display: flex;
   flex-direction: column;
@@ -68,6 +72,7 @@
 
 .sidebar-nav {
   flex: 1;
+  min-height: 0;            /* lets the menu scroll on short windows instead of pushing Logout down */
   display: flex;
   flex-direction: column;
   gap: 3px;
