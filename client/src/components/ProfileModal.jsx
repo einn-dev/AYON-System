@@ -18,8 +18,14 @@ const cleanPhone = (raw) => {
   return v;
 };
 
+/* Offices that serve the whole campus have no college or department.
+   The Administrator also has no contact number on the profile. */
+const CAMPUS_WIDE = ['msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
+
 const ProfileModal = ({ onClose }) => {
   const { user, updateUser } = useAuth();
+  const showCollege = !['admin', ...CAMPUS_WIDE].includes(user?.role);
+  const showContact = user?.role !== 'admin';
   const [form,     setForm]     = useState({ ...user });
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
@@ -86,11 +92,11 @@ const ProfileModal = ({ onClose }) => {
     setAlert(null);
     if (!form.first_name?.trim() || !form.last_name?.trim())
       return setAlert({ type: 'error', msg: 'First name and last name are required.' });
-    if (!form.college)
+    if (showCollege && !form.college)
       return setAlert({ type: 'error', msg: 'Please select your college.' });
-    if (!form.department)
+    if (showCollege && !form.department)
       return setAlert({ type: 'error', msg: 'Please select your department.' });
-    if (form.contact_number && !/^09\d{9}$/.test(form.contact_number))
+    if (showContact && form.contact_number && !/^09\d{9}$/.test(form.contact_number))
       return setAlert({ type: 'error', msg: 'Contact number must be exactly 11 digits, numbers only, starting with 09.' });
 
     setSaving(true);
@@ -110,9 +116,8 @@ const ProfileModal = ({ onClose }) => {
       await API.patch('/auth/profile', {
         first_name:     form.first_name.trim(),
         last_name:      form.last_name.trim(),
-        college:        form.college,
-        department:     form.department,
-        contact_number: form.contact_number || null,
+        ...(showCollege ? { college: form.college, department: form.department } : {}),
+        ...(showContact ? { contact_number: form.contact_number || null } : {}),
       });
 
       // the sidebar picks these up right away
@@ -199,6 +204,7 @@ const ProfileModal = ({ onClose }) => {
                 <input value={form.email || ''} disabled
                   style={{ background: '#f0f4f8', color: '#a0aec0' }} />
               </div>
+              {showCollege && (
               <div className="form-row">
                 <div className="form-group">
                   <label>College</label>
@@ -226,12 +232,15 @@ const ProfileModal = ({ onClose }) => {
                   </select>
                 </div>
               </div>
+              )}
+              {showContact && (
               <div className="form-group">
                 <label>Contact Number</label>
                 <input name="contact_number" value={form.contact_number || ''}
                   placeholder="09XXXXXXXXX" inputMode="numeric" maxLength={11} autoComplete="off"
                   onChange={e => setForm({ ...form, contact_number: cleanPhone(e.target.value) })} />
               </div>
+              )}
 
               {/* only the officials who sign (Coordinator, Chairperson, Dean, Special Assistant, Director, OVCRED) */}
               {SIGNER_ROLES.includes(user?.role) && (
