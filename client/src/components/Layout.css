@@ -275,6 +275,9 @@
 .form-group select:focus,
 .form-group textarea:focus { border-color: #8d1b2d; background: #fff; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* first, middle and last name side by side */
+.form-row.row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 560px) { .form-row.row-3 { grid-template-columns: 1fr; gap: 0; } }
 
 /* ── Misc ── */
 .empty-state { text-align: center; padding: 48px 20px; color: #b3a6a9; }

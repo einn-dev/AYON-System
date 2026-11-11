@@ -11,6 +11,7 @@ import AnnouncementBanner from './Announcements';
 import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
 import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
+import { personName } from '../utils/names';
 
 const Layout = ({ children, navItems, role }) => {
   const { user, logout, updateUser } = useAuth();
@@ -47,7 +48,7 @@ const Layout = ({ children, navItems, role }) => {
     API.get('/auth/profile')
       .then((res) => {
         const u = res.data.user;
-        updateUser({ first_name: u.first_name, last_name: u.last_name, avatar_url: u.avatar_url || null });
+        updateUser({ first_name: u.first_name, middle_name: u.middle_name || null, last_name: u.last_name, avatar_url: u.avatar_url || null });
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,7 +95,7 @@ const Layout = ({ children, navItems, role }) => {
             onClick={() => setProfileOpen(true)}>
             <Avatar user={user} size={40} />
             <div className="user-details">
-              <p className="user-name">{user?.first_name} {user?.last_name}</p>
+              <p className="user-name">{personName(user)}</p>
               <p className="user-email">{user?.email}</p>
             </div>
           </button>
