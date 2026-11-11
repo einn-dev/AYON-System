@@ -4,6 +4,7 @@ const multer   = require('multer');
 const supabase = require('../config/supabase');
 const { notifyUser } = require('../utils/notify');
 const { notifyStaff } = require('../utils/roleNotify');
+const { personName } = require('../utils/names');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 const upload = multer({
@@ -70,7 +71,7 @@ router.post('/', verifyToken, authorizeRoles('researcher'),
       /* Auto-store to repository (private by default) */
       const { data: user } = await supabase
         .from('users')
-        .select('first_name, last_name, college, department')
+        .select('first_name, middle_name, last_name, college, department')
         .eq('user_id', req.user.user_id)
         .single();
 
@@ -78,7 +79,7 @@ router.post('/', verifyToken, authorizeRoles('researcher'),
         external_id: ext.external_id,
         title,
         abstract:    description || null,
-        author:      user ? `${user.first_name} ${user.last_name}` : null,
+        author:      user ? personName(user) : null,
         college:     user?.college    || null,
         department:  user?.department || null,
         file_path,
@@ -88,7 +89,7 @@ router.post('/', verifyToken, authorizeRoles('researcher'),
 
       await notifyStaff({
         title:   'New research in the Repository',
-        message: `"${title}" (externally funded)${user ? ` by ${user.first_name} ${user.last_name}` : ''} was added to the Research Repository.`,
+        message: `"${title}" (externally funded)${user ? ` by ${personName(user)}` : ''} was added to the Research Repository.`,
       });
 
       await notifyUser({
@@ -132,7 +133,7 @@ router.get('/', verifyToken,
     try {
       const { data, error } = await supabase
         .from('externally_funded')
-        .select(`*, users ( first_name, last_name, college )`)
+        .select(`*, users ( first_name, middle_name, last_name, college )`)
         .order('uploaded_at', { ascending: false });
 
       if (error) throw error;
@@ -140,6 +141,7 @@ router.get('/', verifyToken,
       const items = data.map(e => ({
         ...e,
         first_name: e.users?.first_name,
+        middle_name: e.users?.middle_name,
         last_name:  e.users?.last_name,
         college:    e.users?.college,
       }));

@@ -2,7 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const supabase = require('../config/supabase');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
-const { logAudit } = require('../utils/audit');
+const { logAudit, fullName } = require('../utils/audit');
 const { SIGNER_ROLES, checkImage, getSignature, tableMissing } = require('../utils/signatures');
 
 /* ── My Signature (signer roles only) ──
@@ -43,7 +43,7 @@ router.put('/me', verifyToken, authorizeRoles(...SIGNER_ROLES), async (req, res)
       action:     before ? 'signature_replaced' : 'signature_saved',
       targetType: 'user',
       targetId:   req.user.user_id,
-      targetName: [req.user.first_name, req.user.last_name].filter(Boolean).join(' ') || null,
+      targetName: fullName(req.user) || null,
       details:    { size_kb: Math.round(Buffer.from(check.image.split(',')[1], 'base64').length / 1024) },
     });
 
@@ -70,7 +70,7 @@ router.delete('/me', verifyToken, authorizeRoles(...SIGNER_ROLES), async (req, r
       action:     'signature_removed',
       targetType: 'user',
       targetId:   req.user.user_id,
-      targetName: [req.user.first_name, req.user.last_name].filter(Boolean).join(' ') || null,
+      targetName: fullName(req.user) || null,
     });
 
     return res.status(200).json({

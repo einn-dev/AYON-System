@@ -22,8 +22,8 @@ const PERIODS  = ['all', 'year', '90', '30', 'custom'];
 
 const { STATUS_LABEL, TYPE_LABEL } = require('../utils/terms');
 const PERIOD_LABEL = { all: 'All Time', year: 'This Year', 90: 'Last 90 Days', 30: 'Last 30 Days' };
-const STAGE_LABEL = {
-  research_coordinator: 'Research Coordinator', chairperson: 'Chairperson', college_dean: 'College Dean',
+const STAGE_LABEL = {        // in endorsement order
+  chairperson: 'Chairperson', research_coordinator: 'Research Coordinator', college_dean: 'College Dean',
 };
 const OFFICE_ROLES = ['special_assistant', 'msric_director', 'ovcred'];
 const PH_OFFSET_MS = 8 * 60 * 60 * 1000;   // dates are read in Philippine time (UTC+8)
@@ -87,7 +87,8 @@ const fetchAll = async (table, columns, orderBy) => {
   return out;
 };
 
-const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
+const { personName } = require('../utils/names');
+const fullName = (u) => personName(u);
 
 /* where an open proposal is waiting */
 const waitingOn = (p) => {
@@ -106,7 +107,7 @@ const staffCanSee = (p) => {
 /* every submitted proposal the person may see, before the filters */
 const loadProposals = async (req) => {
   const rows = await fetchAll('research_proposals',
-    '*, users ( first_name, last_name, college, department )', 'proposal_id');
+    '*, users ( first_name, middle_name, last_name, college, department )', 'proposal_id');
   const list = rows
     .filter(p => p.status !== 'draft')
     .map(p => ({
@@ -254,7 +255,7 @@ const proposalRows = (list) => list
 
 const loadGrants = async (f) => {
   const rows = await fetchAll('grant_applications',
-    'grant_id, grant_type, status, date_applied, research_proposals ( title, users ( first_name, last_name, college ) )', 'grant_id');
+    'grant_id, grant_type, status, date_applied, research_proposals ( title, users ( first_name, middle_name, last_name, college ) )', 'grant_id');
   return rows
     .map(g => ({
       proposal:   g.research_proposals?.title || '—',
@@ -408,14 +409,17 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
   }
 });
 
-/* ── GET report history ── */
+/* ── GET report history ──
+   The Administrator sees every report; everyone else only the ones they made. */
 router.get('/', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, res) => {
   try {
-    const { data, error } = await supabase
+    let q = supabase
       .from('reports')
-      .select(`*, users ( first_name, last_name )`)
+      .select(`*, users ( first_name, middle_name, last_name )`)
       .order('generated_at', { ascending: false })
       .limit(30);
+    if (req.user.role !== 'admin') q = q.eq('generated_by', req.user.user_id);
+    const { data, error } = await q;
 
     if (error) throw error;
     return res.status(200).json({ reports: data });

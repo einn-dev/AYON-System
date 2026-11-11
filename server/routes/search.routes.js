@@ -31,7 +31,8 @@ const OFFICE   = ['special_assistant', 'msric_director', 'ovcred', 'admin'];
 const ALL_REPO = ['admin', 'msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
 
 const clean = (v) => String(v ?? '').trim();
-const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
+const { personName } = require('../utils/names');
+const fullName = (u) => personName(u);
 
 router.get('/', verifyToken, async (req, res) => {
   const raw = clean(req.query.q).slice(0, Q_MAX);
@@ -64,7 +65,7 @@ router.get('/', verifyToken, async (req, res) => {
     const canSearchProposals = role === 'researcher' || scopeIds !== null || OFFICE.includes(role) || role === 'msric_staff';
     if (canSearchProposals && !(Array.isArray(scopeIds) && !scopeIds.length)) {
       let qb = supabase.from('research_proposals')
-        .select('proposal_id, user_id, title, proposal_type, status, endorsement_stage, submitted_at, created_at, revision_count, returned_by, users ( first_name, last_name, college, department )')
+        .select('proposal_id, user_id, title, proposal_type, status, endorsement_stage, submitted_at, created_at, revision_count, returned_by, users ( first_name, middle_name, last_name, college, department )')
         .order('created_at', { ascending: false })
         .limit(SCAN);
       if (role === 'researcher') qb = qb.eq('user_id', req.user.user_id);
@@ -76,7 +77,7 @@ router.get('/', verifyToken, async (req, res) => {
 
       let rows = (data || []).map(p => ({
         ...p,
-        first_name: p.users?.first_name, last_name: p.users?.last_name,
+        first_name: p.users?.first_name, middle_name: p.users?.middle_name, last_name: p.users?.last_name,
         college: p.users?.college, department: p.users?.department,
       }));
       if (role !== 'researcher') rows = rows.filter(p => p.status !== 'draft');
@@ -123,7 +124,7 @@ router.get('/', verifyToken, async (req, res) => {
     let users = [];
     if (role === 'admin' && !idMatch) {
       const { data, error } = await supabase.from('users')
-        .select('user_id, first_name, last_name, email, is_active, user_roles!user_roles_user_id_fkey ( role_type )')
+        .select('user_id, first_name, middle_name, last_name, email, is_active, user_roles!user_roles_user_id_fkey ( role_type )')
         .limit(SCAN);
       if (error) throw error;
       users = (data || []).filter(u => has(fullName(u), u.email)).slice(0, LIMIT).map(u => {

@@ -39,7 +39,8 @@ const notifyRole = async (roleType, { proposal_id = null, notif_type, title, mes
   }
 };
 
-const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
+const { personName } = require('./names');
+const fullName = (u) => personName(u);
 
 /* MSIRC Staff: in-app notices only (no email), and only what staff may already see:
    the title, the researcher, the college and the status. Never throws. */

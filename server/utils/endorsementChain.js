@@ -1,3 +1,4 @@
+const { personName } = require('./names');
 const supabase = require('../config/supabase');
 const { activeHolders } = require('./roleNotify');
 
@@ -32,7 +33,7 @@ const clean = (v) => String(v ?? '').trim();
 /* The researcher's college and department */
 const ownerOf = async (userId) => {
   const { data, error } = await supabase
-    .from('users').select('user_id, first_name, last_name, college, department')
+    .from('users').select('user_id, first_name, middle_name, last_name, college, department')
     .eq('user_id', userId).maybeSingle();
   if (error) throw error;
   return data || null;
@@ -127,10 +128,10 @@ const attachTrail = async (proposals) => {
     if (people.size) {
       const pid = [...people];
       const [{ data: us }, { data: rs }] = await Promise.all([
-        supabase.from('users').select('user_id, first_name, last_name').in('user_id', pid),
+        supabase.from('users').select('user_id, first_name, middle_name, last_name').in('user_id', pid),
         supabase.from('user_roles').select('user_id, role_type').in('user_id', pid),
       ]);
-      (us || []).forEach(u => { names[u.user_id] = [u.first_name, u.last_name].filter(Boolean).join(' '); });
+      (us || []).forEach(u => { names[u.user_id] = personName(u); });
       (rs || []).forEach(r => { roles[r.user_id] = r.role_type; });
     }
 

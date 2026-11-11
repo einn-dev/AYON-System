@@ -28,12 +28,19 @@ const sendInBackground = (user, token) => {
    The account stays locked until the emailed link is clicked.          */
 const register = async (req, res) => {
   const {
-    email, password, first_name, last_name,
+    email, password, first_name, middle_name, last_name,
     employee_id, department, college, contact_number,
   } = req.body;
 
   if (!email || !password || !first_name || !last_name) {
     return res.status(400).json({ message: 'Please fill in all required fields.' });
+  }
+  const middle = String(middle_name || '').replace(/\s+/g, ' ').trim();
+  if (!middle) {
+    return res.status(400).json({ message: 'Please enter your middle name.' });
+  }
+  if (middle.length > 50 || String(first_name).trim().length > 50 || String(last_name).trim().length > 50) {
+    return res.status(400).json({ message: 'Names can be up to 50 characters.' });
   }
   if (password.length < 8) {
     return res.status(400).json({ message: 'Password must be at least 8 characters.' });
@@ -73,6 +80,7 @@ const register = async (req, res) => {
     const fields = {
       password:       hashedPassword,
       first_name,
+      middle_name:    middle,
       last_name,
       employee_id:    employee_id    || null,
       department:     department     || null,
@@ -241,7 +249,7 @@ const login = async (req, res) => {
     const findUser = (extra) => supabase
       .from('users')
       .select(`
-        user_id, email, password, first_name, last_name, avatar_url, is_active, email_verified,
+        user_id, email, password, first_name, middle_name, last_name, avatar_url, is_active, email_verified,
         user_roles!user_roles_user_id_fkey ( role_type )${extra}
       `)
       .eq('email', String(email).trim().toLowerCase())
@@ -326,6 +334,7 @@ const login = async (req, res) => {
         user_id:    user.user_id,
         email:      user.email,
         first_name: user.first_name,
+        middle_name: user.middle_name || null,
         last_name:  user.last_name,
         avatar_url: user.avatar_url || null,
         role,
@@ -344,7 +353,7 @@ const getProfile = async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select(`
-        user_id, email, first_name, last_name, avatar_url,
+        user_id, email, first_name, middle_name, last_name, avatar_url,
         employee_id, department, college,
         contact_number, created_at,
         user_roles!user_roles_user_id_fkey ( role_type )
@@ -368,7 +377,7 @@ const getProfile = async (req, res) => {
 /* ── UPDATE PROFILE ── */
 const updateProfile = async (req, res) => {
   const {
-    first_name, last_name, department,
+    first_name, middle_name, last_name, department,
     college, contact_number, password,
   } = req.body;
 
@@ -384,6 +393,12 @@ const updateProfile = async (req, res) => {
     const updates = {};
     if (first_name)     updates.first_name     = first_name;
     if (last_name)      updates.last_name      = last_name;
+    // sent as empty = cleared (an older account may have no middle name)
+    if (middle_name !== undefined) {
+      const m = String(middle_name || '').replace(/\s+/g, ' ').trim();
+      if (m.length > 50) return res.status(400).json({ message: 'Names can be up to 50 characters.' });
+      updates.middle_name = m || null;
+    }
     if (department)     updates.department     = department;
     if (college)        updates.college        = college;
     // sent as empty / null = the person cleared the field, so the saved number is removed

@@ -52,7 +52,7 @@ const listRepositoryCandidates = async (req, res) => {
 
     const { data, error } = await supabase
       .from('research_proposals')
-      .select('proposal_id, title, description, file_path, submitted_at, created_at, users ( first_name, last_name, college, department )')
+      .select('proposal_id, title, description, file_path, submitted_at, created_at, users ( first_name, middle_name, last_name, college, department )')
       .eq('status', 'approved')
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -87,7 +87,7 @@ const storeToRepository = async (req, res) => {
   try {
     const { data: p, error } = await supabase
       .from('research_proposals')
-      .select('proposal_id, title, description, file_path, status, users ( first_name, last_name, college, department )')
+      .select('proposal_id, title, description, file_path, status, users ( first_name, middle_name, last_name, college, department )')
       .eq('proposal_id', proposal_id)
       .maybeSingle();
     if (error) throw error;
@@ -257,11 +257,12 @@ const flattenGrant = (g) => ({
   date_applied:   g.date_applied,
   proposal_title: g.research_proposals?.title || null,
   first_name:     g.research_proposals?.users?.first_name || null,
+  middle_name:    g.research_proposals?.users?.middle_name || null,
   last_name:      g.research_proposals?.users?.last_name || null,
   college:        g.research_proposals?.users?.college || null,
 });
 
-const GRANT_SELECT = '*, research_proposals ( title, user_id, users ( first_name, last_name, college ) )';
+const GRANT_SELECT = '*, research_proposals ( title, user_id, users ( first_name, middle_name, last_name, college ) )';
 
 /* GET /admin/grants */
 const listGrants = async (req, res) => {

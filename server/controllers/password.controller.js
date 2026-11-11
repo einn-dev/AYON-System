@@ -70,7 +70,7 @@ const changePassword = async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('user_id, email, first_name, last_name, avatar_url, password')
+      .select('user_id, email, first_name, middle_name, last_name, avatar_url, password')
       .eq('user_id', req.user.user_id)
       .maybeSingle();
     if (error) throw error;
@@ -115,6 +115,7 @@ const changePassword = async (req, res) => {
         user_id:    user.user_id,
         email:      user.email,
         first_name: user.first_name,
+        middle_name: user.middle_name || null,
         last_name:  user.last_name,
         avatar_url: user.avatar_url || null,
         role,
@@ -144,7 +145,7 @@ const forgotPassword = async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('user_id, email, first_name, last_name, is_active, email_verified, password_reset_expires')
+      .select('user_id, email, first_name, middle_name, last_name, is_active, email_verified, password_reset_expires')
       .eq('email', emailLc)
       .maybeSingle();
     if (error) throw error;
@@ -203,7 +204,7 @@ const resetPassword = async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select(`
-        user_id, first_name, last_name, password, is_active, password_reset_expires,
+        user_id, first_name, middle_name, last_name, password, is_active, password_reset_expires,
         user_roles!user_roles_user_id_fkey ( role_type )
       `)
       .eq('password_reset_hash', hashToken(token))

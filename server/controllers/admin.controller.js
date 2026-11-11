@@ -58,7 +58,7 @@ const loadUser = async (id) => {
   const { data, error } = await supabase
     .from('users')
     .select(`
-      user_id, email, first_name, last_name, department, college,
+      user_id, email, first_name, middle_name, last_name, department, college,
       is_active, email_verified,
       user_roles!user_roles_user_id_fkey ( role_id, role_type )
     `)
@@ -118,7 +118,7 @@ const getAllUsers = async (req, res) => {
     const { data, error } = await supabase
       .from('users')
       .select(`
-        user_id, email, first_name, last_name,
+        user_id, email, first_name, middle_name, last_name,
         employee_id, department, college,
         contact_number, is_active, email_verified, created_at,
         user_roles!user_roles_user_id_fkey ( role_id, role_type )
@@ -143,7 +143,7 @@ const getAllUsers = async (req, res) => {
 /* ── POST create user with ANY role (ADMIN ONLY) ── */
 const createUser = async (req, res) => {
   const {
-    email, password, first_name, last_name,
+    email, password, first_name, middle_name, last_name,
     employee_id, department, college, contact_number, role,
   } = req.body;
 
@@ -180,6 +180,7 @@ const createUser = async (req, res) => {
         email:          emailLc,
         password:       hashedPassword,
         first_name:     String(first_name).trim(),
+        middle_name:    String(middle_name || '').trim() || null,
         last_name:      String(last_name).trim(),
         employee_id:    employee_id    || null,
         department:     department     || null,
@@ -205,7 +206,7 @@ const createUser = async (req, res) => {
       action:     'user_created',
       targetType: 'user',
       targetId:   newUser.user_id,
-      targetName: `${String(first_name).trim()} ${String(last_name).trim()}`,
+      targetName: fullName({ first_name, middle_name, last_name }),
       details:    { role, email: emailLc },
     });
 
@@ -236,6 +237,13 @@ const applyUserChanges = async (req, id, input) => {
     if (!v) return { code: 400, body: { message: 'First name and last name cannot be empty.' } };
     if (v.length > 50) return { code: 400, body: { message: 'Names can be up to 50 characters.' } };
     if (v !== target[f]) { userUpdates[f] = v; fieldChanges[f] = { from: target[f], to: v }; }
+  }
+  /* middle name: may be cleared (some people have none) */
+  if (input.middle_name !== undefined) {
+    const v = String(input.middle_name || '').replace(/\s+/g, ' ').trim();
+    if (v.length > 50) return { code: 400, body: { message: 'Names can be up to 50 characters.' } };
+    const was = target.middle_name || '';
+    if (v !== was) { userUpdates.middle_name = v || null; fieldChanges.middle_name = { from: was || null, to: v || null }; }
   }
 
   /* email */
@@ -334,8 +342,9 @@ const applyUserChanges = async (req, id, input) => {
 
   /* audit trail: one entry per kind of change */
   const targetName = fullName({
-    first_name: userUpdates.first_name || target.first_name,
-    last_name:  userUpdates.last_name  || target.last_name,
+    first_name:  userUpdates.first_name || target.first_name,
+    middle_name: userUpdates.middle_name !== undefined ? userUpdates.middle_name : target.middle_name,
+    last_name:   userUpdates.last_name  || target.last_name,
   });
   const base = { targetType: 'user', targetId: target.user_id, targetName };
   const reason = String(input.reason || '').trim().slice(0, 200) || undefined;
@@ -371,7 +380,7 @@ const runChange = (buildInput) => async (req, res) => {
 
 /* PATCH /admin/users/:id  — the Edit pop-up (name, email, role, status, college, department) */
 const updateUser = runChange((b) => ({
-  first_name: b.first_name, last_name: b.last_name, email: b.email,
+  first_name: b.first_name, middle_name: b.middle_name, last_name: b.last_name, email: b.email,
   role_type:  b.role_type,  is_active: b.is_active,
   college:    b.college,    department: b.department,
   reason:     b.reason,
@@ -805,7 +814,7 @@ const getDashboard = async (req, res) => {
 
     const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
       fetchAll('research_proposals',
-        'proposal_id, title, proposal_type, status, submitted_at, created_at, updated_at, users ( first_name, last_name, college )',
+        'proposal_id, title, proposal_type, status, submitted_at, created_at, updated_at, users ( first_name, middle_name, last_name, college )',
         'proposal_id'),
       fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
       fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
@@ -869,7 +878,7 @@ const getDashboard = async (req, res) => {
         title:        p.title,
         proposal_type: p.proposal_type,
         status:       p.status,
-        researcher:   [p.users?.first_name, p.users?.last_name].filter(Boolean).join(' ') || '—',
+        researcher:   fullName(p.users) || '—',
         college:      p.users?.college || null,
         waiting_days: Math.max(0, Math.floor((now - p.last) / DAY_MS)),
       }))
@@ -1002,7 +1011,7 @@ const listProposals = async (req, res) => {
 
     const [proposals, submissions, endorsements, reviews, checks] = await Promise.all([
       fetchAll('research_proposals',
-        '*, users ( first_name, last_name, email, college, department )',
+        '*, users ( first_name, middle_name, last_name, email, college, department )',
         'proposal_id'),
       fetchAll('submissions', 'submission_id, proposal_id, date_submitted, approved_date, rejected_date', 'submission_id'),
       fetchAll('endorsements', 'endorsement_id, proposal_id, date_endorsed, date_rejected', 'endorsement_id'),
@@ -1027,7 +1036,7 @@ const listProposals = async (req, res) => {
           proposal_type:  p.proposal_type,
           status:         p.status,
           submitted_at:   p.submitted_at || p.created_at,
-          researcher:     [p.users?.first_name, p.users?.last_name].filter(Boolean).join(' ') || '—',
+          researcher:     fullName(p.users) || '—',
           email:          p.users?.email || null,
           college:        p.users?.college || null,
           department:     p.users?.department || null,
@@ -1087,7 +1096,7 @@ const getProposalTimeline = async (req, res) => {
     const names = new Map();
     if (ids.size) {
       const { data: people } = await supabase
-        .from('users').select('user_id, first_name, last_name').in('user_id', [...ids]);
+        .from('users').select('user_id, first_name, middle_name, last_name').in('user_id', [...ids]);
       (people || []).forEach(u => names.set(String(u.user_id), fullName(u)));
     }
     const who = (uid) => names.get(String(uid)) || 'Someone';
@@ -1231,7 +1240,7 @@ const moveProposal = async (req, res) => {
     const desk = { submitted: 'special_assistant', under_review: 'msric_director' }[status];
     if (desk) {
       const { data: owner } = await supabase
-        .from('users').select('first_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
+        .from('users').select('first_name, middle_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
       await notifyRole(desk, {
         proposal_id: proposal.proposal_id,
         notif_type:  desk === 'special_assistant' ? 'submission' : 'review',

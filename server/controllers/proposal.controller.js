@@ -354,6 +354,7 @@ const staffFields = (p) => ({
   status:        p.status,
   submitted_at:  p.submitted_at,
   first_name:    p.first_name,
+  middle_name:   p.middle_name,
   last_name:     p.last_name,
   college:       p.college,
 });
@@ -368,7 +369,7 @@ const getAllProposals = async (req, res) => {
       .select(`
         *,
         users!inner (
-          first_name, last_name, email,
+          first_name, middle_name, last_name, email,
           college, department
         )
       `)
@@ -411,6 +412,7 @@ const getAllProposals = async (req, res) => {
     const proposals = data.filter(p => p.status !== 'draft').map(p => ({
       ...p,
       first_name: p.users?.first_name,
+      middle_name: p.users?.middle_name || null,
       last_name:  p.users?.last_name,
       email:      p.users?.email,
       college:    p.users?.college,
@@ -437,7 +439,7 @@ const getProposalById = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('research_proposals')
-      .select(`*, users ( first_name, last_name, email, college, department )`)
+      .select(`*, users ( first_name, middle_name, last_name, email, college, department )`)
       .eq('proposal_id', req.params.id)
       .single();
 
@@ -477,6 +479,7 @@ const getProposalById = async (req, res) => {
       proposal: {
         ...data,
         first_name: data.users?.first_name,
+        middle_name: data.users?.middle_name || null,
         last_name:  data.users?.last_name,
         email:      data.users?.email,
         college:    data.users?.college,
@@ -620,7 +623,7 @@ const updateProposalStatus = async (req, res) => {
     /* tell the office that now has it on its desk (only when the stage really changed) */
     if (proposal.status !== status && ['submitted', 'under_review', 'endorsed'].includes(status)) {
       const { data: owner } = await supabase
-        .from('users').select('first_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
+        .from('users').select('first_name, middle_name, last_name').eq('user_id', proposal.user_id).maybeSingle();
       const by   = fullName(owner) || 'the researcher';
       const next = {
         submitted:    ['special_assistant', 'submission',  'New submission to validate',
@@ -638,7 +641,7 @@ const updateProposalStatus = async (req, res) => {
     /* MSIRC Staff hear about final decisions (not each step inside the office) */
     if (proposal.status !== status && ['approved', 'rejected'].includes(status)) {
       const { data: owner } = await supabase
-        .from('users').select('first_name, last_name, college').eq('user_id', proposal.user_id).maybeSingle();
+        .from('users').select('first_name, middle_name, last_name, college').eq('user_id', proposal.user_id).maybeSingle();
       const decidedBy = ROLE_LABEL[req.user.role] || 'the office';
       await notifyStaff({
         proposal_id: id,
@@ -1101,7 +1104,7 @@ const getMyEndorsements = async (req, res) => {
     if (ids.length) {
       const { data: ps, error: pErr } = await supabase
         .from('research_proposals')
-        .select('proposal_id, title, status, endorsement_stage, returned_by, users ( first_name, last_name )')
+        .select('proposal_id, title, status, endorsement_stage, returned_by, users ( first_name, middle_name, last_name )')
         .in('proposal_id', ids);
       if (pErr) throw pErr;
 
@@ -1117,7 +1120,7 @@ const getMyEndorsements = async (req, res) => {
           proposal_status:   p.status,
           endorsement_stage: p.endorsement_stage || null,
           returned_by_role:  p.status === 'returned' ? (retRole[p.returned_by] || null) : null,
-          researcher:        [p.users?.first_name, p.users?.last_name].filter(Boolean).join(' '),
+          researcher:        fullName(p.users),
         };
       });
     }

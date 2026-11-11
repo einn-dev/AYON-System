@@ -1,3 +1,4 @@
+const { personName } = require('./names');
 const supabase = require('../config/supabase');
 const { ROLE_LABEL } = require('./terms');
 
@@ -105,7 +106,7 @@ const requireSignature = async (req) => {
    of signature never changes this one). Never throws. */
 const recordSignature = async ({ proposalId, user, role, action, round, image }) => {
   try {
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim()
+    const name = personName(user)
       || user?.email || ROLE_LABEL[role] || 'Signer';
     const { error } = await supabase.from('proposal_signatures').insert({
       proposal_id: Number(proposalId),

@@ -125,7 +125,7 @@ router.get('/', verifyToken,
     try {
       const { data, error } = await supabase
         .from('grant_applications')
-        .select(`*, research_proposals ( title, users ( first_name, last_name, college ) )`)
+        .select(`*, research_proposals ( title, users ( first_name, middle_name, last_name, college ) )`)
         .order('date_applied', { ascending: false });
 
       if (error) throw error;
@@ -134,6 +134,7 @@ router.get('/', verifyToken,
         ...g,
         proposal_title: g.research_proposals?.title,
         first_name:     g.research_proposals?.users?.first_name,
+        middle_name:    g.research_proposals?.users?.middle_name,
         last_name:      g.research_proposals?.users?.last_name,
         college:        g.research_proposals?.users?.college,
       }));

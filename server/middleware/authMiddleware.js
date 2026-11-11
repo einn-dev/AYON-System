@@ -30,7 +30,7 @@ const loadAccount = async (userId) => {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.row;
 
-  const base = 'user_id, first_name, last_name, is_active, user_roles!user_roles_user_id_fkey ( role_type )';
+  const base = 'user_id, first_name, middle_name, last_name, is_active, user_roles!user_roles_user_id_fkey ( role_type )';
   const run  = (cols) => supabase.from('users').select(cols).eq('user_id', userId).maybeSingle();
 
   let { data, error } = await run(newColumnsMissing ? base : `${base}, sessions_revoked_at, must_change_password`);
@@ -45,6 +45,7 @@ const loadAccount = async (userId) => {
 
   const row = {
     first_name: data.first_name,
+    middle_name: data.middle_name || null,
     last_name:  data.last_name,
     is_active:  data.is_active !== false,
     role:       data.user_roles?.[0]?.role_type || 'researcher',
@@ -103,6 +104,7 @@ const verifyToken = async (req, res, next) => {
       ...decoded,
       role:       account.role,
       first_name: account.first_name,
+      middle_name: account.middle_name,
       last_name:  account.last_name,
       must_change_password: account.mustChange,
     };

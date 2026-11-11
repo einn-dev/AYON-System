@@ -18,7 +18,9 @@ const supabase = require('../config/supabase');
      await logAudit(req, { action: 'login_failed', actor: null, ... });
      or pass actor: { user_id, name, role } to name the person.            */
 
-const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
+const { personName } = require('./names');
+/* "Maria C. Santos" (middle initial when there is one) */
+const fullName = (u) => personName(u);
 
 const clientIp = (req) => {
   const fwd = req?.headers?.['x-forwarded-for'];
