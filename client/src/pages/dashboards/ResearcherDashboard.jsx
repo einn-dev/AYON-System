@@ -20,12 +20,12 @@ import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL } from
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
-  { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
-  { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
-  { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
-  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
-  { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
-  { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
+  { path: '/researcher/dashboard',   label: 'Dashboard',              icon: <FaTableCellsLarge /> },
+  { path: '/researcher/proposals',   label: 'My Proposals',           icon: <FaFileLines /> },
+  { path: '/researcher/grants',      label: 'Grants and Incentives',  icon: <FaHandHoldingDollar /> },
+  { path: '/researcher/repository',  label: 'Research Repository',    icon: <FaBoxArchive /> },
+  { path: '/researcher/external',    label: 'External Research',      icon: <FaGlobe /> },
+  { path: '/researcher/notifications', label: 'Notifications',        icon: <FaBell /> },
   
 ];
 

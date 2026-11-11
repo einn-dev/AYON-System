@@ -6,6 +6,7 @@ import './AdminModule.css';
 import './AdminCatalog.css';
 import { errText, Pager, ROLE_LABELS, fmtWhen } from './adminShared';
 import { ConfirmBox, cap, fmtDate } from './AdminCatalogShared';
+import { personName } from '../../utils/names';
 
 const PAGE_SIZE = 25;
 
@@ -86,7 +87,7 @@ const GrantModal = ({ grantId, onDecide, onClose }) => {
         {g && (
           <>
             <dl className="ac-dl">
-              <dt>Researcher</dt><dd>{[g.first_name, g.last_name].filter(Boolean).join(' ') || '—'}{g.college ? ` · ${g.college}` : ''}</dd>
+              <dt>Researcher</dt><dd>{personName(g) || '—'}{g.college ? ` · ${g.college}` : ''}</dd>
               <dt>Research Title</dt><dd>{g.proposal_title || '—'}</dd>
               <dt>Date Applied</dt><dd>{fmtDate(g.date_applied)}</dd>
               <dt>Status</dt><dd><span className={`badge ${STATUS_BADGE[g.status] || 'badge-gray'}`}>{cap(g.status)}</span></dd>
@@ -160,7 +161,7 @@ const AdminGrantsPage = () => {
     return grants.filter(g =>
       (status === 'all' || g.status === status) &&
       (type   === 'all' || g.grant_type === type) &&
-      (!q || `${g.first_name || ''} ${g.last_name || ''} ${g.proposal_title || ''}`.toLowerCase().includes(q)));
+      (!q || `${personName(g)} ${g.proposal_title || ''}`.toLowerCase().includes(q)));
   }, [grants, search, status, type]);
 
   useEffect(() => { setPage(1); }, [search, status, type]);
@@ -258,7 +259,7 @@ const AdminGrantsPage = () => {
               {pageRows.map(g => (
                 <tr key={g.grant_id}>
                   <td>
-                    <div className="ac-title">{[g.first_name, g.last_name].filter(Boolean).join(' ') || '—'}</div>
+                    <div className="ac-title">{personName(g) || '—'}</div>
                     <span className="ac-sub">{g.college || '—'}</span>
                   </td>
                   <td style={{ maxWidth: 260 }}>{g.proposal_title || '—'}</td>

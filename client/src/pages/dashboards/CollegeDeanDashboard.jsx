@@ -6,6 +6,7 @@ import '../../components/Layout.css';
 import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge } from 'react-icons/fa6';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -58,7 +59,7 @@ const Overview = ({ proposals }) => (
         <tbody>
           {proposals.slice(0, 6).map(p => (
             <tr key={p.proposal_id}>
-              <td><strong>{p.first_name} {p.last_name}</strong></td>
+              <td><strong>{personName(p)}</strong></td>
               <td>{p.title}</td>
               <td style={{ fontSize: '0.82rem', color: '#718096' }}>{PROPOSAL_TYPES[p.proposal_type]}</td>
               <td><span className={`badge ${statusBadge(p.status)}`}>{statusLabel(p.status)}</span></td>

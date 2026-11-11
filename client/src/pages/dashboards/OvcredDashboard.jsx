@@ -12,6 +12,7 @@ import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -82,7 +83,7 @@ const Overview = ({ proposals }) => {
               .map(p => (
                 <tr key={p.proposal_id}>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.78rem', color: '#718096' }}>{p.college || '—'}</div>
                   </td>
                   <td style={{ maxWidth: 220 }}>{p.title}</td>
@@ -186,7 +187,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
           proposal_id: selected.proposal_id,
           title:       selected.title,
           abstract:    selected.description || '',
-          author:      `${selected.first_name} ${selected.last_name}`,
+          author:      personName(selected),
           college:     selected.college || '',
           department:  selected.department || '',
           file_path:   selected.file_path || '',
@@ -243,7 +244,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
                   </td>
                   <td style={{ maxWidth: 200 }}>{p.title}</td>
@@ -293,7 +294,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
                   gap: '12px 28px', marginBottom: 20 }}>
                   {[
-                    { label: 'Researcher',    value: `${selected.first_name} ${selected.last_name}` },
+                    { label: 'Researcher',    value: personName(selected) },
                     { label: 'Email',         value: selected.email },
                     { label: 'College',       value: selected.college || '—' },
                     { label: 'Department',    value: selected.department || '—' },
@@ -422,7 +423,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
       {returning && (
         <ReturnReasonModal
           title={returning.title}
-          researcher={`${returning.first_name || ''} ${returning.last_name || ''}`.trim()}
+          researcher={personName(returning)}
           onConfirm={handleReturn}
           onClose={() => setReturning(null)} />
       )}
@@ -468,7 +469,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
               <tr key={p.proposal_id}>
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td>
-                  <strong>{p.first_name} {p.last_name}</strong>
+                  <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
                 </td>
                 <td>{p.title}</td>
@@ -521,7 +522,7 @@ const StoreToRepository = ({ proposals }) => {
     setForm({
       title:       proposal.title,
       abstract:    proposal.description || '',
-      author:      `${proposal.first_name} ${proposal.last_name}`,
+      author:      personName(proposal),
       college:     proposal.college || '',
       department:  proposal.department || '',
       keywords:    '',
@@ -708,7 +709,7 @@ const StoreToRepository = ({ proposals }) => {
               {approved.map(p => (
                 <tr key={p.proposal_id}>
                   <td>{p.title}</td>
-                  <td>{p.first_name} {p.last_name}</td>
+                  <td>{personName(p)}</td>
                   <td style={{ fontSize: '0.8rem', color: '#718096' }}>
                     {PROPOSAL_TYPES[p.proposal_type]}
                   </td>

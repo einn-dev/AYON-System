@@ -6,6 +6,7 @@ import './AdminOverview.css';
 import { ROLE_LABELS, roleBadge, userStatus, STATUS_META, errText } from './adminShared';
 import { FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 const RANGES = [
   { value: 'all',  label: 'All time'     },
@@ -334,7 +335,7 @@ const AdminOverview = ({ users }) => {
                 const meta = STATUS_META[userStatus(u)];
                 return (
                   <tr key={u.user_id}>
-                    <td><strong>{u.first_name} {u.last_name}</strong></td>
+                    <td><strong>{personName(u)}</strong></td>
                     <td style={{ color: '#718096' }}>{u.email}</td>
                     <td>
                       <span className={`badge ${roleBadge(u.role_type)}`}>

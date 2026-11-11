@@ -9,4 +9,5 @@ export const OFFICE_ADDRESS = 'MSIRC Building, 2nd Street, Mindanao State Univer
 /* Optional: put the official MSIRC email address between the quotes
    (for example 'name@school.edu.ph'). While it is empty, the pages simply
    point readers to the MSIRC office and no email link is shown. */
-export const CONTACT_EMAIL = 'msirc@msumain.edu.ph';
+export const CONTACT_EMAIL = 'msirc@msumain.edu.ph';;
+

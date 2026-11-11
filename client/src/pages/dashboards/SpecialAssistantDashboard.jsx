@@ -10,6 +10,7 @@ import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, 
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
+import { personName } from '../../utils/names';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -91,7 +92,7 @@ const Overview = ({ proposals }) => {
               .map(p => (
                 <tr key={p.proposal_id}>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.78rem', color: '#718096' }}>{p.email}</div>
                   </td>
                   <td>{p.title}</td>
@@ -130,7 +131,7 @@ const Submissions = ({ proposals, onRefresh }) => {
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
     const matchSearch =
-      `${p.first_name} ${p.last_name} ${p.title}`
+      `${personName(p)} ${p.title}`
         .toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
@@ -183,7 +184,7 @@ const Submissions = ({ proposals, onRefresh }) => {
               <tr key={p.proposal_id}>
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td>
-                  <strong>{p.first_name} {p.last_name}</strong>
+                  <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
                 </td>
                 <td style={{ maxWidth: 200 }}>{p.title}</td>
@@ -204,7 +205,7 @@ const Submissions = ({ proposals, onRefresh }) => {
                       <button className="btn btn-danger btn-sm"
                         onClick={() => setReturning({
                           id: p.proposal_id, title: p.title,
-                          name: `${p.first_name} ${p.last_name}`,
+                          name: personName(p),
                         })}>
                         Return to Researcher
                       </button>
@@ -354,7 +355,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               {pending.map(p => (
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
                   </td>
                   <td>{p.title}</td>
@@ -466,7 +467,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                 <div className="panel-header"><h2>Proposal Details</h2></div>
                 <div className="panel-body">
                   {[
-                    { label: 'Researcher', value: `${selected.first_name} ${selected.last_name}` },
+                    { label: 'Researcher', value: personName(selected) },
                     { label: 'Email',      value: selected.email },
                     { label: 'College',    value: selected.college || '—' },
                     { label: 'Department', value: selected.department || '—' },
@@ -548,7 +549,7 @@ const Forwarded = ({ proposals }) => {
             {forwarded.map(p => (
               <tr key={p.proposal_id}>
                 <td>
-                  <strong>{p.first_name} {p.last_name}</strong>
+                  <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
                 </td>
                 <td>{p.title}</td>

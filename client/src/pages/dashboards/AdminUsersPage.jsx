@@ -8,9 +8,10 @@ import {
   ROLES, ROLE_LABELS, ROLES_NEED_COLLEGE, ROLES_NEED_DEPARTMENT,
   LOCKED_STYLE, roleBadge, userStatus, STATUS_META, errText,
 } from './adminShared';
+import { personName, fullLegalName } from '../../utils/names';
 
 const EMPTY_ADD = {
-  first_name: '', last_name: '', email: '',
+  first_name: '', middle_name: '', last_name: '', email: '',
   password: '', role: 'researcher',
   department: '', college: '',
 };
@@ -64,11 +65,16 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
         <h3>Add New User</h3>
         <form onSubmit={submit}>
           {err && <div className="alert alert-error">{err}</div>}
-          <div className="form-row">
+          <div className="form-row row-3">
             <div className="form-group">
               <label>First Name</label>
               <input required value={form.first_name}
                 onChange={e => setForm({ ...form, first_name: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Middle Name</label>
+              <input value={form.middle_name} maxLength={50} placeholder="Optional"
+                onChange={e => setForm({ ...form, middle_name: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Last Name</label>
@@ -143,7 +149,7 @@ const DeactivateModal = ({ user, onClose, onDone, notify }) => {
     setErr('');
     try {
       await API.patch(`/admin/users/${user.user_id}/status`, { is_active: 0, reason });
-      notify('success', `${user.first_name} ${user.last_name} was deactivated.`);
+      notify('success', `${personName(user)} was deactivated.`);
       onDone();
       onClose();
     } catch (error) {
@@ -156,7 +162,7 @@ const DeactivateModal = ({ user, onClose, onDone, notify }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3>Deactivate {user.first_name} {user.last_name}?</h3>
+        <h3>Deactivate {personName(user)}?</h3>
         <p className="am-modal-sub" style={{ margin: '-8px 0 16px' }}>
           They will no longer be able to sign in. You can activate the account again at any time.
         </p>
@@ -181,6 +187,7 @@ const DeactivateModal = ({ user, onClose, onDone, notify }) => {
 const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }) => {
   const [form, setForm] = useState(() => ({
     first_name: user.first_name || '',
+    middle_name: user.middle_name || '',
     last_name:  user.last_name  || '',
     email:      user.email      || '',
     role:       user.role_type  || 'researcher',
@@ -208,6 +215,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
 
   const dirty =
     form.first_name.trim() !== (user.first_name || '') ||
+    form.middle_name.trim() !== (user.middle_name || '') ||
     form.last_name.trim()  !== (user.last_name  || '') ||
     form.email.trim().toLowerCase() !== String(user.email || '').toLowerCase() ||
     roleChanged || statusChanged ||
@@ -244,6 +252,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
 
     const payload = {
       first_name: form.first_name.trim(),
+      middle_name: form.middle_name.trim(),
       last_name:  form.last_name.trim(),
       email:      form.email.trim(),
     };
@@ -334,11 +343,16 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
         {err && <div className="alert alert-error">{err}</div>}
 
         <form onSubmit={save}>
-          <div className="form-row">
+          <div className="form-row row-3">
             <div className="form-group">
               <label>First name</label>
               <input required value={form.first_name} maxLength={50}
                 onChange={e => setForm({ ...form, first_name: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Middle name</label>
+              <input value={form.middle_name} maxLength={50}
+                onChange={e => setForm({ ...form, middle_name: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Last name</label>
@@ -433,7 +447,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
 
             {confirmReset && (
               <div className="am-confirm">
-                Create a new temporary password for <strong>{user.first_name} {user.last_name}</strong>?
+                Create a new temporary password for <strong>{personName(user)}</strong>?
                 Their current password will stop working right away
                 {isSelf ? '.' : ', and they will be asked to choose a new one the next time they sign in.'}
                 <div className="am-actions">
@@ -507,7 +521,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
   const filtered = users.filter(u => {
     const s = search.trim().toLowerCase();
     const matchSearch = !s ||
-      `${u.first_name} ${u.last_name}`.toLowerCase().includes(s) ||
+      fullLegalName(u).toLowerCase().includes(s) ||
       String(u.email).toLowerCase().includes(s);
     const matchRole   = roleFilter === 'all'   || u.role_type === roleFilter;
     const matchStatus = statusFilter === 'all' || userStatus(u) === statusFilter;
@@ -520,7 +534,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
   const activate = async (u) => {
     try {
       await API.patch(`/admin/users/${u.user_id}/status`, { is_active: 1 });
-      notify('success', `${u.first_name} ${u.last_name} was activated.`);
+      notify('success', `${personName(u)} was activated.`);
       onRefresh();
     } catch (error) {
       notify('error', errText(error, 'Failed to update status.'));
@@ -608,7 +622,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
                   <tr key={u.user_id}>
                     <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                     <td>
-                      <strong>{u.first_name} {u.last_name}</strong>
+                      <strong>{fullLegalName(u)}</strong>
                       {self && <span className="am-you">YOU</span>}
                     </td>
                     <td style={{ color: '#718096' }}>{u.email}</td>

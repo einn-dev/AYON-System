@@ -9,6 +9,7 @@ import ChangePasswordBox from './ChangePasswordBox';
 import { MySignature, SIGNER_ROLES } from './Signature';
 import { FaCamera, FaTrashCan, FaXmark } from 'react-icons/fa6';
 import './Account.css';
+import { personName } from '../utils/names';
 
 /* Contact number: digits only, must start with 09, at most 11 digits. */
 const cleanPhone = (raw) => {
@@ -115,13 +116,17 @@ const ProfileModal = ({ onClose }) => {
 
       await API.patch('/auth/profile', {
         first_name:     form.first_name.trim(),
+        middle_name:    (form.middle_name || '').trim(),
         last_name:      form.last_name.trim(),
         ...(showCollege ? { college: form.college, department: form.department } : {}),
         ...(showContact ? { contact_number: form.contact_number || null } : {}),
       });
 
       // the sidebar picks these up right away
-      updateUser({ first_name: form.first_name.trim(), last_name: form.last_name.trim(), avatar_url });
+      updateUser({
+        first_name: form.first_name.trim(), middle_name: (form.middle_name || '').trim() || null,
+        last_name: form.last_name.trim(), avatar_url,
+      });
       setForm((f) => ({ ...f, avatar_url }));
       setPhoto(null);
       setRemovePhoto(false);
@@ -165,7 +170,7 @@ const ProfileModal = ({ onClose }) => {
                   <span className="pm-photo-cam"><FaCamera /></span>
                 </button>
                 <div className="pm-photo-info">
-                  <p className="pm-photo-name">{form.first_name} {form.last_name}</p>
+                  <p className="pm-photo-name">{personName(form)}</p>
                   <div className="pm-photo-actions">
                     <button type="button" className="btn btn-outline btn-sm"
                       onClick={() => fileRef.current?.click()}>
@@ -187,11 +192,16 @@ const ProfileModal = ({ onClose }) => {
                   onChange={handlePick} hidden />
               </div>
 
-              <div className="form-row">
+              <div className="form-row row-3">
                 <div className="form-group">
                   <label>First Name</label>
                   <input value={form.first_name || ''} autoComplete="off"
                     onChange={e => setForm({ ...form, first_name: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Middle Name</label>
+                  <input value={form.middle_name || ''} autoComplete="off" maxLength={50}
+                    onChange={e => setForm({ ...form, middle_name: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>Last Name</label>

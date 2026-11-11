@@ -12,6 +12,7 @@ import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -82,7 +83,7 @@ const Overview = ({ proposals }) => {
               .map(p => (
                 <tr key={p.proposal_id}>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.78rem', color: '#718096' }}>{p.college || '—'}</div>
                   </td>
                   <td style={{ maxWidth: 220 }}>{p.title}</td>
@@ -241,7 +242,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
                   </td>
                   <td style={{ maxWidth: 200 }}>{p.title}</td>
@@ -293,7 +294,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 <ProposalSignatures proposal={selected} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
                   {[
-                    { label: 'Researcher',   value: `${selected.first_name} ${selected.last_name}` },
+                    { label: 'Researcher',   value: personName(selected) },
                     { label: 'Email',        value: selected.email },
                     { label: 'College',      value: selected.college || '—' },
                     { label: 'Department',   value: selected.department || '—' },
@@ -426,7 +427,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
       {returning && (
         <ReturnReasonModal
           title={returning.title}
-          researcher={`${returning.first_name || ''} ${returning.last_name || ''}`.trim()}
+          researcher={personName(returning)}
           onConfirm={handleReturn}
           onClose={() => setReturning(null)} />
       )}

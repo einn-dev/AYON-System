@@ -30,13 +30,13 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/"             element={<LandingPage />} />
-          <Route path="/login"        element={<LoginPage />} />
-          <Route path="/register"     element={<RegisterPage />} />
-          <Route path="/terms"        element={<TermsPage />} />
-          <Route path="/privacy"      element={<PrivacyPage />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/"              element={<LandingPage />} />
+          <Route path="/login"         element={<LoginPage />} />
+          <Route path="/register"      element={<RegisterPage />} />
+          <Route path="/terms"         element={<TermsPage />} />
+          <Route path="/privacy"        element={<PrivacyPage />} />
+          <Route path="/unauthorized"   element={<Unauthorized />} />
+          <Route path="/verify-email"    element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password"  element={<ResetPasswordPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />

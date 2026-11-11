@@ -4,6 +4,7 @@ import '../../components/Layout.css';
 import './Reports.css';
 import { FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar, FaTableList } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
@@ -218,7 +219,7 @@ const ReportsPage = () => {
       <div className="rp-tiles">
         {[
           ['Total Proposals',  t?.total,      'in the filters'],
-          ['At the College',   t?.at_college, 'Coordinator, Chair or Dean'],
+          ['At the College',   t?.at_college, 'Chairperson, Coordinator or Dean'],
           ['In Office Review', t?.in_office,  'SA, Director or OVCRED'],
           ['Returned for Revision', t?.returned,   'waiting on the researcher'],
           ['Approved',         t?.approved,   ''],
@@ -314,7 +315,7 @@ const ReportsPage = () => {
                 <tr key={r.report_id}>
                   <td><strong>{r.report_title}</strong></td>
                   <td className="rp-hist-f">{r.filters?.text || '—'}</td>
-                  <td>{r.users ? `${r.users.first_name} ${r.users.last_name}` : '—'}</td>
+                  <td>{r.users ? personName(r.users) : '—'}</td>
                   <td style={{ color: '#718096' }}>
                     {r.generated_at ? new Date(r.generated_at).toLocaleString() : '—'}
                   </td>

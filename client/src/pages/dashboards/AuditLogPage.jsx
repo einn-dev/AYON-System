@@ -44,7 +44,7 @@ const ACTIONS = {
 };
 
 const FIELD_LABELS = {
-  first_name: 'First name', last_name: 'Last name', email: 'Email',
+  first_name: 'First name', middle_name: 'Middle name', last_name: 'Last name', email: 'Email',
   college: 'College', department: 'Department',
 };
 

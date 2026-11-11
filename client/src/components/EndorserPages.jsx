@@ -5,6 +5,7 @@ import { FaArrowLeft, FaCheck, FaRotateLeft } from 'react-icons/fa6';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
+import { personName } from '../utils/names';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -163,7 +164,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                 <tr key={p.proposal_id}>
                   <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                   <td>
-                    <strong>{p.first_name} {p.last_name}</strong>
+                    <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>
                       {[p.college, p.department].filter(Boolean).join(' · ') || '—'}
                     </div>
@@ -219,7 +220,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
               {[
-                { label: 'Researcher',     value: `${selected.first_name} ${selected.last_name}` },
+                { label: 'Researcher',     value: personName(selected) },
                 { label: 'Email',          value: selected.email || '—' },
                 { label: 'College',        value: selected.college || '—' },
                 { label: 'Department',     value: selected.department || '—' },

@@ -8,7 +8,7 @@ import { COLLEGES, getDepartments } from '../data/Colleges';
 import { FaArrowLeft, FaEnvelopeCircleCheck } from 'react-icons/fa6';
 
 const EMPTY_FORM = {
-  first_name: '', last_name: '', email: '',
+  first_name: '', middle_name: '', last_name: '', email: '',
   password: '', confirm_password: '',
   department: '', college: '', contact_number: '',
 };
@@ -104,8 +104,10 @@ const RegisterForm = () => {
   const departments = getDepartments(form.college);
 
   const validate = () => {
-    if (!form.first_name.trim() || !form.last_name.trim())
-      return 'First name and last name are required.';
+    if (!form.first_name.trim() || !form.middle_name.trim() || !form.last_name.trim())
+      return 'First name, middle name and last name are required.';
+    if ([form.first_name, form.middle_name, form.last_name].some(v => v.trim().length > 50))
+      return 'Names can be up to 50 characters.';
     if (!form.email.trim())
       return 'Email address is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
@@ -137,6 +139,7 @@ const RegisterForm = () => {
     try {
       const res = await registerUser({
         first_name:     form.first_name.trim(),
+        middle_name:    form.middle_name.trim(),
         last_name:      form.last_name.trim(),
         email:          form.email.trim().toLowerCase(),
         password:       form.password,
@@ -184,13 +187,19 @@ const RegisterForm = () => {
           className="reg-grid"
           autoComplete="off"
         >
-          <div className="form-group reg-half">
+          <div className="form-group reg-third">
             <label>First Name *</label>
-            <input name="first_name" value={form.first_name}
+            <input name="first_name" value={form.first_name} maxLength={50}
               onChange={handleChange} placeholder="Juan" autoComplete="off" />
           </div>
 
-          <div className="form-group reg-half">
+          <div className="form-group reg-third">
+            <label>Middle Name *</label>
+            <input name="middle_name" value={form.middle_name} maxLength={50}
+              onChange={handleChange} placeholder="Santos" autoComplete="off" />
+          </div>
+
+          <div className="form-group reg-third">
             <label>Last Name *</label>
             <input name="last_name" value={form.last_name}
               onChange={handleChange} placeholder="Dela Cruz" autoComplete="off" />
@@ -199,7 +208,7 @@ const RegisterForm = () => {
           <div className="form-group reg-half">
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="yourname@gmail.com" autoComplete="off" />
+              onChange={handleChange} placeholder="you@msumain.edu.ph" autoComplete="off" />
           </div>
 
           <div className="form-group reg-half">

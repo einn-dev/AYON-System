@@ -7,6 +7,7 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaBell, FaBoxArchive, FaInbox, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { personName } from '../../utils/names';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -65,7 +66,7 @@ const Overview = ({ proposals }) => {
           <tbody>
             {proposals.slice(0, 8).map(p => (
               <tr key={p.proposal_id}>
-                <td><strong>{p.first_name} {p.last_name}</strong></td>
+                <td><strong>{personName(p)}</strong></td>
                 <td>{p.title}</td>
                 <td style={{ fontSize: '0.82rem', color: '#718096' }}>
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
@@ -99,7 +100,7 @@ const AllSubmissions = ({ proposals }) => {
 
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
-    const matchSearch = `${p.first_name} ${p.last_name} ${p.title}`
+    const matchSearch = `${personName(p)} ${p.title}`
       .toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
@@ -137,7 +138,7 @@ const AllSubmissions = ({ proposals }) => {
               <tr key={p.proposal_id} data-pid={p.proposal_id}>
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td>
-                  <strong>{p.first_name} {p.last_name}</strong>
+                  <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
                 </td>
                 <td>{p.title}</td>

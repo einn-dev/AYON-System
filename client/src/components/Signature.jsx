@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL } from '../utils/terms';
 import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaXmark, FaSignature } from 'react-icons/fa6';
 import './Signature.css';
+import { personName } from '../utils/names';
 
 /* ─────────────────────────────────────────────────────────────
    Electronic signatures
@@ -28,7 +29,7 @@ const MAX_BYTES = 1024 * 1024;              // what the server accepts
 const OUT_W = 600;                          // saved image size (keeps it small)
 const OUT_H = 200;
 
-const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim();
+const fullName = (u) => personName(u);
 const fmtDate  = (d) => (d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 const fmtTime  = (d) => (d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
 const bytesOf  = (dataUrl) => Math.floor((String(dataUrl).split(',')[1] || '').length * 3 / 4);
