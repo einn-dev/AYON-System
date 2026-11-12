@@ -10,7 +10,7 @@ import { ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import {
   FaMagnifyingGlass, FaCircleQuestion, FaBell, FaXmark, FaFileLines, FaBoxArchive,
-  FaUser, FaArrowRight, FaBookOpen,
+  FaUser, FaArrowRight, FaBookOpen, FaBars,
 } from 'react-icons/fa6';
 import './TopBar.css';
 
@@ -301,7 +301,7 @@ const SearchPalette = ({ role, base, navItems, onClose, onPick }) => {
 };
 
 /* ── The bar ── */
-const TopBar = ({ navItems, unread = 0 }) => {
+const TopBar = ({ navItems, unread = 0, onMenu = null }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const role = user?.role;
@@ -336,6 +336,12 @@ const TopBar = ({ navItems, unread = 0 }) => {
   return (
     <>
       <div className="topbar">
+        {onMenu && (
+          <button type="button" className="tb-icon tb-menu" onClick={onMenu}
+            aria-label="Open menu" aria-controls="ayon-menu" title="Menu">
+            <FaBars />
+          </button>
+        )}
         <button type="button" className="tb-search" onClick={() => setOpen(true)} aria-label="Search AYON">
           <FaMagnifyingGlass />
           <span className="tb-ph">Search proposals, research, pages and help…</span>

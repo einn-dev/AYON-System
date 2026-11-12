@@ -10,8 +10,11 @@ import ProfileModal from './ProfileModal';
 import AnnouncementBanner from './Announcements';
 import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
-import { FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
+import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark } from 'react-icons/fa6';
 import { personName } from '../utils/names';
+
+/* phones and small tablets: the menu slides in from the left instead of taking up the screen */
+const PHONE = '(max-width: 820px)';
 
 const Layout = ({ children, navItems, role }) => {
   const { user, logout, updateUser } = useAuth();
@@ -20,11 +23,42 @@ const Layout = ({ children, navItems, role }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
+  const [menuOpen, setMenuOpen] = useState(false);
   const helpBase = `/${String(navItems?.[0]?.path || '').split('/')[1] || ''}`;
 
   /* unread count for the Notifications item: on each page change, every minute,
      and right away when the Notifications page marks something as read */
   const hasNotifs = navItems.some((i) => /\/notifications$/.test(i.path));
+
+  /* bigger text while a dashboard is open (see html.ayon-app in Layout.css) */
+  useEffect(() => {
+    document.documentElement.classList.add('ayon-app');
+    return () => document.documentElement.classList.remove('ayon-app');
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE);
+    const onChange = () => { setPhone(mq.matches); if (!mq.matches) setMenuOpen(false); };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  /* close the menu after moving to another page */
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  /* Esc closes the menu, and the page behind it does not scroll while it is open */
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   useEffect(() => {
     if (!hasNotifs) return undefined;
     let alive = true;
@@ -60,14 +94,21 @@ const Layout = ({ children, navItems, role }) => {
   };
 
   return (
-    <div className={`layout ${collapsed ? 'collapsed' : ''}`}>
+    <div className={['layout', collapsed && !phone && 'collapsed', phone && 'phone', menuOpen && 'menu-open'].filter(Boolean).join(' ')}>
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className="sidebar" id="ayon-menu" aria-label="Main menu">
         <div className="sidebar-header">
           <span className="sidebar-logo">AYON</span>
-          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
-          </button>
+          {phone ? (
+            <button type="button" className="collapse-btn" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+              <FaXmark />
+            </button>
+          ) : (
+            <button type="button" className="collapse-btn" onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}>
+              {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+            </button>
+          )}
         </div>
 
         <div className="sidebar-role">{role}</div>
@@ -77,6 +118,7 @@ const Layout = ({ children, navItems, role }) => {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `nav-item ${isActive ? 'active' : ''}`
               }
@@ -104,10 +146,11 @@ const Layout = ({ children, navItems, role }) => {
           </button>
         </div>
       </aside>
+      {phone && menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       {/* ── Main Content ── */}
       <main className="main-content">
-        <TopBar navItems={navItems} unread={unread} />
+        <TopBar navItems={navItems} unread={unread} onMenu={phone ? () => setMenuOpen(true) : null} />
         <AnnouncementBanner />
         {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
         {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage /> : children}
