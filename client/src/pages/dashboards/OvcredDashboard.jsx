@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
@@ -109,30 +110,7 @@ const Overview = ({ proposals }) => {
         </table>
       </div>
 
-      {/* Approval rate summary */}
-      {total > 0 && (
-        <div className="panel">
-          <div className="panel-header"><h2>Approval Summary</h2></div>
-          <div className="panel-body">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12 }}>
-              {[
-                { label: 'Approval Rate',  value: `${Math.round((approved / total) * 100)}%`, color: '#276749' },
-                { label: 'Rejection Rate', value: `${Math.round((rejected / total) * 100)}%`, color: '#c53030' },
-                { label: 'Pending Rate',   value: `${Math.round((forApproval / total) * 100)}%`, color: '#b7791f' },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: '#f8fafc', borderRadius: 10,
-                  padding: '16px', border: '1px solid #e8edf2', textAlign: 'center',
-                }}>
-                  <p style={{ fontSize: '2rem', fontWeight: 700, color: s.color, margin: '0 0 4px' }}>{s.value}</p>
-                  <p style={{ fontSize: '0.78rem', color: '#718096', margin: 0,
-                    textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <ProposalStats proposals={proposals} groupBy="college" />
     </>
   );
 };

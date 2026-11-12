@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
@@ -109,27 +110,7 @@ const Overview = ({ proposals }) => {
         </table>
       </div>
 
-      {/* Summary by type */}
-      <div className="panel">
-        <div className="panel-header"><h2>Proposals by Type</h2></div>
-        <div className="panel-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12 }}>
-            {Object.entries(PROPOSAL_TYPES).map(([key, label]) => {
-              const count = proposals.filter(p => p.proposal_type === key).length;
-              return (
-                <div key={key} style={{
-                  background: '#f8fafc', borderRadius: 10, padding: '14px 16px',
-                  border: '1px solid #e8edf2',
-                }}>
-                  <p style={{ fontSize: '0.75rem', color: '#718096', margin: '0 0 6px',
-                    textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-                  <p style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1a3a5c', margin: 0 }}>{count}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <ProposalStats proposals={proposals} groupBy="college" />
     </>
   );
 };

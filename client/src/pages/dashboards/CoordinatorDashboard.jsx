@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
 import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge } from 'react-icons/fa6';
@@ -109,6 +110,7 @@ const Overview = ({ proposals }) => {
           </tbody>
         </table>
       </div>
+      <ProposalStats proposals={proposals} groupBy="department" />
     </>
   );
 };
