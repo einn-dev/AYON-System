@@ -1,0 +1,89 @@
+/* ═══ Proposal Statistics (dashboard section) ═══
+   One maroon for every bar, so the numbers, not the colors, do the talking.
+   The type-by-year table shades from light to dark maroon by count. */
+
+.ps { margin-top: 24px; }
+.ps-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.ps-head h2 { font-size: 1.15rem; color: #5e1420; margin: 0 0 2px; }
+.ps-head p  { font-size: 0.8rem; color: #8a7a7d; margin: 0; }
+.ps-field { font-size: 0.82rem; color: #6b5e61; display: flex; align-items: center; gap: 8px; }
+.ps-field select {
+  padding: 8px 12px; border: 1px solid #e0d3d5; border-radius: 8px;
+  font-size: 0.86rem; background: #fff; color: #3d3235; font-family: inherit;
+}
+
+.ps-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.ps-tile { background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 16px 18px; }
+.ps-tile-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #8a7a7d; font-weight: 600; }
+.ps-tile-value { font-size: 1.9rem; font-weight: 700; color: #5e1420; line-height: 1.1; margin: 6px 0 2px; }
+.ps-tile-sub   { font-size: 0.76rem; color: #6b5e61; }
+
+.ps-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.ps-card { background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 18px 20px; min-width: 0; }
+.ps-card h3 { font-size: 1rem; color: #5e1420; margin: 0 0 2px; font-weight: 600; }
+.ps-card-sub { font-size: 0.76rem; color: #8a7a7d; margin-bottom: 14px; }
+.ps-empty { color: #8a7a7d; font-size: 0.85rem; padding: 20px 0; }
+
+/* horizontal bars */
+.ps-hbars { list-style: none; margin: 0; padding: 0; }
+.ps-hbar {
+  display: grid; grid-template-columns: minmax(90px, 44%) 1fr; align-items: center;
+  gap: 10px; padding: 5px 0; font-size: 0.82rem; outline: none; border-radius: 4px;
+}
+.ps-hbar:focus-visible { box-shadow: 0 0 0 2px #e9d98a; }
+.ps-hbar-name { color: #6b5e61; line-height: 1.25; overflow-wrap: anywhere; }
+.ps-hbar-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ps-hbar-bar { height: 16px; background: #8d1b2d; border-radius: 0 4px 4px 0; min-width: 2px; transition: background 0.15s; }
+.ps-hbar:hover .ps-hbar-bar, .ps-hbar:focus-visible .ps-hbar-bar { background: #5e1420; }
+.ps-hbar:hover .ps-hbar-name { color: #3d3235; }
+.ps-hbar-val { font-weight: 600; color: #3d3235; font-size: 0.8rem; }
+
+/* columns */
+.ps-cols {
+  position: relative; display: flex; align-items: flex-end; gap: 10px;
+  height: 170px; border-bottom: 1px solid #e8dcde; padding: 0 4px;
+}
+.ps-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; height: 100%; max-width: 60px; margin: 0 auto; outline: none;
+}
+.ps-col-cap { font-size: 0.76rem; font-weight: 600; color: #3d3235; margin-bottom: 4px; }
+.ps-col-bar { width: 70%; max-width: 30px; background: #8d1b2d; border-radius: 4px 4px 0 0; min-height: 2px; transition: background 0.15s; }
+.ps-col:hover .ps-col-bar, .ps-col:focus-visible .ps-col-bar { background: #5e1420; }
+.ps-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid #f3ecec; pointer-events: none; }
+.ps-xlabels { display: flex; gap: 10px; padding: 6px 4px 0; }
+.ps-xlabels span { flex: 1; text-align: center; font-size: 0.72rem; color: #8a7a7d; max-width: 60px; margin: 0 auto; }
+
+/* type x year table */
+.ps-table-card { margin-bottom: 14px; }
+.ps-scroll { overflow-x: auto; }
+.ps-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; min-width: 520px; }
+.ps-table th, .ps-table td { padding: 9px 12px; border-bottom: 1px solid #f3ecec; text-align: center; }
+.ps-table thead th {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #8a7a7d;
+  font-weight: 600; background: #faf7f7;
+}
+.ps-table th[scope="row"], .ps-table thead th:first-child { text-align: left; color: #3d3235; font-weight: 500; }
+.ps-table td { color: #2d2326; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ps-table .ps-sum { color: #5e1420; font-weight: 700; background: #faf7f7; }
+.ps-table tfoot th, .ps-table tfoot td { border-top: 2px solid #efe5e6; font-weight: 700; background: #faf7f7; }
+.ps-zero { color: #c9bcbf; font-weight: 400; }
+
+.ps-tip {
+  position: fixed; z-index: 2000; pointer-events: none;
+  background: #2e0d14; color: #fff; font-size: 0.78rem;
+  padding: 7px 10px; border-radius: 8px; max-width: 260px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.ps-tip b { display: block; font-size: 0.84rem; }
+
+@media (max-width: 980px) {
+  .ps-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ps-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .ps-kpis { grid-template-columns: 1fr; }
+}
