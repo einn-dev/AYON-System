@@ -1,4 +1,5 @@
 import API from './authService';
+import { readLogin, saveUser, clearLogin } from './tabLogin';
 
 /* ─────────────────────────────────────────────────────────────
    When the server says "this login is no longer valid" (the account was
@@ -39,20 +40,14 @@ API.interceptors.response.use(
     const code = error.response?.data?.code;
 
     if (code === 'PASSWORD_CHANGE_REQUIRED' && wasSignedInCall(error.config)) {
-      try {
-        const saved = JSON.parse(localStorage.getItem('ayon_user') || 'null');
-        if (saved) {
-          saved.must_change_password = true;
-          localStorage.setItem('ayon_user', JSON.stringify(saved));
-        }
-      } catch { /* ignore */ }
+      const { user: saved } = readLogin();
+      if (saved) saveUser({ ...saved, must_change_password: true });
       if (window.location.pathname !== '/change-password') {
         window.location.assign('/change-password');
       }
     } else if (code && SESSION_ENDED[code] && wasSignedInCall(error.config)) {
+      clearLogin();                            // only this tab; other tabs keep their accounts
       try {
-        localStorage.removeItem('ayon_token');
-        localStorage.removeItem('ayon_user');
         sessionStorage.setItem(LOGOUT_REASON_KEY, SESSION_ENDED[code]);
       } catch {
         /* private mode: nothing to save, still redirect */
