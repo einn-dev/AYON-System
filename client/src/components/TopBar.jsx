@@ -9,10 +9,11 @@ import ProposalTracker from './ProposalTracker';
 import { ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import {
-  FaMagnifyingGlass, FaCircleQuestion, FaBell, FaXmark, FaFileLines, FaBoxArchive,
+  FaMagnifyingGlass, FaCircleQuestion, FaXmark, FaFileLines, FaBoxArchive,
   FaUser, FaArrowRight, FaBookOpen, FaBars,
 } from 'react-icons/fa6';
 import './TopBar.css';
+import NotificationBell from './NotificationBell';
 
 /* ─────────────────────────────────────────────────────────────
    Top bar on every page: global search (Ctrl K), Help, Notifications.
@@ -352,14 +353,7 @@ const TopBar = ({ navItems, unread = 0, onMenu = null }) => {
             onClick={() => navigate(`${base}/help`)}>
             <FaCircleQuestion />
           </button>
-          {notifPath && (
-            <button type="button" className="tb-icon" title="Notifications"
-              aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-              onClick={() => navigate(notifPath)}>
-              <FaBell />
-              {unread > 0 && <i className="tb-badge">{unread > 99 ? '99+' : unread}</i>}
-            </button>
-          )}
+          {notifPath && <NotificationBell role={role} base={base} notifPath={notifPath} unread={unread} />}
         </div>
       </div>
 
