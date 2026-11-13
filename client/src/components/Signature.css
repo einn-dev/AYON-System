@@ -48,11 +48,3 @@
 .sig-st.wait { color: #8a7413; }
 .sig-st.todo, .sig-st.skip, .sig-st.none { color: #b3a5a8; }
 .sig-older { margin: 6px 0 0; padding-left: 18px; font-size: 0.78rem; color: #5e5155; line-height: 1.6; }
-
-/* setup window */
-.sig-overlay { position: fixed; inset: 0; background: rgba(30, 10, 15, 0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
-.sig-dialog { background: #fff; border-radius: 14px; width: 100%; max-width: 520px; max-height: 92vh; overflow: auto; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); }
-.sig-dialog-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #efe5e6; }
-.sig-dialog-head h2 { margin: 0; font-size: 1.05rem; color: #5e1420; }
-.sig-close { background: none; border: none; font-size: 1.1rem; color: #8a7a7d; cursor: pointer; padding: 4px; display: inline-flex; }
-.sig-dialog-body { padding: 16px 18px; }

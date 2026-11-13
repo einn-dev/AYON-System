@@ -12,6 +12,7 @@ import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
 import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark } from 'react-icons/fa6';
 import { personName } from '../utils/names';
+import { OPEN_PROFILE } from './Signature';
 
 /* phones and small tablets: the menu slides in from the left instead of taking up the screen */
 const PHONE = '(max-width: 820px)';
@@ -21,7 +22,7 @@ const Layout = ({ children, navItems, role }) => {
   const navigate          = useNavigate();
   const location          = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(null);   // null, or the tab to open
   const [unread, setUnread] = useState(0);
   const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,6 +43,13 @@ const Layout = ({ children, navItems, role }) => {
     const onChange = () => { setPhone(mq.matches); if (!mq.matches) setMenuOpen(false); };
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  /* other parts of AYON can open My Profile on a tab, e.g. "Open My Profile" in a signing box */
+  useEffect(() => {
+    const open = (e) => { setMenuOpen(false); setProfileOpen(e.detail?.tab || 'profile'); };
+    window.addEventListener(OPEN_PROFILE, open);
+    return () => window.removeEventListener(OPEN_PROFILE, open);
   }, []);
 
   /* close the menu after moving to another page */
@@ -134,7 +142,7 @@ const Layout = ({ children, navItems, role }) => {
 
         <div className="sidebar-footer">
           <button type="button" className="user-info user-info-link" title="View my profile"
-            onClick={() => setProfileOpen(true)}>
+            onClick={() => setProfileOpen('profile')}>
             <Avatar user={user} size={40} />
             <div className="user-details">
               <p className="user-name">{personName(user)}</p>
@@ -156,7 +164,7 @@ const Layout = ({ children, navItems, role }) => {
         {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage /> : children}
       </main>
 
-      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+      {profileOpen && <ProfileModal startTab={profileOpen} onClose={() => setProfileOpen(null)} />}
     </div>
   );
 };

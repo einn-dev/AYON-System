@@ -39,7 +39,7 @@
 
 /* ── My Profile pop-up ── */
 .pm-overlay {
-  position: fixed; inset: 0; z-index: 1000;
+  position: fixed; inset: 0; z-index: 2000;   /* above a proposal window when opened from its signing box */
   background: rgba(40, 8, 14, 0.55);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
@@ -73,6 +73,23 @@
 }
 .pm-close:hover { background: #ecdadd; }
 .pm-body { padding: 20px 24px 22px; overflow-y: auto; }
+
+/* tabs: Profile · Digital Signature · Password */
+.pm-tabs {
+  display: flex; gap: 4px; padding: 0 24px;
+  border-bottom: 1px solid #f0e6e8; overflow-x: auto; flex-shrink: 0;
+}
+.pm-tab {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  background: none; border: none; border-bottom: 3px solid transparent;
+  padding: 12px 12px 10px; margin-bottom: -1px; cursor: pointer;
+  font: inherit; font-size: 0.86rem; color: #8a7a7d;
+}
+.pm-tab:hover { color: #5e1420; }
+.pm-tab.on { color: #5e1420; font-weight: 600; border-bottom-color: #8d1b2d; }
+.pm-tab:focus-visible { outline: 2px solid #cf9f4d; outline-offset: -2px; border-radius: 6px 6px 0 0; }
+.pm-tab-ic { display: inline-flex; font-size: 0.9em; }
+@media (max-width: 480px) { .pm-tabs { padding: 0 12px; } .pm-tab { padding: 12px 8px 10px; } }
 
 .pm-photo {
   display: flex; align-items: center; gap: 18px;

@@ -17,10 +17,10 @@ export const CONTACT = {
 
 const SIGNATURE = {
   id: 'signature',
-  title: 'Set up your signature (once)',
+  title: 'Set up your digital signature (once)',
   steps: [
-    'Click your name at the bottom of the sidebar to open your profile.',
-    'Under **My Signature**, choose **Draw** and sign inside the box, or **Upload** a PNG or JPG picture of your signature.',
+    'Click your name at the bottom of the sidebar to open **My Profile**, then open the **Digital Signature** tab.',
+    'Choose **Draw** and sign inside the box, or **Upload** a PNG or JPG picture of your signature.',
     'Click **Save Signature**. You can **Replace** or **Remove** it later; proposals you already signed keep their signature.',
   ],
 };
@@ -318,7 +318,7 @@ export const WHO_SIGNS = [
 export const FAQ = [
   ['I forgot my password.', 'On the login page, click **Forgot password?** and enter your email. You get a link to set a new password.'],
   ['I did not receive the email.', 'Check your Spam folder. Then use the resend link on the login page, or ask the Administrator.'],
-  ['Why can\'t I endorse this proposal?', 'It is not your turn yet (the tracker shows who has it), you have not set up **My Signature**, or the box under your signature is not ticked.'],
+  ['Why can\'t I endorse this proposal?', 'It is not your turn yet (the tracker shows who has it), you have not set up your **Digital Signature** in My Profile, or the box under your signature is not ticked.'],
   ['Why is the Endorse and Sign button grey?', 'Write your remarks (at least 10 characters) and tick the box under your signature.'],
   ['My proposal was returned. What now?', 'Open it from **My Proposals**, read the reason, click **Edit and Resubmit**, fix it, and resubmit.'],
   ['Can I stop in the middle of the form?', 'Yes. Click **Save as Draft** on any step. Continue later from **My Proposals** with **Continue Editing**.'],

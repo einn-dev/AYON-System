@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL } from '../utils/terms';
-import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaXmark, FaSignature } from 'react-icons/fa6';
+import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaSignature } from 'react-icons/fa6';
 import './Signature.css';
 import { personName } from '../utils/names';
 
 /* ─────────────────────────────────────────────────────────────
    Electronic signatures
-     MySignature        : draw or upload, save, replace, remove (profile)
+     MySignature        : draw or upload, save, replace, remove (My Profile → Digital Signature)
      SignConfirm        : "your signature + I confirm" box on a signing action
+                          (no signature yet → a button that opens My Profile on that tab)
      ProposalSignatures : the signature lines on a proposal's details
    Who signs, and when:
      Chairperson, Research Coordinator, College Dean → Endorse and Sign
@@ -86,6 +86,12 @@ const prepareUpload = (file) => new Promise((resolve, reject) => {
   img.src = url;
 });
 
+/* events shared with Layout.jsx */
+export const SIG_CHANGED  = 'ayon:signature-changed';
+export const OPEN_PROFILE = 'ayon:open-profile';
+export const openMyProfile = (tab = 'profile') =>
+  window.dispatchEvent(new CustomEvent(OPEN_PROFILE, { detail: { tab } }));
+
 /* ── The signed-in official's saved signature ── */
 export const useMySignature = () => {
   const { user } = useAuth();
@@ -109,6 +115,13 @@ export const useMySignature = () => {
   }, [canSign]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  /* saved or removed in My Profile: every open signing box picks it up */
+  useEffect(() => {
+    window.addEventListener(SIG_CHANGED, reload);
+    return () => window.removeEventListener(SIG_CHANGED, reload);
+  }, [reload]);
+
   return { sig, setSig, loading, error, reload, canSign };
 };
 
@@ -179,7 +192,7 @@ const SignaturePad = ({ padRef, onInk }) => {
 };
 
 /* ── My Signature (in the profile of officials who sign) ── */
-export const MySignature = ({ onSaved, compact = false }) => {
+export const MySignature = ({ onSaved }) => {
   const { user } = useAuth();
   const { sig, setSig, loading, error, canSign } = useMySignature();
   const [mode,    setMode]    = useState('draw');
@@ -228,6 +241,7 @@ export const MySignature = ({ onSaved, compact = false }) => {
       setInked(false);
       setMode('draw');
       setAlert({ type: 'success', msg: res.data?.message || 'Your signature was saved.' });
+      window.dispatchEvent(new Event(SIG_CHANGED));
       if (onSaved) onSaved(res.data?.signature);
     } catch (err) {
       setAlert({ type: 'error', msg: err.response?.data?.message || 'Could not save your signature. Please try again.' });
@@ -246,6 +260,7 @@ export const MySignature = ({ onSaved, compact = false }) => {
       setEditing(false);
       setMode('draw');
       setAlert({ type: 'success', msg: res.data?.message || 'Your signature was removed.' });
+      window.dispatchEvent(new Event(SIG_CHANGED));
     } catch (err) {
       setAlert({ type: 'error', msg: err.response?.data?.message || 'Could not remove your signature.' });
     } finally {
@@ -254,21 +269,17 @@ export const MySignature = ({ onSaved, compact = false }) => {
   };
 
   return (
-    <div className={`sig-section${compact ? ' compact' : ''}`}>
-      {!compact && (
-        <div className="sig-head">
-          <h3><FaSignature className="ic" />My Signature</h3>
-          {sig && <span className="badge badge-green">Saved</span>}
-        </div>
-      )}
-      {!compact && (
-        <p className="sig-hint">
-          Used when you {user?.role === 'special_assistant' ? 'validate and forward'
-            : user?.role === 'msric_director' ? 'endorse to OVCRED or approve'
-            : user?.role === 'ovcred' ? 'grant final approval' : 'endorse'} a proposal.
-          Returning or rejecting never signs.
-        </p>
-      )}
+    <div className="sig-section">
+      <div className="sig-head">
+        <h3><FaSignature className="ic" />Digital Signature</h3>
+        {sig ? <span className="badge badge-green">Saved</span> : !loading && <span className="badge badge-amber">Not set up</span>}
+      </div>
+      <p className="sig-hint">
+        Used when you {user?.role === 'special_assistant' ? 'validate and forward'
+          : user?.role === 'msric_director' ? 'endorse to OVCRED or approve'
+          : user?.role === 'ovcred' ? 'grant final approval' : 'endorse'} a proposal.
+        Returning or rejecting never signs.
+      </p>
 
       {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
 
@@ -365,41 +376,22 @@ export const MySignature = ({ onSaved, compact = false }) => {
             </div>
           )}
 
-          {!compact && (
-            <p className="sig-hint" style={{ marginTop: 10 }}>
-              Only you can set or change your signature. Changing it later does not change proposals you already signed.
-            </p>
-          )}
+          <p className="sig-hint" style={{ marginTop: 10 }}>
+            Only you can set or change your signature. Changing it later does not change proposals you already signed.
+          </p>
         </>
       )}
     </div>
   );
 };
 
-/* ── Small window with My Signature, opened from a signing box ── */
-const SignatureSetupModal = ({ onClose, onSaved }) => createPortal(
-  <div className="sig-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <div className="sig-dialog" role="dialog" aria-modal="true" aria-labelledby="sig-setup-title">
-      <div className="sig-dialog-head">
-        <h2 id="sig-setup-title">Set Up My Signature</h2>
-        <button type="button" className="sig-close" onClick={onClose} aria-label="Close"><FaXmark /></button>
-      </div>
-      <div className="sig-dialog-body">
-        <MySignature compact onSaved={(s) => { onSaved(s); onClose(); }} />
-      </div>
-    </div>
-  </div>,
-  document.body,
-);
-
 /* ── "Your signature + I confirm" box on a signing action ──
    Calls onReady(true) only when a signature is saved AND the box is ticked.
    `verb` completes the sentence "I, <name> (<role>), ___ this proposal ..." */
 export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => {
   const { user } = useAuth();
-  const { sig, setSig, loading, error } = useMySignature();
+  const { sig, loading, error } = useMySignature();
   const [checked, setChecked] = useState(false);
-  const [setup,   setSetup]   = useState(false);
 
   useEffect(() => { onReady(!!sig && checked); }, [sig, checked, onReady]);
 
@@ -418,10 +410,11 @@ export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => 
         </div>
       ) : (
         <div className="sig-warn">
-          You have not set up your signature yet. You need one to sign.
+          You have not set up your digital signature yet. You need one to sign.
+          Set it up in <b>My Profile</b>, under <b>Digital Signature</b>. This box updates as soon as it is saved.
           <div style={{ marginTop: 8 }}>
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => setSetup(true)}>
-              <FaSignature className="ic" />Set Up My Signature
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => openMyProfile('signature')}>
+              <FaSignature className="ic" />Open My Profile
             </button>
           </div>
         </div>
@@ -438,7 +431,6 @@ export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => 
         </label>
       )}
 
-      {setup && <SignatureSetupModal onClose={() => setSetup(false)} onSaved={(s) => s && setSig(s)} />}
     </div>
   );
 };

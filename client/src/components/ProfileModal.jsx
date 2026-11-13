@@ -7,7 +7,7 @@ import { checkAvatarFile, prepareAvatar, AVATAR_MAX_MB } from '../utils/avatar';
 import Avatar from './Avatar';
 import ChangePasswordBox from './ChangePasswordBox';
 import { MySignature, SIGNER_ROLES } from './Signature';
-import { FaCamera, FaTrashCan, FaXmark } from 'react-icons/fa6';
+import { FaCamera, FaTrashCan, FaXmark, FaUser, FaSignature, FaKey } from 'react-icons/fa6';
 import './Account.css';
 import { personName } from '../utils/names';
 
@@ -23,8 +23,16 @@ const cleanPhone = (raw) => {
    The Administrator also has no contact number on the profile. */
 const CAMPUS_WIDE = ['msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
 
-const ProfileModal = ({ onClose }) => {
+const ProfileModal = ({ onClose, startTab = 'profile' }) => {
   const { user, updateUser } = useAuth();
+  const signs = SIGNER_ROLES.includes(user?.role);
+  const TABS = [
+    { key: 'profile',   label: 'Profile',           icon: <FaUser />,      sub: 'Your photo and personal information.' },
+    ...(signs ? [{ key: 'signature', label: 'Digital Signature', icon: <FaSignature />, sub: 'The signature placed on proposals you sign.' }] : []),
+    { key: 'password',  label: 'Password',          icon: <FaKey />,       sub: 'Change the password you sign in with.' },
+  ];
+  const [tab, setTab] = useState(TABS.some(t => t.key === startTab) ? startTab : 'profile');
+  const current = TABS.find(t => t.key === tab) || TABS[0];
   const showCollege = !['admin', ...CAMPUS_WIDE].includes(user?.role);
   const showContact = user?.role !== 'admin';
   const [form,     setForm]     = useState({ ...user });
@@ -148,17 +156,31 @@ const ProfileModal = ({ onClose }) => {
         <div className="pm-head">
           <div>
             <h2 id="pm-title">My Profile</h2>
-            <p>Update your photo, personal information and password.</p>
+            <p>{current.sub}</p>
           </div>
           <button type="button" className="pm-close" onClick={onClose} aria-label="Close">
             <FaXmark />
           </button>
         </div>
 
-        <div className="pm-body">
-          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+        <div className="pm-tabs" role="tablist" aria-label="My Profile sections">
+          {TABS.map(t => (
+            <button key={t.key} type="button" role="tab" id={`pm-tab-${t.key}`}
+              aria-selected={tab === t.key} aria-controls="pm-panel"
+              className={`pm-tab${tab === t.key ? ' on' : ''}`} onClick={() => setTab(t.key)}>
+              <span className="pm-tab-ic">{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
 
-          {fetching ? (
+        <div className="pm-body" id="pm-panel" role="tabpanel" aria-labelledby={`pm-tab-${tab}`}>
+          {tab === 'signature' && <MySignature />}
+
+          {tab === 'password' && <ChangePasswordBox />}
+
+          {tab === 'profile' && alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+
+          {tab !== 'profile' ? null : fetching ? (
             <div className="empty-state"><p>Loading your profile...</p></div>
           ) : (
             <form onSubmit={handleSave} autoComplete="off">
@@ -251,17 +273,6 @@ const ProfileModal = ({ onClose }) => {
                   onChange={e => setForm({ ...form, contact_number: cleanPhone(e.target.value) })} />
               </div>
               )}
-
-              {/* only the officials who sign (Coordinator, Chairperson, Dean, Special Assistant, Director, OVCRED) */}
-              {SIGNER_ROLES.includes(user?.role) && (
-                <>
-                  <hr className="pm-sep" />
-                  <MySignature />
-                </>
-              )}
-
-              <hr className="pm-sep" />
-              <ChangePasswordBox />
 
               <div className="pm-foot">
                 <button type="button" className="btn btn-outline" onClick={onClose}>Close</button>
