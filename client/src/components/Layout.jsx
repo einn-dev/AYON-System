@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
@@ -13,6 +13,8 @@ import HelpPage from '../pages/HelpPage';
 import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark } from 'react-icons/fa6';
 import { personName } from '../utils/names';
 import { OPEN_PROFILE } from './Signature';
+import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
+import { FaBell, FaXmark as FaClose } from 'react-icons/fa6';
 
 /* phones and small tablets: the menu slides in from the left instead of taking up the screen */
 const PHONE = '(max-width: 820px)';
@@ -24,6 +26,8 @@ const Layout = ({ children, navItems, role }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(null);   // null, or the tab to open
   const [unread, setUnread] = useState(0);
+  const lastCount = useRef(null);                        // the unread count we saw last time
+  const [toast, setToast] = useState(null);              // "something new" message
   const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
   const [menuOpen, setMenuOpen] = useState(false);
   const helpBase = `/${String(navItems?.[0]?.path || '').split('/')[1] || ''}`;
@@ -67,23 +71,49 @@ const Layout = ({ children, navItems, role }) => {
     };
   }, [menuOpen]);
 
+  /* Live updates: every 15 seconds while this tab is visible (and right away when
+     you come back to it). When the count goes UP, the open page reloads its data
+     and a small message says what is new. See utils/liveRefresh.js. */
   useEffect(() => {
     if (!hasNotifs) return undefined;
     let alive = true;
     const refresh = () => {
       API.get('/notifications/unread-count')
-        .then((res) => { if (alive) setUnread(Number(res.data.count) || 0); })
+        .then(async (res) => {
+          if (!alive) return;
+          const count  = Number(res.data.count) || 0;
+          const before = lastCount.current;
+          lastCount.current = count;
+          setUnread(count);
+          if (before === null || count <= before) return;
+          window.dispatchEvent(new Event(LIVE_UPDATE));
+          try {
+            const list = await API.get('/notifications');
+            const latest = (list.data.notifications || []).find((n) => !n.is_read);
+            if (alive && latest) setToast({ id: latest.notif_id, title: latest.title, message: latest.message, more: count - before - 1 });
+          } catch { /* the bell still shows the count */ }
+        })
         .catch(() => {});
     };
     refresh();
-    const timer = setInterval(() => { if (!document.hidden) refresh(); }, 60000);
+    const timer = setInterval(() => { if (!document.hidden) refresh(); }, LIVE_EVERY);
+    const onVisible = () => { if (!document.hidden) refresh(); };
+    document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('ayon:notifs-changed', refresh);
     return () => {
       alive = false;
       clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('ayon:notifs-changed', refresh);
     };
   }, [hasNotifs, location.pathname]);
+
+  /* the message goes away by itself after 8 seconds */
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 8000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // refresh the profile picture / name once, in case they were changed on another device
   useEffect(() => {
@@ -163,6 +193,24 @@ const Layout = ({ children, navItems, role }) => {
         {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
         {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage /> : children}
       </main>
+
+      {toast && (
+        <div className="live-toast" role="status" aria-live="polite">
+          <span className="live-toast-ic" aria-hidden="true"><FaBell /></span>
+          <div className="live-toast-body">
+            <strong>{toast.title}</strong>
+            <span>{toast.message}</span>
+            {toast.more > 0 && <small>and {toast.more} more new notification{toast.more === 1 ? '' : 's'}</small>}
+            <button type="button" className="live-toast-link"
+              onClick={() => { setToast(null); window.dispatchEvent(new Event(OPEN_BELL)); }}>
+              View notifications
+            </button>
+          </div>
+          <button type="button" className="live-toast-x" onClick={() => setToast(null)} aria-label="Close">
+            <FaClose />
+          </button>
+        </div>
+      )}
 
       {profileOpen && <ProfileModal startTab={profileOpen} onClose={() => setProfileOpen(null)} />}
     </div>

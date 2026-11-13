@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLiveRefresh } from '../../utils/liveRefresh';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
@@ -17,12 +18,14 @@ const NotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('all');
 
-  useEffect(() => {
+  const load = useCallback(() => {
     API.get('/notifications')
       .then(res => setNotifs(res.data.notifications || []))
       .catch(() => setNotifs([]))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => { load(); }, [load]);
+  useLiveRefresh(load);                    // new notifications appear while the page is open
 
   const markRead = async (id) => {
     try {

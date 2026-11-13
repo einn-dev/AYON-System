@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import API from '../services/authService';
 import './Layout.css';
 import './OfficeNotifications.css';
+import { useLiveRefresh } from '../utils/liveRefresh';
 import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
 /* Notifications page for the Special Assistant, MSIRC Director, OVCRED and MSIRC Staff.
@@ -58,6 +59,7 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Review', filters =
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(load);                    // new notifications appear while the page is open
 
   const markRead = async (id) => {
     try {

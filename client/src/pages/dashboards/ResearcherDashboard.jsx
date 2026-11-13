@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import { useLiveRefresh } from '../../utils/liveRefresh';
 import API    from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import '../../components/Layout.css';
@@ -20,12 +21,12 @@ import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL } from
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
-  { path: '/researcher/dashboard',   label: 'Dashboard',              icon: <FaTableCellsLarge /> },
-  { path: '/researcher/proposals',   label: 'My Proposals',           icon: <FaFileLines /> },
-  { path: '/researcher/grants',      label: 'Grants and Incentives',  icon: <FaHandHoldingDollar /> },
-  { path: '/researcher/repository',  label: 'Research Repository',    icon: <FaBoxArchive /> },
-  { path: '/researcher/external',    label: 'External Research',      icon: <FaGlobe /> },
-  { path: '/researcher/notifications', label: 'Notifications',        icon: <FaBell /> },
+  { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
+  { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
+  { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
+  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
+  { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
+  { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
   
 ];
 
@@ -220,6 +221,10 @@ const MyProposals = ({ proposals, onRefresh }) => {
   }, [fromForm]);
   const [f,        setF]        = useState(EMPTY_FILTERS);
   const [selected, setSelected] = useState(null);
+  /* the details window shows the newest data after a live update */
+  useEffect(() => {
+    setSelected((cur) => (cur ? proposals.find((p) => p.proposal_id === cur.proposal_id) || cur : cur));
+  }, [proposals]);
   const [editing,  setEditing]  = useState(null);   // the returned proposal being edited
   const [deleting, setDeleting] = useState(null);
   const [notice,   setNotice]   = useState(null);   // { type, msg } after an action
@@ -832,6 +837,7 @@ const ResearcherDashboard = () => {
   }, []);
 
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
+  useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
   if (loading) return <div className="loading">Loading...</div>;
 

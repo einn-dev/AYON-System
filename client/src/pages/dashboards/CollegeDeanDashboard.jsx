@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
@@ -20,9 +21,11 @@ const NAV_ITEMS = [
 
 const Notifications = () => {
   const [notifs, setNotifs] = useState([]);
-  useEffect(() => {
+  const load = useCallback(() => {
     API.get('/notifications').then(res => setNotifs(res.data.notifications || [])).catch(() => {});
   }, []);
+  useEffect(() => { load(); }, [load]);
+  useLiveRefresh(load);
   const markRead = async (id) => {
     try { await API.patch(`/notifications/${id}/read`); setNotifs(prev => prev.map(n => n.notif_id === id ? { ...n, is_read: 1 } : n)); } catch {}
   };
@@ -84,6 +87,7 @@ const CollegeDeanDashboard = () => {
   }, []);
 
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
+  useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
   if (loading) return <div className="loading">Loading...</div>;
 
