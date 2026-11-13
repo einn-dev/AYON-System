@@ -1,37 +1,28 @@
 /* ─────────────────────────────────────────────────────────────
-   One login per browser TAB.
+   One login per browser TAB, kept only while the tab is open.
 
-   Each tab keeps its own login in sessionStorage, which belongs to that tab
-   only. So one tab can be the Chairperson and another the MSIRC Director,
-   and both keep working.
-
-   localStorage keeps a copy of the LAST account that signed in on this
-   browser. A new tab (or the browser opened again) starts as that account,
-   so opening AYON in a new tab does not ask you to sign in again.
-
-   Signing out only signs out that tab. A tab that signed out stays signed
-   out even if you reload it, until someone signs in there again.
+   Each tab keeps its login in sessionStorage, which belongs to that tab
+   only, so:
+     - many tabs can be signed in as different accounts at the same time;
+     - a NEW tab asks to sign in (safer on shared computers);
+     - reloading a tab (F5) keeps it signed in;
+     - closing the tab or the browser signs it out, and nothing about the
+       login stays saved on the computer.
 
    authService.js reads the tab's login:  sessionStorage.getItem('ayon_token')
    ───────────────────────────────────────────────────────────── */
 
 const TOKEN = 'ayon_token';
 const USER  = 'ayon_user';
-const OUT   = 'ayon_tab_signed_out';
 
 const safe  = (fn, fallback = null) => { try { return fn(); } catch { return fallback; } };
 const parse = (raw) => safe(() => JSON.parse(raw || 'null'));
-const sameAccount = (a, b) => !!a && !!b && String(a.user_id) === String(b.user_id) && a.role === b.role;
 
-/* runs once, when the tab opens AYON: a new tab starts as the last account that signed in */
+/* Older versions of AYON kept the login in localStorage, which stays on the
+   computer even after the browser is closed. Remove it. */
 safe(() => {
-  if (sessionStorage.getItem(TOKEN) || sessionStorage.getItem(OUT)) return;
-  const token = localStorage.getItem(TOKEN);
-  const user  = localStorage.getItem(USER);
-  if (token && user) {
-    sessionStorage.setItem(TOKEN, token);
-    sessionStorage.setItem(USER, user);
-  }
+  localStorage.removeItem(TOKEN);
+  localStorage.removeItem(USER);
 });
 
 /* this tab's login */
@@ -41,42 +32,16 @@ export const readLogin = () => ({
 });
 
 /* signed in (or chose a new password) in this tab */
-export const saveLogin = (token, user) => {
-  const raw = JSON.stringify(user);
-  safe(() => {
-    sessionStorage.setItem(TOKEN, token);
-    sessionStorage.setItem(USER, raw);
-    sessionStorage.removeItem(OUT);
-  });
-  safe(() => {                                 // new tabs start as this account
-    localStorage.setItem(TOKEN, token);
-    localStorage.setItem(USER, raw);
-  });
-};
+export const saveLogin = (token, user) => safe(() => {
+  sessionStorage.setItem(TOKEN, token);
+  sessionStorage.setItem(USER, JSON.stringify(user));
+});
 
 /* name, photo or a flag of this tab's account changed */
-export const saveUser = (user) => {
-  const raw = JSON.stringify(user);
-  safe(() => sessionStorage.setItem(USER, raw));
-  safe(() => {
-    if (sameAccount(parse(localStorage.getItem(USER)), user)) localStorage.setItem(USER, raw);
-  });
-};
+export const saveUser = (user) => safe(() => sessionStorage.setItem(USER, JSON.stringify(user)));
 
 /* signed out (or the login ended) in this tab; other tabs keep their accounts */
-export const clearLogin = () => {
-  const { token, user } = readLogin();
-  safe(() => {
-    sessionStorage.removeItem(TOKEN);
-    sessionStorage.removeItem(USER);
-    sessionStorage.setItem(OUT, '1');
-  });
-  safe(() => {                                 // new tabs no longer start as this account
-    const lastToken = localStorage.getItem(TOKEN);
-    const lastUser  = parse(localStorage.getItem(USER));
-    if ((token && lastToken === token) || sameAccount(lastUser, user)) {
-      localStorage.removeItem(TOKEN);
-      localStorage.removeItem(USER);
-    }
-  });
-};
+export const clearLogin = () => safe(() => {
+  sessionStorage.removeItem(TOKEN);
+  sessionStorage.removeItem(USER);
+});

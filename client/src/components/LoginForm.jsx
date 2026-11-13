@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../services/authService';
 import PasswordInput from './PasswordInput';
@@ -21,6 +21,7 @@ const EMPTY_FORM = { email: '', password: '' };
 const LoginForm = () => {
   const { login } = useAuth();
   const navigate  = useNavigate();
+  const location  = useLocation();
   const [form, setForm]             = useState(EMPTY_FORM);
   const [error, setError]           = useState('');
   const [unverified, setUnverified] = useState(false);
@@ -90,9 +91,13 @@ const LoginForm = () => {
       const res = await loginUser(form);
       login(res.data.user, res.data.token);
       // signed in with a temporary password from an Admin: must choose a new one first
+      // the page they opened before signing in, if it belongs to their role
+      const home = ROLE_REDIRECTS[res.data.user.role];
+      const from = String(location.state?.from || '');
+      const back = home && (from === home || from.startsWith(`${home}/`)) ? from : null;
       const redirect = res.data.user.must_change_password
         ? '/change-password'
-        : (ROLE_REDIRECTS[res.data.user.role] || '/login');
+        : (back || home || '/login');
       navigate(redirect, { replace: true });
     } catch (err) {
       const data = err.response?.data;
@@ -137,7 +142,7 @@ const LoginForm = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="yourname@gmail.com"
+              placeholder="you@msumain.edu.ph"
               autoComplete="off"
             />
           </div>
