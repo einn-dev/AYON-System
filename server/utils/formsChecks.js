@@ -1,5 +1,4 @@
 const supabase = require('../config/supabase');
-const { GRANT_TYPES } = require('./terms');
 const { roundOf } = require('./endorsementChain');
 const { fullName } = require('./roleNotify');
 const {
@@ -7,7 +6,8 @@ const {
 } = require('./grantForms');
 
 /* ─────────────────────────────────────────────────────────────
-   Grants and Incentives applications follow an MSIRC form (see grantForms.js).
+   Internally Funded Research (Form 005) and the Grants and Incentives
+   applications follow an MSIRC form (see grantForms.js).
      research_proposals.form_no    which form: '001', '008', '003', '002', '004'
      research_proposals.form_data  what the applicant filled in
      proposal_form_checks          what each office ticked and filled in on its step,
@@ -24,9 +24,10 @@ const parse = (raw) => {
    current = the saved draft (when editing one).
    Returns { form_no, form_data, form } or { fail: [status, body] }               */
 const readForm = ({ body, type, submit, current }) => {
-  if (!GRANT_TYPES.includes(type)) return { form_no: null, form_data: {}, form: null };
-  const no = body.form_no !== undefined ? String(body.form_no || '').trim() : String((current && current.form_no) || '');
   const allowed = FORMS_OF_TYPE[type] || [];
+  if (!allowed.length) return { form_no: null, form_data: {}, form: null };
+  let no = body.form_no !== undefined ? String(body.form_no || '').trim() : String((current && current.form_no) || '');
+  if (!no && allowed.length === 1) no = allowed[0];          // a type with only one form uses it
   if (!no) {
     return submit
       ? { fail: [400, { message: 'Please choose which form applies to your application.', code: 'FORM_REQUIRED' }] }

@@ -58,3 +58,70 @@
 .gf-view-step ul { list-style: none; margin: 4px 0 0; padding: 0; }
 .gf-view-step li { padding: 2px 0; line-height: 1.4; }
 .gf-ok { color: #276749; margin-right: 7px; font-size: 0.75rem; }
+
+/* ── Form 005: long fields across the full width ── */
+.gf-wide { grid-column: 1 / -1; }
+.gf-field-hint { margin: -2px 0 8px; font-size: 0.78rem; color: #6b5e61; line-height: 1.45; }
+.gf-count { display: block; text-align: right; font-size: 0.74rem; color: #8a7a7d; margin-top: 3px; }
+.gf-count.over { color: #b3261e; font-weight: 700; }
+.gf-x {
+  background: none; border: 1px solid #eadfe0; border-radius: 6px; width: 30px; height: 30px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; color: #9b2c2c; cursor: pointer;
+}
+.gf-x:disabled { opacity: 0.35; cursor: default; }
+
+.gf-people { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.gf-person { display: grid; grid-template-columns: 110px 1fr 1.6fr 30px; gap: 8px; align-items: center; width: 100%; }
+.gf-person-no { font-size: 0.76rem; font-weight: 600; color: #6b5e61; }
+
+.gf-plan { overflow-x: auto; }
+.gf-plan-table { border-collapse: collapse; width: 100%; min-width: 520px; margin-bottom: 8px; font-size: 0.84rem; }
+.gf-plan-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: #8a7a7d; font-weight: 600; text-align: center; padding: 6px 4px; background: #faf7f7; }
+.gf-plan-table th:first-child { text-align: left; width: 50%; }
+.gf-plan-table td { padding: 4px; border-bottom: 1px solid #f3ecec; }
+.gf-plan-cell { text-align: center; }
+.gf-plan-cell input { width: 18px; height: 18px; accent-color: #8d1b2d; }
+.gf-plan-table.view td { padding: 7px 6px; }
+.gf-on { color: #8d1b2d; }
+
+.gf-budget-part { margin-bottom: 14px; }
+.gf-budget-title { margin: 0; font-weight: 700; color: #3d3235; font-size: 0.86rem; }
+.gf-budget-hint { margin: 0 0 6px; font-size: 0.76rem; color: #8a7a7d; }
+.gf-line { display: grid; grid-template-columns: 1.3fr 1.5fr 120px 30px; gap: 8px; margin-bottom: 6px; align-items: center; }
+.gf-line-amt { text-align: right; }
+.gf-budget-sum { width: 100%; max-width: 420px; margin-left: auto; border-collapse: collapse; font-size: 0.86rem; }
+.gf-budget-sum caption { text-align: left; font-size: 0.74rem; color: #8a7a7d; padding-bottom: 4px; }
+.gf-budget-sum th { text-align: left; font-weight: 500; padding: 6px 8px; color: #3d3235; }
+.gf-budget-sum td { text-align: right; padding: 6px 8px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gf-budget-sum tr:last-child { border-top: 2px solid #e8dcde; }
+.gf-budget-sum tr:last-child th, .gf-budget-sum tr:last-child td { font-weight: 700; color: #2d2326; }
+.gf-budget-sum tr.over td, .gf-budget-sum tr.over th { color: #b3261e; }
+.gf-budget-sum small { font-weight: 400; color: #8a7a7d; }
+
+@media (max-width: 640px) {
+  .gf-person { grid-template-columns: 1fr 30px; }
+  .gf-person-no { grid-column: 1 / -1; }
+  .gf-person input:nth-of-type(2) { grid-column: 1; }
+  .gf-line { grid-template-columns: 1fr 30px; }
+  .gf-line input:nth-of-type(2), .gf-line input:nth-of-type(3) { grid-column: 1; }
+}
+
+/* read-only view of long fields */
+.gf-view-long { border-top: 1px solid #f3ecec; margin-top: 12px; padding-top: 10px; }
+.gf-view-label { margin: 0 0 4px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8a7a7d; }
+.gf-view-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.88rem; color: #2d2326; line-height: 1.55; }
+.gf-view-people { margin: 0; padding-left: 20px; font-size: 0.88rem; }
+.gf-view-people li { margin-bottom: 4px; }
+.gf-view-people span { color: #6b5e61; font-size: 0.82rem; }
+.gf-scroll { overflow-x: auto; }
+.gf-budget-view { border-collapse: collapse; width: 100%; min-width: 460px; font-size: 0.84rem; }
+.gf-budget-view th, .gf-budget-view td { padding: 6px 8px; border-bottom: 1px solid #f3ecec; text-align: left; }
+.gf-budget-view thead th { font-size: 0.72rem; text-transform: uppercase; color: #8a7a7d; background: #faf7f7; }
+.gf-budget-view .num { text-align: right; font-variant-numeric: tabular-nums; }
+.gf-bgroup th { background: #fdf6f7; color: #5e1420; font-size: 0.8rem; }
+.gf-bsub td { font-weight: 600; }
+.gf-btotal td { font-weight: 700; border-top: 2px solid #e8dcde; color: #2d2326; }
+
+/* long fields never push the page wider than the screen */
+.gf-fields > .form-group, .gf-budget, .gf-people, .gf-plan { min-width: 0; }
+.gf-person input, .gf-line input { width: 100%; min-width: 0; box-sizing: border-box; }

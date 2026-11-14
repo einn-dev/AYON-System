@@ -4,7 +4,7 @@ import API from '../services/authService';
 import './Resubmit.css';
 import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';
 import { GrantFormFields, SlotDocs, slotDocsProblem } from './GrantForms';
-import { formOf, fieldsProblem } from '../utils/grantForms';
+import { formOf, fieldsProblem, fieldsWarning } from '../utils/grantForms';
 
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
@@ -37,12 +37,13 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   }, [onClose, saving]);
 
   const cleanTitle = title.trim();
-  const cleanDesc  = desc.trim();
+  /* Form 005: the Executive Summary is also the abstract */
+  const cleanDesc  = gform?.descFrom ? String(formData[gform.descFrom] || '').trim() : desc.trim();
   const titleChanged = cleanTitle !== (proposal.title || '');
   const descChanged  = cleanDesc  !== (proposal.description || '').trim();
   const changes = [];
   if (titleChanged) changes.push('Title changed');
-  if (descChanged)  changes.push(gform ? 'Notes changed' : 'Description changed');
+  if (descChanged && !gform?.descFrom) changes.push(gform ? 'Notes changed' : 'Description changed');
   const fieldsChanged = gform
     ? gform.fields.filter(f => String(formData[f.k] || '').trim() !== String((proposal.form_data || {})[f.k] || '').trim())
     : [];
@@ -89,7 +90,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   return createPortal(
     <div className="modal-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}>
-      <div className="modal rs-modal" ref={dialogRef} tabIndex={-1}
+      <div className={`modal rs-modal${gform?.no === '005' ? ' rs-wide' : ''}`} ref={dialogRef} tabIndex={-1}
         role="dialog" aria-modal="true" aria-labelledby="rs-title">
         <div className="rs-head">
           <div>
@@ -121,6 +122,9 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
           </div>
         )}
 
+        {gform && fieldsWarning(gform, formData) && <div className="alert alert-info" role="note">{fieldsWarning(gform, formData)}</div>}
+
+        {!gform?.descFrom && (
         <div className="rs-field">
           <label className="rs-label" htmlFor="rs-desc-in">{gform ? 'Notes (optional)' : 'Abstract'}</label>
           <textarea id="rs-desc-in" value={desc} onChange={e => setDesc(e.target.value)} />
@@ -128,6 +132,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
             {descProblem || 'Tip: answer the points in the reason above.'}
           </div>
         </div>
+        )}
 
         <div className="rs-field">
           <span className="rs-label">Documents</span>

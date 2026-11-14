@@ -91,3 +91,6 @@
   .rs-meta { grid-template-columns: 1fr; }
   .rs-banner .btn { margin-left: 0; }
 }
+
+/* Form 005 has long sections: a wider window */
+.rs-modal.rs-wide { max-width: 900px; }

@@ -15,7 +15,8 @@ import { ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
-import { GRANT_FORMS, FORMS_OF_TYPE, fieldsProblem } from '../../utils/grantForms';
+import { GRANT_FORMS, FORMS_OF_TYPE, fieldsProblem, fieldsWarning } from '../../utils/grantForms';
+import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary } from '../../components/GrantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
@@ -39,7 +40,7 @@ const PROPOSAL_TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ val
    Grants and Incentives: Travel Subsidy, Oral Presentation, Publication Incentive. */
 const TYPE_NOTE = {
   research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight.',
-  internally_funded:     'Research funded by the University through MSIRC.',
+  internally_funded:     'Research funded by the University through MSIRC, up to ₱50,000 for 5 months (Form 005).',
   externally_funded:     'Research funded by an agency outside the University.',
   travel_subsidy:        'Travel to present a paper (Form 001) or to attend a conference (Form 008).',
   oral_presentation:     'Cash incentive for a paper you presented (Form 003). Needs an approved Research Spotlight.',
@@ -509,6 +510,7 @@ const DESC_MAX  = 10000;
 
 const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const K = KINDS[kind];
+  const { user } = useAuth();
   const STEPS = K.steps;
   /* Travel Subsidy and Oral Presentation are for a Research Spotlight that is already approved */
   const spotlights = proposals
@@ -544,7 +546,9 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
         proposal_type: K.types.includes(p.proposal_type) ? p.proposal_type : '',
         title: p.title || '', description: p.description || '',
         spotlight_id: p.spotlight_id ? String(p.spotlight_id) : '',
-        form_no: p.form_no || '', form_data: p.form_data || {},
+        /* a type with only one form (Internally Funded Research: Form 005) always uses it */
+        form_no: p.form_no || ((FORMS_OF_TYPE[p.proposal_type] || []).length === 1 ? FORMS_OF_TYPE[p.proposal_type][0] : ''),
+        form_data: p.form_data || {},
       });
       setDocs(docsFromFiles(p.files || []));
       setSavedAt(prev => prev || p.updated_at || null);
@@ -576,14 +580,19 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
         removed: [...d.removed, ...d.rows.filter(r => r.existing?.file_id && !keep.includes(r.existing.label)).map(r => r.existing.file_id)],
       }));
     }
+    /* Form 005: the researcher is the first proponent (Project Leader) */
+    const leader = f && f.fields.some(x => x.type === 'people') && user
+      ? { proponents: [{ name: personName(user), contact: [user.department, user.college, user.email].filter(Boolean).join(', ') }] }
+      : {};
     setForm(cur => ({
       ...cur, proposal_type: type, form_no: no || '',
-      form_data: no === cur.form_no ? cur.form_data : {},
+      form_data: no === cur.form_no ? cur.form_data : leader,
       spotlight_id: f?.needsSpotlight ? (cur.spotlight_id || (spotlights.length === 1 ? String(spotlights[0].proposal_id) : '')) : '',
     }));
     setAlert(null);
   };
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const formWarning = gform ? fieldsWarning(gform, form.form_data) : '';
   const fail = (msg) => { setAlert({ type: 'error', msg }); return false; };
 
   const textOk = (needTitle) => {
@@ -602,9 +611,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     data.append('save_as',       saveAs);
     data.append('proposal_type', form.proposal_type);
     data.append('title',         form.title.trim());
-    data.append('description',   form.description.trim());
+    /* Form 005: the Executive Summary is also the abstract */
+    data.append('description',   gform?.descFrom ? String(form.form_data[gform.descFrom] || '').trim() : form.description.trim());
     data.append('spotlight_id',  needsSpotlight ? form.spotlight_id : '');
-    if (kind === 'grants') {
+    if (FORMS_OF_TYPE[form.proposal_type]) {
       data.append('form_no',   gform ? gform.no : '');
       data.append('form_data', JSON.stringify(gform ? form.form_data : {}));
     }
@@ -840,12 +850,15 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   <GrantFormFields form={gform} value={form.form_data} disabled={!!busy}
                     onChange={(v) => { setForm({ ...form, form_data: v }); setAlert(null); }} />
                 )}
-                <div className="form-group">
-                  <label htmlFor="sp-desc">{gform ? 'Notes (optional)' : K.descLabel}</label>
-                  <textarea id="sp-desc" name="description" value={form.description} onChange={handleChange}
-                    rows={gform ? 3 : 5} placeholder={gform ? 'Anything else the offices should know.' : K.descHint}
-                    style={{ resize: 'vertical' }} />
-                </div>
+                {formWarning && <div className="alert alert-info" role="note">{formWarning}</div>}
+                {!gform?.descFrom && (
+                  <div className="form-group">
+                    <label htmlFor="sp-desc">{gform ? 'Notes (optional)' : K.descLabel}</label>
+                    <textarea id="sp-desc" name="description" value={form.description} onChange={handleChange}
+                      rows={gform ? 3 : 5} placeholder={gform ? 'Anything else the offices should know.' : K.descHint}
+                      style={{ resize: 'vertical' }} />
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button type="button" className="btn btn-outline" onClick={() => { setAlert(null); setStep(1); }}><FaArrowLeft className="ic" />Back</button>
                   {draftButton}
@@ -862,7 +875,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
               <>
                 <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px' }}>Documents</p>
                 <p style={{ fontSize: '0.84rem', color: '#718096', margin: '0 0 12px' }}>
-                  {K.docsHint}
+                  {gform ? 'Attach each document the form asks for. Those marked * are required to submit.' : K.docsHint}
                 </p>
                 {gform ? (
                   <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={!!busy}

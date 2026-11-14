@@ -1,11 +1,16 @@
 /* ─────────────────────────────────────────────────────────────
-   The MSIRC forms behind Grants and Incentives.
+   The MSIRC forms filled in inside AYON.
+   My Research:
+     Internally Funded Research : Form 005 (research proposal for internal funding)
+   Grants and Incentives:
      Travel Subsidy        : Form 001 (present a paper), Form 008 (attend a conference)
      Oral Presentation     : Form 003
      Publication Incentive : Form 002 (journal article), Form 004 (book or book chapter)
 
    For each form:
      fields  what the applicant fills in (the title is kept in the proposal's title)
+             types: text, select, date, year, textarea, agenda (R&D Agenda area),
+                    people (proponents), workplan (5-month grid), budget (PS and MOOE lines)
      docs    the documents the applicant uploads; the first one is the main document
      steps   what each office ticks or fills in on its step of the paper form
              items   tick boxes            (optional: true = tick only if it applies)
@@ -16,9 +21,78 @@
    ───────────────────────────────────────────────────────────── */
 
 const DESIGNATIONS = ['Faculty', 'Student', 'Staff'];
+
+/* MSU Marawi Research and Development Agenda 2023-2028 (from the R&E Manual) */
+const AGENDA = [
+  ['I. Human and Community Development', ['Education', 'Peace and Development', 'Social Services and Social Protection', 'Gender and Development and Persons With Disabilities (PWDs) Inclusion']],
+  ['II. Culture, Tourism and the Arts', ['Mapping, Conservation, Preservation and Restoration of Cultural Heritage', 'Halal Ecosystem', 'Education', 'Women and Youth', 'Tourism and Hospitality Business Management']],
+  ['III. Language, Media, and Communication Research', ['Theoretical and Applied Linguistics', 'Media Content Research and Innovation', 'Media and Information Literacy and other 21st Century Literacies', 'Communication, Campaign and Popularization of Scientific Knowledge', 'Language Documentation']],
+  ['IV. Industry, Innovation, Infrastructure, Energy and Emerging Technologies', ['Transportation', 'Energy and Power Generation', 'Communication and Digital Network', 'Water and Sanitation', 'Advanced Materials', 'Materials for Energy', 'Nanotechnology', 'Optics and Photonics', 'Electronics Industry', 'ICT Innovations', 'Industry 4.0', 'Quantum Technology', 'Smart Cities, Villages and Communities', 'Artificial Intelligence', 'Utilities', 'Unmanned Vehicle Systems (UVS)', 'Metals and Engineering', 'Start-up Development Program', 'Technology and Innovation', 'Data Analytics', 'Data Visualization']],
+  ['V. Sustainable Economic Production, Food Security and Poverty', ['Agriculture', 'Inland Fisheries', 'Marine Fisheries', 'Technological Innovations that Help Farmers', 'Socio-Economic and Policy Research', 'Food Security and Safety', 'Halal (food, medicines, cosmetics, and pharmaceuticals)', 'Entrepreneurship and Social Enterprise Development', 'Technology Business Incubation Program', 'Forestry', 'Circular Economy']],
+  ['VI. The Biological-Physical-Chemical Environment', ['Lake Lanao, Agus River and Other Aquatic Ecosystems', 'Ranao-Agus Riverbasin, Watersheds, and Forests', 'Iligan Bay, Illana Bay and Other Marine Ecosystems', 'Agricultural Ecosystems', 'Urban Ecosystems', 'Biodiversity (flora and fauna) and Ecosystem Studies', 'Mineral Resources', 'Solid Waste Management', 'Pollution and Rehabilitation Studies of Degradation of Ecosystems', 'Land-use Change Assessment and Monitoring', 'Biomass and Carbon Stocks Estimation and Modelling', 'Green Computing']],
+  ['VII. Health Research and Development', ['Environmental Health and Sanitation', 'Health Prophetical Education and Services', 'Family Health', 'Health and Climate Change', 'Health in Emergencies', 'Studies on Health Systems', 'Communicable and Non-communicable Diseases', 'Mental Health', 'Health-seeking Behavior', 'Health and Digital Technology', 'Emerging and Re-emerging Diseases', 'Anti-microbial Resistance', 'Studies on Cultural and Indigenous Practices Affecting Health', 'Policy Research', 'Sports, Physical Activity, and Recreation as Interventions to Health Problems']],
+  ['VIII. Law and Governance', ['Policy Development', 'E-governance', 'Ethics, Transparency and Accountability', 'Legal Research', 'Contemporary Issues and Trends in the Muslim World', 'Global Security, Foreign Policy, Diplomacy and International Relations']],
+  ['IX. Basic Research', ['Pure Basic Research', 'Policy Research', 'Oriented Basic Research']],
+  ['X. Disaster Risk Reduction and Climate Change', ['Observation and Monitoring Networks', 'Technology Development and Application for Monitoring', 'Modelling and Simulation for Improvement of Monitoring and Forecasting', 'Hazards, Vulnerability, and Risk Assessments', 'Infrastructure', 'Warning and Risk Communication', 'Technology Development and Application for Climate Change Mitigation and Adaptation', 'Technology Development and Application for DRRM', 'Policy Research']],
+];
+const AGENDA_OPTIONS = AGENDA.flatMap(([area, subs]) => subs.map((sub) => `${area}: ${sub}`));
+
+/* Form 005 budget rules */
+const BUDGET_MAX  = 50000;   // "Estimated Budget (maximum of PhP 50,000.00)"
+const PS_SHARE    = 0.45;    // "Personal Services ... should not exceed 45% of the MOOE"
+const PLAN_MONTHS = 5;       // "Implementation Schedule Duration: 5 months"
+const num = (v) => { const n = Number(String(v ?? '').replace(/,/g, '').trim()); return Number.isFinite(n) ? n : 0; };
+const budgetTotals = (b) => {
+  const sum = (rows) => (rows || []).reduce((a, r) => a + num(r.amount), 0);
+  const ps = sum(b && b.ps); const mooe = sum(b && b.mooe);
+  return { ps, mooe, total: ps + mooe };
+};
+const wordsIn = (v) => String(v || '').trim().split(/\s+/).filter(Boolean).length;
 const FINANCIAL = 'With financial assistance';
 
 const GRANT_FORMS = {
+  '005': {
+    no: '005', type: 'internally_funded', needsSpotlight: false,
+    name: 'Research Proposal for Internal Funding (MSU-Main Campus Research and Development Grant)',
+    short: 'Research proposal',
+    note: 'Form 005 (BOR Res. No. 221, s. 2024). Up to ₱50,000.00, 5 months.',
+    titleLabel: '(1) Project Title', titleHint: 'Title of your research project',
+    descFrom: 'summary',          // the Executive Summary is also saved as the abstract
+    fields: [
+      { k: 'proponents',   label: '(2) Proponent(s)', type: 'people', required: true,
+        hint: 'Name and contact details (department, college, cellphone and email) of each proponent. The first one is the Project Leader.' },
+      { k: 'summary',      label: '(3) Executive Summary', type: 'textarea', maxWords: 300, rows: 5, required: true, hint: 'Not more than 300 words.' },
+      { k: 'introduction', label: '(4) Introduction', type: 'textarea', required: true,
+        hint: 'A brief background of the study: the problem or need being addressed and the historical basis for the R&D. Include what justifies the research design and methodology.' },
+      { k: 'objectives',   label: '(5) Objectives', type: 'textarea', required: true,
+        hint: 'The general and specific objectives. Make them SMART: Specific, Measurable, Attainable, Relevant and Time-bound.' },
+      { k: 'significance', label: '(6) Significance of the Study', type: 'textarea', required: true,
+        hint: 'How the output will be used, its socio-economic benefits and impacts on health or other areas. Mention the end-users or beneficiaries, with their number and location if applicable.' },
+      { k: 'output',       label: '(7) Expected Output', type: 'textarea', rows: 3, required: true,
+        hint: 'The expected results: products, technologies, processes, knowledge or other deliverables.' },
+      { k: 'priority',     label: '(8) R&D Priority Area', type: 'agenda', required: true,
+        hint: 'From the approved MSU-Main Campus Research and Development Agenda 2023-2028.' },
+      { k: 'program',      label: 'Program under the Priority Area', hint: 'For example: Smart schools (optional)' },
+      { k: 'literature',   label: '(9) Review of Related Literature', type: 'textarea', required: true,
+        hint: 'What is already known on the topic, the gaps or inconsistencies, and how this research addresses them.' },
+      { k: 'methodology',  label: '(10) Methodology', type: 'textarea', rows: 6, required: true,
+        hint: 'Research design, sampling, and data collection and analysis methods. Mention ethical, biosafety or IACUC considerations and how each will be addressed.' },
+      { k: 'clearance',    label: 'Clearance needed', type: 'select', required: true,
+        options: ['None', 'Research Ethics Committee (MSUM_REC)', 'Institutional Biosafety Committee (MSUM_IBC)', 'Institutional Animal Care and Use Committee (MSUM_IACUC)'] },
+      { k: 'references',   label: '(11) References', type: 'textarea', required: true, hint: 'The literature and sources cited.' },
+      { k: 'workplan',     label: '(12) Activities or Work Plan', type: 'workplan', required: true,
+        hint: 'The major activities and the months (1 to 5) when each is done.' },
+      { k: 'budget',       label: '(13) and (14) Budget', type: 'budget', required: true,
+        hint: 'List each expense. The Estimated Budget totals are added up for you. Maximum of ₱50,000.00. No honoraria for the project leader or members.' },
+      { k: 'duties',       label: '(17) Duties and Responsibilities of the Proponent(s)', type: 'textarea', rows: 4, required: true },
+    ],
+    docs: [
+      { label: 'Curriculum Vitae of Proponent(s)', required: true, hint: 'Section (16): one file with the CV of each proponent.' },
+      { label: 'Research Ethics, Biosafety or IACUC Clearance', hint: 'Only if your research needs one. It can be attached later if it is not out yet.' },
+    ],
+    steps: {},
+  },
+
   '001': {
     no: '001', type: 'travel_subsidy', needsSpotlight: true,
     name: 'Application for Travel Grant for Research Dissemination',
@@ -234,6 +308,7 @@ const GRANT_FORMS = {
 };
 
 const FORMS_OF_TYPE = {
+  internally_funded:     ['005'],
   travel_subsidy:        ['001', '008'],
   oral_presentation:     ['003'],
   publication_incentive: ['002', '004'],
@@ -242,21 +317,61 @@ const FORMS_OF_TYPE = {
 const formOf  = (p) => (p && p.form_no ? GRANT_FORMS[p.form_no] || null : null);
 const stepOf  = (p, role) => { const f = formOf(p); return (f && f.steps[role]) || null; };
 const shown   = (q, answers) => !q.showIf || String((answers || {})[q.showIf.k] || '') === q.showIf.is;
+const LONG = ['textarea', 'agenda', 'people', 'workplan', 'budget'];   // shown across the full width
 const isMoney = (v) => /^\d{1,9}(\.\d{1,2})?$/.test(String(v || '').trim()) && Number(v) > 0;
 
 /* Why the applicant's fields cannot be submitted yet, or '' */
+const peopleProblem = (f, list) => {
+  if (!list.length) return f.required ? 'Please add at least one proponent.' : '';
+  const i = list.findIndex((p) => !p.name || !p.contact);
+  return i >= 0 ? `Please fill in the name and the contact details of proponent ${i + 1}.` : '';
+};
+const planProblem = (f, rows) => {
+  if (!rows.length) return f.required ? 'Please add at least one activity to the work plan.' : '';
+  const i = rows.findIndex((r) => !r.months.length);
+  return i >= 0 ? `Please tick at least one month for "${rows[i].activity}" in the work plan.` : '';
+};
+const budgetProblem = (f, b) => {
+  const lines = [...b.ps, ...b.mooe];
+  if (!lines.length) return f.required ? 'Please add the budget lines.' : '';
+  const bad = lines.find((r) => !r.item || !isMoney(r.amount));
+  if (bad) return `Each budget line needs an item and an amount${bad.item ? ` (check "${bad.item}")` : ''}.`;
+  const t = budgetTotals(b);
+  if (t.total > BUDGET_MAX) return `The total budget (₱${t.total.toLocaleString('en-PH')}) is over the ₱${BUDGET_MAX.toLocaleString('en-PH')} maximum.`;
+  return '';
+};
 const fieldsProblem = (form, data) => {
+  const d = data || {};
   for (const f of form.fields) {
-    const v = String((data || {})[f.k] || '').trim();
+    const raw = d[f.k];
+    if (f.type === 'people') { const p = peopleProblem(f, raw || []); if (p) return p; continue; }
+    if (f.type === 'workplan') { const p = planProblem(f, raw || []); if (p) return p; continue; }
+    if (f.type === 'budget') { const p = budgetProblem(f, raw || { ps: [], mooe: [] }); if (p) return p; continue; }
+    const v = String(raw || '').trim();
     if (f.required && !v) return `Please fill in "${f.label}".`;
     if (!v) continue;
+    if (f.type === 'textarea') {
+      if (f.maxWords && wordsIn(v) > f.maxWords) return `"${f.label}" must be ${f.maxWords} words or fewer (now ${wordsIn(v)}).`;
+      continue;
+    }
+    if (f.type === 'agenda') { if (!AGENDA_OPTIONS.includes(v)) return `Please choose "${f.label}".`; continue; }
     if (v.length > 200) return `"${f.label}" must be 200 characters or fewer.`;
     if (f.type === 'select' && !f.options.includes(v)) return `Please choose "${f.label}".`;
     if (f.type === 'date' && Number.isNaN(Date.parse(v))) return `"${f.label}" is not a valid date.`;
     if (f.type === 'year' && !/^(19|20)\d{2}$/.test(v)) return `"${f.label}" must be a year, for example 2026.`;
   }
-  const d = data || {};
   if (d.date_from && d.date_to && String(d.date_to) < String(d.date_from)) return 'The "To" date cannot be earlier than the "From" date.';
+  return '';
+};
+
+/* A note that does not stop submitting (Form 005: Personal Services against MOOE) */
+const fieldsWarning = (form, data) => {
+  const b = (data || {}).budget;
+  if (!form || !form.fields.some((f) => f.type === 'budget') || !b) return '';
+  const t = budgetTotals(b);
+  if (t.ps > 0 && t.ps > t.mooe * PS_SHARE) {
+    return `Personal Services (₱${t.ps.toLocaleString('en-PH')}) is more than 45% of the MOOE (₱${(t.mooe * PS_SHARE).toLocaleString('en-PH')}). Form 005 says it should not exceed that.`;
+  }
   return '';
 };
 
@@ -287,9 +402,40 @@ const stepProblem = (step, value) => {
 };
 
 /* keeps only what the form defines */
+const str = (v, max) => String(v ?? '').trim().slice(0, max);
+const cleanMoney = (v) => { const t = String(v ?? '').replace(/,/g, '').trim(); return /^\d{0,9}(\.\d{0,2})?$/.test(t) ? t : ''; };
 const cleanFields = (form, data) => {
   const out = {};
-  form.fields.forEach((f) => { const v = String((data || {})[f.k] || '').trim().slice(0, 200); if (v) out[f.k] = v; });
+  const d = data || {};
+  form.fields.forEach((f) => {
+    const raw = d[f.k];
+    if (f.type === 'people') {
+      const list = (Array.isArray(raw) ? raw : []).slice(0, 10)
+        .map((p) => ({ name: str(p && p.name, 150), contact: str(p && p.contact, 300) }))
+        .filter((p) => p.name || p.contact);
+      if (list.length) out[f.k] = list;
+    } else if (f.type === 'workplan') {
+      const rows = (Array.isArray(raw) ? raw : []).slice(0, 20)
+        .map((r) => ({
+          activity: str(r && r.activity, 300),
+          months: [...new Set(((r && r.months) || []).map(Number))].filter((m) => Number.isInteger(m) && m >= 1 && m <= PLAN_MONTHS).sort((x, y) => x - y),
+        }))
+        .filter((r) => r.activity);
+      if (rows.length) out[f.k] = rows;
+    } else if (f.type === 'budget') {
+      const lines = (rows) => (Array.isArray(rows) ? rows : []).slice(0, 30)
+        .map((r) => ({ item: str(r && r.item, 150), unit: str(r && r.unit, 150), amount: cleanMoney(r && r.amount) }))
+        .filter((r) => r.item || r.amount);
+      const b = { ps: lines(raw && raw.ps), mooe: lines(raw && raw.mooe) };
+      if (b.ps.length || b.mooe.length) out[f.k] = b;
+    } else if (f.type === 'textarea') {
+      const v = str(raw, f.maxChars || 10000); if (v) out[f.k] = v;
+    } else if (f.type === 'agenda') {
+      const v = str(raw, 300); if (AGENDA_OPTIONS.includes(v)) out[f.k] = v;
+    } else {
+      const v = str(raw, 200); if (v) out[f.k] = v;
+    }
+  });
   return out;
 };
 const cleanStep = (step, value) => {
@@ -302,4 +448,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, formOf, stepOf, shown, fieldsProblem, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formOf, stepOf, shown, fieldsProblem, fieldsWarning, stepProblem, cleanFields, cleanStep };

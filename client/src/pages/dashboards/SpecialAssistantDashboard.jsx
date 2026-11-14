@@ -14,7 +14,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
-import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
+import { stepOf, stepProblem } from '../../utils/grantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -273,8 +273,9 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
     }));
   };
 
-  /* an application on an MSIRC form uses that form's checklist instead of the general one */
-  const hasForm = !!formOf(selected);
+  /* an application whose MSIRC form has a Special Assistant step uses that checklist
+     instead of the general one (Form 005 has none, so it keeps the general one) */
+  const hasForm = !!stepOf(selected, 'special_assistant');
   const formProblem = hasForm ? stepProblem(stepOf(selected, 'special_assistant'), formCheck) : '';
   const allComplete = hasForm ? !formProblem : Object.values(checklist).every(v => v === 'complete');
 
