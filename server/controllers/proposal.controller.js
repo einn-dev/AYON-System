@@ -6,6 +6,7 @@ const { notifyUser } = require('../utils/notify');
 const { statusLabel, SUBMIT_TYPES, GRANT_TYPES } = require('../utils/terms');
 const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
+const { formOf, cleanFields, fieldsProblem } = require('../utils/grantForms');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
@@ -706,6 +707,7 @@ const updateProposalStatus = async (req, res) => {
      file               a new Main Proposal Document (replaces the old one)
      supporting[]       new supporting documents, with supporting_labels
      remove_files       JSON array of supporting file_id values to remove
+     form_data          the fields of its MSIRC form (Grants and Incentives), as JSON
    Documents that are not touched are kept.                                  */
 const resubmitProposal = async (req, res) => {
   const { id } = req.params;
@@ -748,12 +750,25 @@ const resubmitProposal = async (req, res) => {
       });
     }
 
+    /* an application on an MSIRC form: its fields can be corrected too */
+    const form = formOf(proposal);
+    let formData = null;
+    if (form && body.form_data !== undefined) {
+      let raw = body.form_data;
+      if (typeof raw === 'string') { try { raw = JSON.parse(raw || '{}'); } catch { raw = {}; } }
+      formData = cleanFields(form, raw);
+      const problem = fieldsProblem(form, formData);
+      if (problem) return res.status(400).json({ message: problem, code: 'FORM_INCOMPLETE' });
+    }
+    const sorted = (o) => JSON.stringify(Object.keys(o || {}).sort().map(k => [k, o[k]]));
+    const formChanged = !!formData && sorted(formData) !== sorted(cleanFields(form, proposal.form_data || {}));
+
     const titleChanged = hasTitle && titleIn !== proposal.title;
     const descChanged  = hasDesc  && descIn !== (proposal.description || null);
     const filesChanged = !!up.main || up.supporting.length > 0 || removeIds.length > 0;
-    if (!titleChanged && !descChanged && !filesChanged) {
+    if (!titleChanged && !descChanged && !filesChanged && !formChanged) {
       return res.status(400).json({
-        message: 'Nothing has changed yet. Edit the title or description, or change the documents.',
+        message: 'Nothing has changed yet. Edit the details, or change the documents.',
         code: 'NO_CHANGES',
       });
     }
@@ -764,7 +779,7 @@ const resubmitProposal = async (req, res) => {
     const plan    = planChange(withLegacy(current, proposal), { add: kinds, removeIds });
     if (!plan.ok) return res.status(400).json({ message: plan.error });
     if (!plan.hasMain) {
-      return res.status(400).json({ message: 'Please attach the Main Proposal Document before you resubmit.', code: 'MAIN_REQUIRED' });
+      return res.status(400).json({ message: `Please attach the ${form ? form.docs[0].label : 'Main Proposal Document'} before you resubmit.`, code: 'MAIN_REQUIRED' });
     }
 
     let rows = [];
@@ -787,6 +802,7 @@ const resubmitProposal = async (req, res) => {
     const base  = { status: stage ? 'for_endorsement' : 'submitted', updated_at: now };
     if (titleChanged) base.title       = titleIn;
     if (descChanged)  base.description = descIn;
+    if (formChanged)  base.form_data   = formData;
     if (newFile)      base.file_path   = newFile;
 
     /* only if it is still returned: a double click or a second tab changes nothing twice */
