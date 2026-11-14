@@ -15,9 +15,9 @@ import { ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
-import { GRANT_FORMS, FORMS_OF_TYPE, fieldsProblem, fieldsWarning } from '../../utils/grantForms';
+import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsProblem, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import { personName } from '../../utils/names';
-import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary } from '../../components/GrantForms';
+import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide } from '../../components/GrantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -39,7 +39,7 @@ const PROPOSAL_TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ val
    My Research: Research Spotlight, Internally Funded, Externally Funded.
    Grants and Incentives: Travel Subsidy, Oral Presentation, Publication Incentive. */
 const TYPE_NOTE = {
-  research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight.',
+  research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight. Needed before a travel grant or presentation incentive.',
   internally_funded:     'Research funded by the University through MSIRC, up to ₱50,000 for 5 months (Form 005).',
   externally_funded:     'Research funded by an agency outside the University.',
   travel_subsidy:        'Travel to present a paper (Form 001) or to attend a conference (Form 008).',
@@ -391,7 +391,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                 </td>
                 <td style={{ color: '#718096', fontSize: '0.82rem' }}>
                   {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
-                  {GRANT_FORMS[p.form_no] && <div style={{ fontSize: '0.74rem' }}>Form {p.form_no}: {GRANT_FORMS[p.form_no].short}</div>}
+                  {GRANT_FORMS[p.form_no] && FORMS_OF_TYPE[p.proposal_type]?.length > 1 && <div style={{ fontSize: '0.74rem' }}>Form {p.form_no}: {GRANT_FORMS[p.form_no].short}</div>}
                 </td>
                 <td>
                   <span className={`badge ${statusBadge(p.status)}`}>
@@ -580,9 +580,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
         removed: [...d.removed, ...d.rows.filter(r => r.existing?.file_id && !keep.includes(r.existing.label)).map(r => r.existing.file_id)],
       }));
     }
-    /* Form 005: the researcher is the first proponent (Project Leader) */
-    const leader = f && f.fields.some(x => x.type === 'people') && user
-      ? { proponents: [{ name: personName(user), contact: [user.department, user.college, user.email].filter(Boolean).join(', ') }] }
+    /* Form 005 and the Spotlight entry: the researcher is the first proponent or author */
+    const people = f && f.fields.find(x => x.type === 'people');
+    const leader = people && user
+      ? { [people.k]: [{ name: personName(user), contact: [user.department, user.college, ...(people.k === 'proponents' ? [user.email] : [])].filter(Boolean).join(', ') }] }
       : {};
     setForm(cur => ({
       ...cur, proposal_type: type, form_no: no || '',
@@ -600,6 +601,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     if (needTitle && kind === 'grants' && !gform) return fail('Please choose which form applies (step 1).');
     if (needTitle && needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for (step 1).');
     if (needTitle && !form.title.trim()) return fail(`Please fill in "${gform ? gform.titleLabel : 'Title'}".`);
+    if (gform) { const problem = titleProblem(gform, form.title); if (problem) return fail(problem); }
     if (needTitle && gform) { const problem = fieldsProblem(gform, form.form_data); if (problem) return fail(problem); }
     if (form.title.trim().length > TITLE_MAX) return fail(`Title must be ${TITLE_MAX} characters or fewer.`);
     if (form.description.trim().length > DESC_MAX) return fail(`${K.descLabel} must be ${DESC_MAX} characters or fewer.`);
@@ -659,7 +661,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     e.preventDefault();
     if (busy) return;
     if (!textOk(true)) return;
-    const problem = gform ? slotDocsProblem(gform, docs) : docsProblem(docs, { needMain: true });
+    const problem = gform ? slotDocsProblem(gform, docs, form.form_data) : docsProblem(docs, { needMain: true });
     if (problem) return fail(problem);
     setBusy('submit'); setAlert(null);
     try {
@@ -838,7 +840,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
               <>
                 {gform && (
                   <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 14px' }}>
-                    MSIRC Form No. {gform.no}: {gform.name}
+                    {gform.label ? gform.name : `${formLabel(gform)}: ${gform.name}`}
                   </p>
                 )}
                 <div className="form-group">
@@ -846,6 +848,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   <input id="sp-title" name="title" value={form.title} onChange={handleChange}
                     maxLength={TITLE_MAX + 50} placeholder={gform ? gform.titleHint : K.titleHint} />
                 </div>
+                <FormGuide form={gform} />
                 {gform && (
                   <GrantFormFields form={gform} value={form.form_data} disabled={!!busy}
                     onChange={(v) => { setForm({ ...form, form_data: v }); setAlert(null); }} />
@@ -878,7 +881,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   {gform ? 'Attach each document the form asks for. Those marked * are required to submit.' : K.docsHint}
                 </p>
                 {gform ? (
-                  <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={!!busy}
+                  <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={!!busy} data={form.form_data}
                     onError={(m) => (m ? fail(m) : setAlert(null))} />
                 ) : (
                   <DocumentsEditor value={docs} onChange={setDocs} disabled={!!busy}
@@ -889,7 +892,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #e8edf2', marginBottom: 20 }}>
                   <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 10px' }}>Review your submission:</p>
                   {[
-                    { label: K.typeHead,  value: gform ? `${typeLabel} (Form ${gform.no})` : typeLabel },
+                    { label: K.typeHead,  value: gform && !gform.label ? `${typeLabel} (Form ${gform.no})` : typeLabel },
                     ...(needsSpotlight ? [{ label: 'Research Spotlight', value: spotlightTitle || '—' }] : []),
                     { label: 'Title', value: form.title.trim() || '—' },
                     { label: 'Documents',      value: willHave.length ? willHave.join(', ') : 'No documents attached' },

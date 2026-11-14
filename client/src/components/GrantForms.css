@@ -125,3 +125,9 @@
 /* long fields never push the page wider than the screen */
 .gf-fields > .form-group, .gf-budget, .gf-people, .gf-plan { min-width: 0; }
 .gf-person input, .gf-line input { width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* the form's guidelines (Research Spotlight) */
+.gf-guide { border: 1px solid #f0dc9a; background: #fffaf0; border-radius: 10px; padding: 10px 14px; margin: 0 0 16px; }
+.gf-guide summary { cursor: pointer; font-weight: 700; color: #6b4f10; font-size: 0.86rem; }
+.gf-guide ul { margin: 8px 0 2px; padding-left: 18px; }
+.gf-guide li { font-size: 0.82rem; color: #4a3b10; line-height: 1.5; margin-bottom: 4px; }

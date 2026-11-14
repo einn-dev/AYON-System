@@ -2,7 +2,7 @@ const supabase = require('../config/supabase');
 const { roundOf } = require('./endorsementChain');
 const { fullName } = require('./roleNotify');
 const {
-  GRANT_FORMS, FORMS_OF_TYPE, formOf, stepOf, fieldsProblem, stepProblem, cleanFields, cleanStep,
+  GRANT_FORMS, FORMS_OF_TYPE, formOf, stepOf, fieldsProblem, titleProblem, stepProblem, cleanFields, cleanStep,
 } = require('./grantForms');
 
 /* ─────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ const readForm = ({ body, type, submit, current }) => {
   const form = GRANT_FORMS[no];
   const data = cleanFields(form, body.form_data !== undefined ? parse(body.form_data) : ((current && current.form_data) || {}));
   if (submit) {
-    const problem = fieldsProblem(form, data);
+    const problem = titleProblem(form, body.title) || fieldsProblem(form, data);
     if (problem) return { fail: [400, { message: problem, code: 'FORM_INCOMPLETE' }] };
   }
   return { form_no: no, form_data: data, form };

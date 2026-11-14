@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark } from 'react-icons/fa6';
 import { ROLE_LABEL } from '../utils/terms';
 import {
-  GRANT_FORMS, formOf, stepOf, shown, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
+  GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
 } from '../utils/grantForms';
 import './GrantForms.css';
 
@@ -26,28 +26,29 @@ const showValue = (q, v) => (q.type === 'money' ? peso(v) : q.type === 'date' ? 
 const pesoNum = (n) => `₱${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /* (2) Proponents: name and contact details, one row each */
-const PeopleField = ({ id, value, onChange, disabled }) => {
+const PeopleField = ({ id, value, onChange, disabled, authors = false }) => {
+  const who = authors ? 'author' : 'proponent';
   const list = value && value.length ? value : [{ name: '', contact: '' }];
   const set = (i, k, v) => onChange(list.map((p, j) => (j === i ? { ...p, [k]: v } : p)));
   return (
     <div className="gf-people" id={id}>
       {list.map((p, i) => (
         <div key={i} className="gf-person">
-          <span className="gf-person-no">{i === 0 ? 'Project Leader' : `Proponent ${i + 1}`}</span>
-          <input aria-label={`Name of proponent ${i + 1}`} placeholder="Full name" maxLength={150}
+          <span className="gf-person-no">{authors ? (i === 0 ? 'Main Author' : `Author ${i + 1}`) : (i === 0 ? 'Project Leader' : `Proponent ${i + 1}`)}</span>
+          <input aria-label={`Name of ${who} ${i + 1}`} placeholder="Full name" maxLength={150}
             value={p.name} disabled={disabled} onChange={(e) => set(i, 'name', e.target.value)} />
-          <input aria-label={`Contact details of proponent ${i + 1}`} maxLength={300}
-            placeholder="Department, college, cellphone, email" value={p.contact} disabled={disabled}
+          <input aria-label={`${authors ? 'Affiliation' : 'Contact details'} of ${who} ${i + 1}`} maxLength={300}
+            placeholder={authors ? 'Department and college' : 'Department, college, cellphone, email'} value={p.contact} disabled={disabled}
             onChange={(e) => set(i, 'contact', e.target.value)} />
           {list.length > 1 && (
-            <button type="button" className="gf-x" disabled={disabled} aria-label={`Remove proponent ${i + 1}`}
+            <button type="button" className="gf-x" disabled={disabled} aria-label={`Remove ${who} ${i + 1}`}
               onClick={() => onChange(list.filter((_, j) => j !== i))}><FaXmark /></button>
           )}
         </div>
       ))}
       {list.length < 10 && (
         <button type="button" className="btn btn-outline btn-sm" disabled={disabled}
-          onClick={() => onChange([...list, { name: '', contact: '' }])}><FaPlus className="ic" />Add Proponent</button>
+          onClick={() => onChange([...list, { name: '', contact: '' }])}><FaPlus className="ic" />{authors ? 'Add Author' : 'Add Proponent'}</button>
       )}
     </div>
   );
@@ -187,7 +188,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
                 )}
               </>
             ) : f.type === 'people' ? (
-              <PeopleField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
+              <PeopleField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} authors={f.k === 'authors'} />
             ) : f.type === 'workplan' ? (
               <WorkplanField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
             ) : f.type === 'budget' ? (
@@ -212,12 +213,14 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
 let slotSeq = 0;
 const rowOf = (docs, label) => docs.rows.find((r) => (r.existing ? r.existing.label : r.choice) === label);
 
-export const slotDocsProblem = (form, docs) => {
+/* data = the form's answers; some answers make another document required */
+export const slotDocsProblem = (form, docs, data) => {
   const [main, ...rest] = form.docs;
   if (!docs.main.existing && !docs.main.file) return `Please attach the ${main.label}.`;
+  const needed = requiredDocs(form, data);
   for (const d of rest) {
     const r = rowOf(docs, d.label);
-    if (d.required && !(r && (r.existing || r.file))) return `Please attach the ${d.label}.`;
+    if (needed.includes(d.label) && !(r && (r.existing || r.file))) return `Please attach the ${d.label}.`;
   }
   return '';
 };
@@ -225,7 +228,8 @@ export const slotDocsSummary = (form, docs) => form.docs
   .filter((d, i) => (i === 0 ? (docs.main.existing || docs.main.file) : (() => { const r = rowOf(docs, d.label); return r && (r.existing || r.file); })()))
   .map((d) => d.label);
 
-export const SlotDocs = ({ form, value, onChange, onError, disabled = false }) => {
+export const SlotDocs = ({ form, value, onChange, onError, disabled = false, data = {} }) => {
+  const needed = requiredDocs(form, data);
   const inputs = useRef({});
   const ok = (file) => {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -269,7 +273,7 @@ export const SlotDocs = ({ form, value, onChange, onError, disabled = false }) =
           <li key={d.label} className={`gf-slot${has ? ' has' : ''}`}>
             <span className="gf-slot-ic" aria-hidden="true">{has ? <FaCheck /> : <FaFileLines />}</span>
             <div className="gf-slot-text">
-              <b>{d.label}{d.required ? <span className="gf-req"> *</span> : <span className="gf-opt"> (if it applies)</span>}</b>
+              <b>{d.label}{needed.includes(d.label) ? <span className="gf-req"> *</span> : <span className="gf-opt"> (if it applies)</span>}</b>
               {d.hint && <small>{d.hint}</small>}
               <small className="gf-slot-file">
                 {fresh ? `${fresh.name} (not saved yet)` : saved ? (saved.file_name || 'Uploaded') : 'No file chosen'}
@@ -294,6 +298,14 @@ export const SlotDocs = ({ form, value, onChange, onError, disabled = false }) =
   );
 };
 
+/* ── The form's guidelines (Research Spotlight) ── */
+export const FormGuide = ({ form }) => (form && form.guide ? (
+  <details className="gf-guide" open>
+    <summary>Guidelines</summary>
+    <ul>{form.guide.map((g) => <li key={g}>{g}</li>)}</ul>
+  </details>
+) : null);
+
 /* ── An office's step on the form ──   value = { ticks: [], answers: {} } */
 export const EMPTY_CHECK = { ticks: [], answers: {} };
 
@@ -304,7 +316,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
   if (!step) {
     return (
       <div className="gf-check">
-        <p className="gf-check-title">MSIRC Form No. {form.no}</p>
+        <p className="gf-check-title">{formLabel(form)}</p>
         <p className="gf-check-none">This form has no checklist for the {ROLE_LABEL[role] || 'office'}. Review the application, then sign.</p>
       </div>
     );
@@ -315,7 +327,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
 
   return (
     <div className="gf-check">
-      <p className="gf-check-title">MSIRC Form No. {form.no}: your checklist</p>
+      <p className="gf-check-title">{formLabel(form)}: your checklist</p>
       {step.hint && <p className="gf-check-hint">{step.hint}</p>}
 
       {(step.items || []).map((it) => {
@@ -357,7 +369,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
 /* ── The filled-in form, and what each office ticked (read only) ── */
 const LongValue = ({ f, v }) => {
   if (f.type === 'people') {
-    return <ol className="gf-view-people">{v.map((p, i) => <li key={i}><b>{p.name}</b>{i === 0 && ' (Project Leader)'}<br /><span>{p.contact}</span></li>)}</ol>;
+    return <ol className="gf-view-people">{v.map((p, i) => <li key={i}><b>{p.name}</b>{i === 0 && (f.k === 'authors' ? ' (Main Author)' : ' (Project Leader)')}<br /><span>{p.contact}</span></li>)}</ol>;
   }
   if (f.type === 'workplan') {
     const months = Array.from({ length: PLAN_MONTHS }, (_, i) => i + 1);
@@ -412,7 +424,7 @@ export const GrantFormView = ({ proposal }) => {
 
   return (
     <div className="gf-view">
-      <p className="gf-view-no">MSIRC Form No. {form.no}</p>
+      <p className="gf-view-no">{formLabel(form)}</p>
       <p className="gf-view-name">{form.name}</p>
       <dl className="gf-view-grid">
         {form.fields.filter((f) => data[f.k] && !LONG.includes(f.type)).map((f) => (

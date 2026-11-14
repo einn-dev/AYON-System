@@ -4,7 +4,7 @@ import API from '../services/authService';
 import './Resubmit.css';
 import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';
 import { GrantFormFields, SlotDocs, slotDocsProblem } from './GrantForms';
-import { formOf, fieldsProblem, fieldsWarning } from '../utils/grantForms';
+import { formOf, formLabel, fieldsProblem, fieldsWarning, titleProblem as titleRule } from '../utils/grantForms';
 
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
@@ -53,9 +53,9 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const titleProblem =
     !cleanTitle ? 'Title cannot be empty.'
     : cleanTitle.length > TITLE_MAX ? `Title must be ${TITLE_MAX} characters or fewer.`
-    : '';
+    : titleRule(gform, cleanTitle);
   const descProblem = cleanDesc.length > DESC_MAX ? `Description must be ${DESC_MAX} characters or fewer.` : '';
-  const docsIssue = gform ? slotDocsProblem(gform, docs) : docsProblem(docs, { needMain: true });
+  const docsIssue = gform ? slotDocsProblem(gform, docs, formData) : docsProblem(docs, { needMain: true });
   const fieldsIssue = gform ? fieldsProblem(gform, formData) : '';
   const canSend = changes.length > 0 && !titleProblem && !descProblem && !docsIssue && !fieldsIssue && !saving;
 
@@ -90,7 +90,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   return createPortal(
     <div className="modal-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}>
-      <div className={`modal rs-modal${gform?.no === '005' ? ' rs-wide' : ''}`} ref={dialogRef} tabIndex={-1}
+      <div className={`modal rs-modal${gform && (gform.no === '005' || gform.no === 'SPOT') ? ' rs-wide' : ''}`} ref={dialogRef} tabIndex={-1}
         role="dialog" aria-modal="true" aria-labelledby="rs-title">
         <div className="rs-head">
           <div>
@@ -116,7 +116,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
 
         {gform && (
           <div className="rs-field">
-            <span className="rs-label">MSIRC Form No. {gform.no}</span>
+            <span className="rs-label">{formLabel(gform)}</span>
             <GrantFormFields form={gform} value={formData} onChange={setFormData} disabled={saving} />
             {fieldsIssue && <div className="rs-hint err">{fieldsIssue}</div>}
           </div>
@@ -137,7 +137,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         <div className="rs-field">
           <span className="rs-label">Documents</span>
           {gform ? (
-            <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={saving} onError={setError} />
+            <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={saving} onError={setError} data={formData} />
           ) : (
             <DocumentsEditor value={docs} onChange={setDocs} disabled={saving} onError={setError} />
           )}

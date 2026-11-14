@@ -1,6 +1,8 @@
 /* ─────────────────────────────────────────────────────────────
    The MSIRC forms filled in inside AYON.
    My Research:
+     Research Spotlight         : the Spotlight entry (no form number; extended abstract
+                                  guidelines and the Certification and Endorsement)
      Internally Funded Research : Form 005 (research proposal for internal funding)
    Grants and Incentives:
      Travel Subsidy        : Form 001 (present a paper), Form 008 (attend a conference)
@@ -51,6 +53,51 @@ const wordsIn = (v) => String(v || '').trim().split(/\s+/).filter(Boolean).lengt
 const FINANCIAL = 'With financial assistance';
 
 const GRANT_FORMS = {
+  SPOT: {
+    no: 'SPOT', type: 'research_spotlight', needsSpotlight: false,
+    label: 'Research Spotlight Entry',
+    name: 'MSU Main Campus Research Spotlight: Extended Abstract and Oral Presentation',
+    short: 'Research Spotlight entry',
+    note: 'Extended abstract, with the Certification and Endorsement.',
+    titleLabel: 'Title of the Paper', titleHint: 'Upper case, at most 15 words',
+    titleMaxWords: 15,
+    descFrom: 'abstract',         // the abstract is also saved as the proposal's abstract
+    guide: [
+      'Extended abstract: Arial 12, short bond paper, single spacing, 1-inch margins, major headings in ALL CAPS, 1,200 to 2,000 words.',
+      'Title in upper case and bold, at most 15 words. Authors: surname, first name and middle initial; the first author is the main author and the presenting author is underlined. Then each affiliation, and the presenting author\'s email and mobile number.',
+      'Content: Introduction or Rationale, Materials and Methods (experimental) or Methodology (non-experimental), Results and Discussion, Conclusion, and References.',
+      'Oral presentation: at most 20 slides, font size 28 or bigger, in this order: Title, Rationale or Objectives, Methods, Results or Discussion, Conclusion. 10 minutes, then 5 minutes of questions. Give your slides to the technical team before your turn.',
+    ],
+    fields: [
+      { k: 'abstract',  label: 'Abstract', type: 'textarea', maxWords: 300, rows: 6, required: true, hint: 'Not more than 300 words.' },
+      { k: 'keywords',  label: 'Keywords', required: true, hint: '3 to 5 keywords, separated by commas' },
+      { k: 'cluster',   label: 'Research Cluster', type: 'select', required: true,
+        options: ['Pure and Applied Sciences', 'Social Sciences, Humanities and Education'] },
+      { k: 'presentation', label: 'Type of Presentation', type: 'select', required: true, options: ['Oral', 'Poster'] },
+      { k: 'authors',   label: 'Author(s)', type: 'people', required: true,
+        hint: 'Name and affiliation (department and college) of each author. The first one is the main author.' },
+      { k: 'presenter', label: 'Presenting Author', required: true, hint: 'The author who will present' },
+      { k: 'presenter_contact', label: 'Presenting Author\'s Email and Mobile Number', required: true, hint: 'For example: name@msumain.edu.ph / 0917 000 0000' },
+      { k: 'student',   label: 'Student thesis entry?', type: 'select', required: true,
+        options: ['No', 'Yes, presented by the adviser'],
+        hint: 'For a student thesis that is not under a faculty research project. The student signs the Faculty Waiver Form.' },
+    ],
+    docs: [
+      { label: 'Extended Abstract', required: true, hint: '1,200 to 2,000 words, following the guidelines above.' },
+      { label: 'Certification and Endorsement', required: true,
+        hint: 'Certifies that the paper has not been presented elsewhere and is a product of a research work, endorsed by the Research Coordinator, Chairman and Dean.' },
+      { label: 'Faculty Waiver Form', hint: 'Only for a student thesis entry presented by the adviser.' },
+    ],
+    steps: {
+      chairperson: { items: [
+        { k: 'not_presented', label: 'The paper has not yet been presented in any conference, symposium or forum elsewhere' },
+        { k: 'research_work', label: 'The paper is a product of a research work' },
+        { k: 'guidelines',    label: 'The extended abstract follows the Research Spotlight guidelines' },
+        { k: 'waiver',        label: 'Faculty Waiver Form is attached (student thesis entry)', optional: true },
+      ] },
+    },
+  },
+
   '005': {
     no: '005', type: 'internally_funded', needsSpotlight: false,
     name: 'Research Proposal for Internal Funding (MSU-Main Campus Research and Development Grant)',
@@ -308,12 +355,15 @@ const GRANT_FORMS = {
 };
 
 const FORMS_OF_TYPE = {
+  research_spotlight:    ['SPOT'],
   internally_funded:     ['005'],
   travel_subsidy:        ['001', '008'],
   oral_presentation:     ['003'],
   publication_incentive: ['002', '004'],
 };
 
+/* "MSIRC Form No. 005", or the form's own name when it has no number */
+const formLabel = (f) => (f ? f.label || `MSIRC Form No. ${f.no}` : '');
 const formOf  = (p) => (p && p.form_no ? GRANT_FORMS[p.form_no] || null : null);
 const stepOf  = (p, role) => { const f = formOf(p); return (f && f.steps[role]) || null; };
 const shown   = (q, answers) => !q.showIf || String((answers || {})[q.showIf.k] || '') === q.showIf.is;
@@ -362,6 +412,18 @@ const fieldsProblem = (form, data) => {
   }
   if (d.date_from && d.date_to && String(d.date_to) < String(d.date_from)) return 'The "To" date cannot be earlier than the "From" date.';
   return '';
+};
+
+/* The title's own limit (Research Spotlight: at most 15 words), or '' */
+const titleProblem = (form, title) => (form && form.titleMaxWords && wordsIn(title) > form.titleMaxWords
+  ? `The title must be ${form.titleMaxWords} words or fewer (now ${wordsIn(title)}).` : '');
+
+/* Documents that become required because of an answer, e.g. the Faculty Waiver
+   Form for a student thesis entry in the Research Spotlight */
+const requiredDocs = (form, data) => {
+  const out = form.docs.filter((d) => d.required).map((d) => d.label);
+  if (form.no === 'SPOT' && String((data || {}).student || '').startsWith('Yes')) out.push('Faculty Waiver Form');
+  return out;
 };
 
 /* A note that does not stop submitting (Form 005: Personal Services against MOOE) */
@@ -448,4 +510,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formOf, stepOf, shown, fieldsProblem, fieldsWarning, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, stepProblem, cleanFields, cleanStep };
