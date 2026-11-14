@@ -26,22 +26,28 @@ It puts the institute's research services in one place. Researchers submit propo
 ## What AYON does
 
 **For researchers**
-- Submit a research proposal in three steps: type, details, and documents
-- Save a proposal as a **draft** at any step and finish it later
-- Attach a **Main Proposal Document** plus up to **4 supporting documents**, such as the Line-Item Budget, each with its own label
-- Follow every proposal on a step-by-step tracker that shows who has it now
-- Edit and resubmit a proposal that was returned for revision
-- Filter **My Proposals** by status, type and year, and sort it
-- Apply for grants and incentives, and browse the Research Repository
+- **My Research**: submit Research Spotlight, Internally Funded and Externally Funded research
+- **Grants and Incentives**: apply for a Travel Subsidy, an Oral Presentation incentive or a Publication Incentive, with its own Submit button
+- The **MSIRC forms are filled in inside AYON**, each with its own fields and documents (see the table below)
+- A grant for presenting a paper (Form 001) or a presentation incentive (Form 003) needs an **approved Research Spotlight** first
+- Save any submission as a **draft** at any step and finish it later
+- Follow every submission on a step-by-step tracker that shows who has it now
+- Edit and resubmit a returned submission, including its form fields and documents
+- Filter each list by status, type and year, and sort it; browse the Research Repository
 
 **For the college and the MSIRC offices**
 - Endorse, validate, approve or return proposals, each with a remarks field
+- See the whole filled-in form, and **tick each office's own part of the form** (its checklist, recommendation or incentive amount) before signing
 - **Electronic signatures**: a saved signature plus a confirmation tick box, placed on the proposal at each signing step
 - Queues that show only what is waiting for each office
+- **Proposal statistics** on each dashboard: per year or month, by type, by status, and by college or department
 - Reports with filters, and a history of the reports each person generated
 
 **For everyone**
-- In-app notifications, with email notices for important steps
+- In-app notifications, with email notices for important steps; a notification panel on the bell
+- **Live updates**: an open page refreshes itself within about 15 seconds when something new happens
+- **One sign-in per browser tab**: several accounts can be open in different tabs; a new tab asks to sign in, and closing it signs out
+- Works on phones: the menu slides in from the ☰ button
 - **Global search** (Ctrl K) across proposals, research and pages, limited to what each role may see
 - A **Help** page with a guide for each role, a status guide, FAQs and the MSIRC contact details
 - Announcements from the administrator, shown as a banner
@@ -59,7 +65,7 @@ It puts the institute's research services in one place. Researchers submit propo
 
 | Role | What they do in AYON |
 |---|---|
-| Researcher | Submits proposals and follows their progress |
+| Researcher | Submits research and grant or incentive applications, and follows their progress |
 | Chairperson | First college endorsement (department level) |
 | Research Coordinator | Second college endorsement |
 | College Dean | Last college endorsement |
@@ -68,6 +74,21 @@ It puts the institute's research services in one place. Researchers submit propo
 | OVCRED | Grants the final approval |
 | MSIRC Staff | Monitors proposals at MSIRC and the Repository (view only) |
 | Administrator | Manages accounts, settings, announcements and logs |
+
+---
+
+## The MSIRC forms in AYON
+
+| Researcher page | Choice | Form filled in inside AYON |
+|---|---|---|
+| My Research | Research Spotlight | Research Spotlight Entry (extended abstract guidelines, Certification and Endorsement) |
+| My Research | Internally Funded Research | MSIRC Form No. 005, Research Proposal for Internal Funding (up to ₱50,000.00, 5 months) |
+| My Research | Externally Funded Research | Title, abstract and documents |
+| Grants and Incentives | Travel Subsidy | Form No. 001, Travel Grant for Research Dissemination, or Form No. 008, Travel Authority for Conference Attendance |
+| Grants and Incentives | Oral Presentation | Form No. 003, International Presentation Cash Incentive |
+| Grants and Incentives | Publication Incentive | Form No. 002, Journal Publication Incentive, or Form No. 004, Book and Book Chapter Publication Incentives |
+
+Form No. 007 (Terminal Report) is not in AYON yet.
 
 ---
 
@@ -86,7 +107,7 @@ MSIRC:  Special Assistant (validate)  →  MSIRC Director  →  OVCRED (final ap
 Approved  /  Rejected
 ```
 
-Any office can **return** a proposal to the researcher with a reason. The researcher edits it and resubmits, and it starts again from the college level.
+Research and grant or incentive applications follow the same route. Any office can **return** one to the researcher with a reason. The researcher edits it and resubmits, and it starts again from the college level.
 
 | Status | Meaning |
 |---|---|
@@ -125,14 +146,15 @@ AYON-System/
 │       ├── pages/          Sign-in, register, help, terms, privacy
 │       │   └── dashboards/ One dashboard per role, plus admin pages
 │       ├── data/           Help content, colleges list, legal text
-│       ├── services/       API connection (authService.js)
-│       └── utils/          Status and role labels
+│       ├── services/       API connection (authService.js) and the per-tab sign-in (tabLogin.js)
+│       └── utils/          Status and role labels, the MSIRC form definitions (grantForms.js)
 └── server/                 Express API (deployed to Render)
     ├── config/             Supabase connection
     ├── controllers/        What each request does
     ├── middleware/         Sign-in and role checks
     ├── routes/             API addresses (/api/...)
-    ├── utils/              Endorsement chain, signatures, files, email, audit log
+    ├── utils/              Endorsement chain, signatures, files, email, audit log,
+    │                       and the MSIRC form definitions (grantForms.js, the same as the client's)
     └── server.js           Starts the API
 ```
 
@@ -168,8 +190,11 @@ In Supabase, open **SQL Editor** and run these files **in this order**:
 10. `add_signatures.sql`
 11. `add_announcements.sql`
 12. `add_proposal_files.sql`
+13. `add_middle_name.sql`
+14. `add_grant_types.sql` (Travel Subsidy and Oral Presentation as two types, and the Research Spotlight link)
+15. `add_grant_forms.sql` (the MSIRC forms and each office's checklist)
 
-Each file is safe to run more than once.
+Each file is safe to run more than once. For a demo, `demo_data.sql` can be run after these; keep it out of a public repository, because it holds the shared demo password.
 
 ### 3. Start the server
 
