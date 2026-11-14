@@ -14,7 +14,9 @@ import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
-import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, NEEDS_SPOTLIGHT, isGrantType } from '../../utils/terms';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
+import { GRANT_FORMS, FORMS_OF_TYPE, fieldsProblem } from '../../utils/grantForms';
+import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary } from '../../components/GrantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -39,9 +41,9 @@ const TYPE_NOTE = {
   research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight.',
   internally_funded:     'Research funded by the University through MSIRC.',
   externally_funded:     'Research funded by an agency outside the University.',
-  travel_subsidy:        'Travel authority and assistance to present a paper (Form 001). Needs an approved Research Spotlight.',
+  travel_subsidy:        'Travel to present a paper (Form 001) or to attend a conference (Form 008).',
   oral_presentation:     'Cash incentive for a paper you presented (Form 003). Needs an approved Research Spotlight.',
-  publication_incentive: 'Cash incentive for a published article (Form 002).',
+  publication_incentive: 'Cash incentive for a journal article (Form 002) or a book or book chapter (Form 004).',
 };
 const KINDS = {
   research: {
@@ -63,7 +65,7 @@ const KINDS = {
     pick: 'Select what you want to apply for:', steps: ['Application Type', 'Details', 'Documents and Submit'],
     titleLabel: 'Title of the Paper or Article', titleHint: 'Title of the paper you will present, presented, or published',
     descLabel: 'Details', descHint: 'For example: the conference, place and dates, or the journal, volume and year published...',
-    docsHint: 'The main document (your request letter or filled-in form) is required to submit. Add up to 4 supporting documents, each with a label.',
+    docsHint: 'Attach each document the form asks for. Those marked * are required to submit.',
     empty: 'No applications yet. Click "Submit Application" to get started.',
   },
 };
@@ -388,6 +390,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                 </td>
                 <td style={{ color: '#718096', fontSize: '0.82rem' }}>
                   {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
+                  {GRANT_FORMS[p.form_no] && <div style={{ fontSize: '0.74rem' }}>Form {p.form_no}: {GRANT_FORMS[p.form_no].short}</div>}
                 </td>
                 <td>
                   <span className={`badge ${statusBadge(p.status)}`}>
@@ -521,7 +524,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const [loading, setLoading] = useState(!!draftParam);
   const [blocked, setBlocked] = useState('');           // the draft cannot be edited (already submitted, not found)
   const [savedAt, setSavedAt] = useState(location.state?.savedAt || null);
-  const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '', spotlight_id: '' });
+  const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '', spotlight_id: '', form_no: '', form_data: {} });
   const [docs,    setDocs]    = useState(() => docsFromFiles([]));
 
   /* continue a draft: load it */
@@ -541,6 +544,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
         proposal_type: K.types.includes(p.proposal_type) ? p.proposal_type : '',
         title: p.title || '', description: p.description || '',
         spotlight_id: p.spotlight_id ? String(p.spotlight_id) : '',
+        form_no: p.form_no || '', form_data: p.form_data || {},
       });
       setDocs(docsFromFiles(p.files || []));
       setSavedAt(prev => prev || p.updated_at || null);
@@ -557,14 +561,37 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     if (draftParam) { setDraftId(Number(draftParam)); loadDraft(draftParam); }
   }, [draftParam, loadDraft]);
 
-  const needsSpotlight = NEEDS_SPOTLIGHT.includes(form.proposal_type);
+  /* Grants and Incentives: the MSIRC form chosen for this type (utils/grantForms.js) */
+  const formChoices = FORMS_OF_TYPE[form.proposal_type] || [];
+  const gform = formChoices.includes(form.form_no) ? GRANT_FORMS[form.form_no] : null;
+  const needsSpotlight = !!gform?.needsSpotlight;
+  /* choosing a type or a form: documents that belong to another form are dropped */
+  const chooseForm = (type, no) => {
+    const f = GRANT_FORMS[no];
+    const keep = f ? f.docs.slice(1).map(d => d.label) : null;
+    if (keep && no !== form.form_no) {
+      setDocs(d => ({
+        ...d,
+        rows: d.rows.filter(r => keep.includes(r.existing ? r.existing.label : r.choice)),
+        removed: [...d.removed, ...d.rows.filter(r => r.existing?.file_id && !keep.includes(r.existing.label)).map(r => r.existing.file_id)],
+      }));
+    }
+    setForm(cur => ({
+      ...cur, proposal_type: type, form_no: no || '',
+      form_data: no === cur.form_no ? cur.form_data : {},
+      spotlight_id: f?.needsSpotlight ? (cur.spotlight_id || (spotlights.length === 1 ? String(spotlights[0].proposal_id) : '')) : '',
+    }));
+    setAlert(null);
+  };
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const fail = (msg) => { setAlert({ type: 'error', msg }); return false; };
 
   const textOk = (needTitle) => {
     if (!form.proposal_type) return fail('Please select a type.');
+    if (needTitle && kind === 'grants' && !gform) return fail('Please choose which form applies (step 1).');
     if (needTitle && needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for (step 1).');
-    if (needTitle && !form.title.trim()) return fail('Please enter the title.');
+    if (needTitle && !form.title.trim()) return fail(`Please fill in "${gform ? gform.titleLabel : 'Title'}".`);
+    if (needTitle && gform) { const problem = fieldsProblem(gform, form.form_data); if (problem) return fail(problem); }
     if (form.title.trim().length > TITLE_MAX) return fail(`Title must be ${TITLE_MAX} characters or fewer.`);
     if (form.description.trim().length > DESC_MAX) return fail(`${K.descLabel} must be ${DESC_MAX} characters or fewer.`);
     return true;
@@ -577,6 +604,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     data.append('title',         form.title.trim());
     data.append('description',   form.description.trim());
     data.append('spotlight_id',  needsSpotlight ? form.spotlight_id : '');
+    if (kind === 'grants') {
+      data.append('form_no',   gform ? gform.no : '');
+      data.append('form_data', JSON.stringify(gform ? form.form_data : {}));
+    }
     appendDocs(data, docs);
     return data;
   };
@@ -618,7 +649,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     e.preventDefault();
     if (busy) return;
     if (!textOk(true)) return;
-    const problem = docsProblem(docs, { needMain: true });
+    const problem = gform ? slotDocsProblem(gform, docs) : docsProblem(docs, { needMain: true });
     if (problem) return fail(problem);
     setBusy('submit'); setAlert(null);
     try {
@@ -639,7 +670,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   );
   const typeLabel = typeText(form.proposal_type);
   const spotlightTitle = spotlights.find(p => String(p.proposal_id) === String(form.spotlight_id))?.title;
-  const willHave  = docsSummary(docs);
+  const willHave  = gform ? slotDocsSummary(gform, docs) : docsSummary(docs);
 
   const back = (
     <Link to={K.base} className="btn btn-outline btn-sm"
@@ -701,19 +732,21 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                 <p style={{ fontWeight: 600, color: '#1a3a5c', marginBottom: 16 }}>{K.pick}</p>
                 {kind === 'grants' && spotlights.length === 0 && (
                   <div className="alert alert-info" role="note">
-                    <strong>Travel Subsidy</strong> and <strong>Oral Presentation</strong> open once you have an
+                    Presenting a paper (<strong>Form 001</strong>) and <strong>Oral Presentation</strong> open once you have an
                     approved <strong>Research Spotlight</strong>. Submit one in{' '}
-                    <Link to="/researcher/proposals">My Research</Link>. Publication Incentive is open now.
+                    <Link to="/researcher/proposals">My Research</Link>. Attending a conference (Form 008) and Publication Incentive are open now.
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                   {K.types.map(t => {
-                    const locked = NEEDS_SPOTLIGHT.includes(t) && spotlights.length === 0;
+                    const forms  = FORMS_OF_TYPE[t] || [];
+                    /* locked only when every form of this type needs a Research Spotlight and there is none */
+                    const locked = forms.length > 0 && spotlights.length === 0 && forms.every(no => GRANT_FORMS[no].needsSpotlight);
                     const on = form.proposal_type === t;
                     const pick = () => {
-                      if (locked) return;
-                      setForm({ ...form, proposal_type: t, spotlight_id: NEEDS_SPOTLIGHT.includes(t) ? (form.spotlight_id || (spotlights.length === 1 ? String(spotlights[0].proposal_id) : '')) : '' });
-                      setAlert(null);
+                      if (locked || on) return;
+                      if (forms.length) chooseForm(t, forms.length === 1 ? forms[0] : '');
+                      else { setForm({ ...form, proposal_type: t }); setAlert(null); }
                     };
                     return (
                       <div key={t} role="button" tabIndex={locked ? -1 : 0} data-type={t}
@@ -734,6 +767,28 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                     );
                   })}
                 </div>
+                {formChoices.length > 1 && (
+                  <fieldset className="spot-list" id="sp-form">
+                    <legend>Which one applies?</legend>
+                    <p className="spot-hint">Each one follows its own MSIRC form.</p>
+                    {formChoices.map(no => {
+                      const f = GRANT_FORMS[no];
+                      const off = f.needsSpotlight && spotlights.length === 0;
+                      const on  = form.form_no === no;
+                      return (
+                        <label key={no} className={`spot-item${on ? ' on' : ''}${off ? ' off' : ''}`}>
+                          <input type="radio" name="form_no" value={no} checked={on} disabled={off}
+                            onChange={() => chooseForm(form.proposal_type, no)} />
+                          <span className="spot-text">
+                            <b>{f.short}</b>
+                            <small>{f.note}{off ? ' You have none yet.' : ''}</small>
+                          </span>
+                          <span className="badge badge-gray">Form {no}</span>
+                        </label>
+                      );
+                    })}
+                  </fieldset>
+                )}
                 {needsSpotlight && (
                   <fieldset className="spot-list" id="sp-spot">
                     <legend>Research Spotlight this application is for</legend>
@@ -758,6 +813,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   <button type="button" className="btn btn-primary"
                     onClick={() => {
                       if (!form.proposal_type) return fail('Please select a type.');
+                      if (kind === 'grants' && !gform) return fail('Please choose which one applies.');
                       if (needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for.');
                       setAlert(null); setStep(2);
                     }}>
@@ -770,22 +826,31 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
             {/* Step 2 — Details */}
             {step === 2 && (
               <>
+                {gform && (
+                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 14px' }}>
+                    MSIRC Form No. {gform.no}: {gform.name}
+                  </p>
+                )}
                 <div className="form-group">
-                  <label htmlFor="sp-title">{K.titleLabel}</label>
+                  <label htmlFor="sp-title">{gform ? gform.titleLabel : K.titleLabel}{gform && <span style={{ color: '#b3261e' }}> *</span>}</label>
                   <input id="sp-title" name="title" value={form.title} onChange={handleChange}
-                    maxLength={TITLE_MAX + 50} placeholder={K.titleHint} />
+                    maxLength={TITLE_MAX + 50} placeholder={gform ? gform.titleHint : K.titleHint} />
                 </div>
+                {gform && (
+                  <GrantFormFields form={gform} value={form.form_data} disabled={!!busy}
+                    onChange={(v) => { setForm({ ...form, form_data: v }); setAlert(null); }} />
+                )}
                 <div className="form-group">
-                  <label htmlFor="sp-desc">{K.descLabel}</label>
+                  <label htmlFor="sp-desc">{gform ? 'Notes (optional)' : K.descLabel}</label>
                   <textarea id="sp-desc" name="description" value={form.description} onChange={handleChange}
-                    rows={5} placeholder={K.descHint}
+                    rows={gform ? 3 : 5} placeholder={gform ? 'Anything else the offices should know.' : K.descHint}
                     style={{ resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button type="button" className="btn btn-outline" onClick={() => { setAlert(null); setStep(1); }}><FaArrowLeft className="ic" />Back</button>
                   {draftButton}
                   <button type="button" className="btn btn-primary"
-                    onClick={() => { if (!form.title.trim()) return fail('Title is required.'); if (!textOk(true)) return; setAlert(null); setStep(3); }}>
+                    onClick={() => { if (!textOk(true)) return; setAlert(null); setStep(3); }}>
                     Next <FaArrowRight className="ic-r" />
                   </button>
                 </div>
@@ -799,14 +864,19 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                 <p style={{ fontSize: '0.84rem', color: '#718096', margin: '0 0 12px' }}>
                   {K.docsHint}
                 </p>
-                <DocumentsEditor value={docs} onChange={setDocs} disabled={!!busy}
-                  onError={(m) => (m ? fail(m) : setAlert(null))} />
+                {gform ? (
+                  <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={!!busy}
+                    onError={(m) => (m ? fail(m) : setAlert(null))} />
+                ) : (
+                  <DocumentsEditor value={docs} onChange={setDocs} disabled={!!busy}
+                    onError={(m) => (m ? fail(m) : setAlert(null))} />
+                )}
 
                 {/* Review Summary */}
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #e8edf2', marginBottom: 20 }}>
                   <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 10px' }}>Review your submission:</p>
                   {[
-                    { label: K.typeHead,  value: typeLabel },
+                    { label: K.typeHead,  value: gform ? `${typeLabel} (Form ${gform.no})` : typeLabel },
                     ...(needsSpotlight ? [{ label: 'Research Spotlight', value: spotlightTitle || '—' }] : []),
                     { label: 'Title', value: form.title.trim() || '—' },
                     { label: 'Documents',      value: willHave.length ? willHave.join(', ') : 'No documents attached' },

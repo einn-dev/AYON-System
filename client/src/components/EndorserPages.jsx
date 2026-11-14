@@ -6,6 +6,8 @@ import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/term
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import { personName } from '../utils/names';
+import { FormChecklist, EMPTY_CHECK } from './GrantForms';
+import { formOf, stepOf, stepProblem } from '../utils/grantForms';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -100,12 +102,13 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
   const [saving,     setSaving]     = useState(false);
   const [confirming, setConfirming] = useState(false);   // asking "return it?" before sending
   const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
+  const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // this step of the MSIRC form (Grants and Incentives)
 
   const queue = proposals.filter(p => isMyTurn(p, role));
   const clean = note.trim();
   const noteOk = clean.length >= NOTE_MIN && clean.length <= NOTE_MAX;
 
-  const open = (p) => { setSelected(p); setNote(''); setAlert(null); setConfirming(false); };
+  const open = (p) => { setSelected(p); setFormCheck(EMPTY_CHECK); setNote(''); setAlert(null); setConfirming(false); };
   const back = () => { setSelected(null); setAlert(null); setConfirming(false); };
 
   const send = async (decision) => {
@@ -117,6 +120,10 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           : `Please write what the researcher needs to fix (at least ${NOTE_MIN} characters).`,
       });
     }
+    if (decision === 'endorsed') {
+      const problem = stepProblem(stepOf(selected, role), formCheck);
+      if (problem) return setAlert({ type: 'error', msg: problem });
+    }
     if (decision === 'endorsed' && !signReady) {
       return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature before endorsing.' });
     }
@@ -126,7 +133,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
       const res = await API.post(`/proposals/${selected.proposal_id}/endorse`, {
         decision,
         remarks: clean,
-        ...(decision === 'endorsed' ? { attest: true } : {}),
+        ...(decision === 'endorsed' ? { attest: true, ...(formOf(selected) ? { form_check: formCheck } : {}) } : {}),
       });
       setSelected(null);
       setNote('');
@@ -269,6 +276,8 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
         <div className="panel" style={{ alignSelf: 'start' }}>
           <div className="panel-header"><h2>Your Endorsement</h2></div>
           <div className="panel-body">
+            <FormChecklist proposal={selected} role={role} value={formCheck} disabled={saving}
+              onChange={(v) => { setFormCheck(v); setAlert(null); }} />
             <div className="form-group">
               <label htmlFor="endorse-note">
                 Remarks <span style={{ color: '#b3261e' }}>*</span>

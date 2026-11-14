@@ -414,3 +414,5 @@ html.ayon-app { font-size: 112.5%; }
 .spot-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .spot-text b { color: #2d3748; font-size: 0.9rem; overflow-wrap: anywhere; }
 .spot-text small { color: #718096; font-size: 0.76rem; }
+
+.spot-item.off { opacity: 0.6; cursor: not-allowed; background: #f7f7f8; }

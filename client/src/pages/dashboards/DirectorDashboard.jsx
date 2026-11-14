@@ -15,6 +15,8 @@ import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
+import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
+import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -124,6 +126,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [saving,   setSaving]   = useState(false);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
+  const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the Director's step on an MSIRC form
   const hl = useOpenHighlight(proposals.length > 0);
 
   const filtered = proposals.filter(p => p.status === statusFilter);
@@ -146,12 +149,16 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
       return setAlert({ type: 'error', msg: 'Please provide remarks before rejecting.' });
     }
     const signs = decision === 'approved' || decision === 'endorsed';   // rejecting never signs
+    if (signs) {
+      const problem = stepProblem(stepOf(selected, 'msric_director'), formCheck);
+      if (problem) return setAlert({ type: 'error', msg: problem });
+    }
     if (signs && !signReady) {
       return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature first.' });
     }
     setSaving(true);
     try {
-      await API.patch(`/proposals/${proposalId}/status`, signs ? { status: decision, attest: true } : { status: decision });
+      await API.patch(`/proposals/${proposalId}/status`, signs ? { status: decision, attest: true, ...(formOf(selected) ? { form_check: formCheck } : {}) } : { status: decision });
 
       if (decision === 'approved' || decision === 'endorsed') {
         /* the review record only knows approve / reject / return: endorsing to OVCRED is an approval */
@@ -236,7 +243,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                   </td>
                   <td>
                     <button className="btn btn-primary btn-sm"
-                      onClick={() => { setSelected(p); setRemarks(''); setAlert(null); }}>
+                      onClick={() => { setSelected(p); setFormCheck(EMPTY_CHECK); setRemarks(''); setAlert(null); }}>
                       {statusFilter === 'under_review' ? 'Review' : 'View Details'}
                     </button>
                   </td>
@@ -331,6 +338,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 <div className="panel">
                   <div className="panel-header"><h2>Director's Decision</h2></div>
                   <div className="panel-body">
+                    <FormChecklist proposal={selected} role="msric_director" value={formCheck} disabled={saving}
+                      onChange={(v) => { setFormCheck(v); setAlert(null); }} />
                     <div className="form-group">
                       <label>Remarks</label>
                       <textarea rows={5} value={remarks}

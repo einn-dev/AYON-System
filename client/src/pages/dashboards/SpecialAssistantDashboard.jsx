@@ -13,6 +13,8 @@ import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
+import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
+import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
@@ -249,12 +251,14 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [alert,      setAlert]      = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
+  const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the Special Assistant's step on an MSIRC form
 
   const pending = proposals.filter(p => p.status === 'submitted');
   const hl = useOpenHighlight(proposals.length > 0 && !selected);
 
   const openValidation = (proposal) => {
     setSelected(proposal);
+    setFormCheck(EMPTY_CHECK);
     setRemarks('');
     const initial = {};
     REQUIREMENTS.forEach(r => { initial[r] = 'missing'; });
@@ -269,11 +273,14 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
     }));
   };
 
-  const allComplete = Object.values(checklist).every(v => v === 'complete');
+  /* an application on an MSIRC form uses that form's checklist instead of the general one */
+  const hasForm = !!formOf(selected);
+  const formProblem = hasForm ? stepProblem(stepOf(selected, 'special_assistant'), formCheck) : '';
+  const allComplete = hasForm ? !formProblem : Object.values(checklist).every(v => v === 'complete');
 
   const handleForward = async () => {
     if (!allComplete) {
-      return setAlert({ type: 'error', msg: 'Please mark all requirements as complete before forwarding.' });
+      return setAlert({ type: 'error', msg: formProblem || 'Please mark all requirements as complete before forwarding.' });
     }
     if (!signReady) {
       return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature before forwarding.' });
@@ -283,11 +290,14 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
       await API.patch(`/proposals/${selected.proposal_id}/status`, {
         status: 'under_review',
         attest: true,
+        ...(hasForm ? { form_check: formCheck } : {}),
       });
-      await API.post(`/proposals/${selected.proposal_id}/checklist`, {
-        requirements: checklist,
-        remarks,
-      });
+      if (!hasForm) {
+        await API.post(`/proposals/${selected.proposal_id}/checklist`, {
+          requirements: checklist,
+          remarks,
+        });
+      }
       setAlert({ type: 'success', msg: 'Documents validated, signed and forwarded to the MSIRC Director.' });
       setSelected(null);
       onRefresh();
@@ -401,10 +411,15 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             <div className="panel">
               <div className="panel-header">
                 <h2>Document Checklist</h2>
-                <span className="badge badge-blue">{complete}/{total} complete</span>
+                {!hasForm && <span className="badge badge-blue">{complete}/{total} complete</span>}
               </div>
               <div className="panel-body">
 
+                {hasForm ? (
+                  <FormChecklist proposal={selected} role="special_assistant" value={formCheck} disabled={saving}
+                    onChange={(v) => { setFormCheck(v); setAlert(null); }} />
+                ) : (
+                  <>
                 {/* Progress bar */}
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.82rem', color: '#718096' }}>
@@ -448,6 +463,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     }}>{req}</span>
                   </div>
                 ))}
+                  </>
+                )}
 
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Remarks</label>
@@ -505,7 +522,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   </button>
                   {(!allComplete || !signReady) && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
-                      {!allComplete ? 'Check all requirements' : 'Tick the box under your signature'} to enable forwarding.
+                      {!allComplete ? (hasForm ? 'Complete the checklist' : 'Check all requirements') : 'Tick the box under your signature'} to enable forwarding.
                     </p>
                   )}
                   <button

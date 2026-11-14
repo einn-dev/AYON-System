@@ -1,0 +1,60 @@
+/* ═══ MSIRC forms for Grants and Incentives (GrantForms.jsx) ═══ */
+.gf-req { color: #b3261e; }
+.gf-opt, .gf-tick em { color: #8a7a7d; font-weight: 400; font-style: normal; }
+
+/* applicant's fields */
+.gf-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+@media (max-width: 640px) { .gf-fields { grid-template-columns: 1fr; } }
+
+/* one upload box per document */
+.gf-slots { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.gf-slot {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; flex-wrap: wrap;
+  border: 1px solid #e8dcde; border-radius: 10px; background: #fff;
+}
+.gf-slot.has { border-color: #9ae6b4; background: #f7fdf9; }
+.gf-slot-ic {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; background: #f5e9eb; color: #8d1b2d;
+}
+.gf-slot.has .gf-slot-ic { background: #276749; color: #fff; }
+.gf-slot-text { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gf-slot-text b { font-size: 0.88rem; color: #2d2326; }
+.gf-slot-text small { font-size: 0.76rem; color: #6b5e61; line-height: 1.4; overflow-wrap: anywhere; }
+.gf-slot-file { color: #8a7a7d !important; }
+.gf-slot.has .gf-slot-file { color: #276749 !important; font-weight: 600; }
+.gf-slot-actions { display: flex; gap: 6px; align-items: center; }
+
+/* an office's checklist */
+.gf-check {
+  border: 1px solid #e8dcde; border-left: 4px solid #8d1b2d; border-radius: 10px;
+  padding: 14px 14px 10px; margin-bottom: 16px; background: #fdfbfb;
+}
+.gf-check-title { margin: 0 0 8px; font-weight: 700; color: #5e1420; font-size: 0.9rem; }
+.gf-check-hint, .gf-check-none { margin: 0 0 10px; font-size: 0.8rem; color: #6b5e61; line-height: 1.45; }
+.gf-tick, .gf-radio {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; margin-bottom: 6px;
+  border: 1px solid #eadfe0; border-radius: 8px; background: #fff; cursor: pointer;
+  font-size: 0.84rem; color: #3d3235; line-height: 1.4;
+}
+.gf-tick.on, .gf-radio.on { border-color: #9ae6b4; background: #f0fff4; color: #22543d; font-weight: 600; }
+.gf-tick input, .gf-radio input { width: 17px; height: 17px; margin: 1px 0 0; flex-shrink: 0; accent-color: #276749; }
+.gf-choice { border: none; padding: 0; margin: 10px 0 4px; min-width: 0; }
+.gf-choice legend { font-size: 0.8rem; font-weight: 600; color: #3d3235; padding: 0; margin-bottom: 6px; }
+.gf-input { margin: 10px 0 6px; }
+
+/* read-only view */
+.gf-view {
+  border: 1px solid #efe5e6; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; background: #fdfbfb;
+}
+.gf-view-no { margin: 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #8d1b2d; font-weight: 700; }
+.gf-view-name { margin: 2px 0 12px; font-weight: 700; color: #2d2326; font-size: 0.95rem; line-height: 1.35; }
+.gf-view-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 20px; margin: 0; }
+.gf-view-grid dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8a7a7d; }
+.gf-view-grid dd { margin: 2px 0 0; font-weight: 600; color: #2d2326; font-size: 0.88rem; overflow-wrap: anywhere; }
+.gf-view-steps { border-top: 1px solid #efe5e6; margin-top: 14px; padding-top: 12px; }
+.gf-view-sub { margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8a7a7d; font-weight: 600; }
+.gf-view-step { margin-bottom: 10px; font-size: 0.84rem; color: #3d3235; }
+.gf-view-step ul { list-style: none; margin: 4px 0 0; padding: 0; }
+.gf-view-step li { padding: 2px 0; line-height: 1.4; }
+.gf-ok { color: #276749; margin-right: 7px; font-size: 0.75rem; }

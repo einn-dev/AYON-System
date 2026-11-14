@@ -1,6 +1,7 @@
 const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
 const { attachSpotlight } = require('../utils/spotlight');
+const { attachFormChecks } = require('../utils/formChecks');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
@@ -1051,6 +1052,7 @@ const listProposals = async (req, res) => {
       .sort((a, b) => b.days_waiting - a.days_waiting);
     await attachFiles(rows);
     await attachSpotlight(rows);
+    await attachFormChecks(rows);
 
     /* how many people each office has (shown on the Remind button) */
     const office_counts = {};

@@ -5,6 +5,7 @@ const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/
 const { notifyUser } = require('../utils/notify');
 const { statusLabel, SUBMIT_TYPES, GRANT_TYPES } = require('../utils/terms');
 const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
+const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
@@ -43,6 +44,7 @@ const getMyProposals = async (req, res) => {
     await attachTrail(data || []);
     await attachFiles(data || []);
     await attachSpotlight(data || []);
+    await attachFormChecks(data || []);
     return res.status(200).json({ proposals: data || [] });
   } catch (err) {
     console.error('getMyProposals error:', err);
@@ -53,7 +55,8 @@ const getMyProposals = async (req, res) => {
 /* ── POST submit proposal, or save it as a draft ──
    multipart body:
      proposal_type, title, description
-     spotlight_id       the approved Research Spotlight (Travel Subsidy and Oral Presentation only)
+     form_no, form_data the MSIRC form and its fields (Grants and Incentives; form_data is JSON)
+     spotlight_id       the approved Research Spotlight (Forms 001 and 003 only)
      save_as            'draft' | 'submit' (default 'submit')
      file               the Main Proposal Document (required to submit, optional for a draft)
      supporting[]       up to 4 supporting documents
@@ -70,9 +73,12 @@ const submitProposal = async (req, res) => {
   const textProblem = checkText({ title, desc, needTitle: !asDraft });
   if (textProblem) return res.status(400).json(textProblem);
 
+  const fm = readForm({ body, type, submit: !asDraft });
+  if (fm.fail) return res.status(fm.fail[0]).json(fm.fail[1]);
+
   let spotlightId = null;
   try {
-    const sp = await checkSpotlight({ type, raw: body.spotlight_id, userId: req.user.user_id, required: !asDraft });
+    const sp = await checkSpotlight({ needs: !!(fm.form && fm.form.needsSpotlight), raw: body.spotlight_id, userId: req.user.user_id, required: !asDraft });
     if (sp.fail) return res.status(sp.fail[0]).json(sp.fail[1]);
     spotlightId = sp.id;
   } catch (err) {
@@ -103,6 +109,7 @@ const submitProposal = async (req, res) => {
         user_id: req.user.user_id,
         proposal_type: type,
         ...(spotlightId ? { spotlight_id: spotlightId } : {}),
+        ...(fm.form_no ? { form_no: fm.form_no, form_data: fm.form_data } : {}),
         title,
         description: desc || null,
         file_path:   main ? main.file_path : null,
@@ -253,8 +260,11 @@ const updateDraft = async (req, res) => {
     const textProblem = checkText({ title, desc, needTitle: submit });
     if (textProblem) return res.status(400).json(textProblem);
 
+    const fm = readForm({ body, type, submit, current: draft });
+    if (fm.fail) return res.status(fm.fail[0]).json(fm.fail[1]);
+
     const sp = await checkSpotlight({
-      type, userId: req.user.user_id, required: submit,
+      needs: !!(fm.form && fm.form.needsSpotlight), userId: req.user.user_id, required: submit,
       raw: body.spotlight_id !== undefined ? body.spotlight_id : draft.spotlight_id,
     });
     if (sp.fail) return res.status(sp.fail[0]).json(sp.fail[1]);
@@ -284,6 +294,7 @@ const updateDraft = async (req, res) => {
       .update({
         proposal_type: type,
         ...(sp.id || draft.spotlight_id ? { spotlight_id: sp.id } : {}),
+        ...(fm.form_no || draft.form_no ? { form_no: fm.form_no, form_data: fm.form_data } : {}),
         title,
         description: desc || null,
         file_path:   newMain ? newMain.file_path : (keptMain ? keptMain.file_path : null),
@@ -449,6 +460,7 @@ const getAllProposals = async (req, res) => {
 
     await attachFiles(proposals);
     await attachSpotlight(proposals);
+    await attachFormChecks(proposals);
     return res.status(200).json({ proposals });
   } catch (err) {
     console.error('getAllProposals error:', err);
@@ -498,6 +510,7 @@ const getProposalById = async (req, res) => {
     await attachTrail([data]);
     await attachFiles([data]);
     await attachSpotlight([data]);
+    await attachFormChecks([data]);
     return res.status(200).json({
       proposal: {
         ...data,
@@ -614,6 +627,10 @@ const updateProposalStatus = async (req, res) => {
       signature = sign.signature;
     }
 
+    /* an application on an MSIRC form: this office's checklist must be complete to sign */
+    const formStep = signAs ? readStep(proposal, req.user.role, (req.body || {}).form_check) : { value: null };
+    if (formStep.fail) return res.status(formStep.fail[0]).json(formStep.fail[1]);
+
     /* only if nobody changed it in the meantime (a double click signs once) */
     const { data: changed, error } = await supabase
       .from('research_proposals')
@@ -628,6 +645,7 @@ const updateProposalStatus = async (req, res) => {
     }
 
     if (signAs) {
+      await saveStep(proposal, req.user.role, req.user, formStep.value);
       const round = roundOf(proposal);
       await recordSignature({
         proposalId: id, user: req.user, role: req.user.role, action: signAs, round, image: signature.image_data,
@@ -924,10 +942,14 @@ const endorseProposal = async (req, res) => {
 
     /* endorsing is signing: a saved signature and the ticked box are needed (returning never signs) */
     let signature = null;
+    let formStep = { value: null };
     if (decision === 'endorsed') {
       const sign = await requireSignature(req);
       if (!sign.ok) return res.status(sign.status).json(sign.body);
       signature = sign.signature;
+      /* an application on an MSIRC form: this step's checklist must be complete to endorse */
+      formStep = readStep(proposal, role, body.form_check);
+      if (formStep.fail) return res.status(formStep.fail[0]).json(formStep.fail[1]);
     }
 
     const now   = new Date().toISOString();
@@ -972,6 +994,7 @@ const endorseProposal = async (req, res) => {
       await recordSignature({
         proposalId: id, user: req.user, role, action: 'endorse', round, image: signature.image_data,
       });
+      await saveStep(proposal, role, req.user, formStep.value);
 
       const whereTo = next ? `the ${ROLE_LABEL[next.role]}` : 'the Special Assistant for document validation';
       await notifyUser({

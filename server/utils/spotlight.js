@@ -1,18 +1,18 @@
 const supabase = require('../config/supabase');
-const { NEEDS_SPOTLIGHT } = require('./terms');
 
 /* ─────────────────────────────────────────────────────────────
-   Travel Subsidy and Oral Presentation applications must be for a Research
-   Spotlight of the same researcher that is already Approved
-   (MSRC Form 001 and MSIRC Form 003 both ask for the Research Spotlight).
+   Form 001 (travel to present a paper) and Form 003 (presentation incentive)
+   must be for a Research Spotlight of the same researcher that is already
+   Approved. Form 008 (attending a conference) and the publication forms do not.
    research_proposals.spotlight_id keeps which one. See add_grant_types.sql.
    ───────────────────────────────────────────────────────────── */
 
 /* Works out the spotlight_id to save.
-   Returns { id }  (id is null when the type does not need one)
+   needs = the chosen form asks for a Research Spotlight (grantForms.js)
+   Returns { id }  (id is null when the form does not need one)
         or { fail: [httpStatus, body] }                                      */
-const checkSpotlight = async ({ type, raw, userId, required }) => {
-  if (!NEEDS_SPOTLIGHT.includes(type)) return { id: null };
+const checkSpotlight = async ({ needs, raw, userId, required }) => {
+  if (!needs) return { id: null };
   const id = Number(raw);
   if (!raw || !Number.isInteger(id) || id <= 0) {
     return required

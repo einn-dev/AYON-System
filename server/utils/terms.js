@@ -41,8 +41,6 @@ const TYPE_LABEL = {
 const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded', 'externally_funded'];
 const GRANT_TYPES     = ['travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const SUBMIT_TYPES    = [...RESEARCH_TYPES, ...GRANT_TYPES];
-/* these need an approved Research Spotlight first */
-const NEEDS_SPOTLIGHT = ['travel_subsidy', 'oral_presentation'];
 
 const statusLabel = (s) => STATUS_LABEL[s] || String(s || '').replace(/_/g, ' ');
 const typeLabel   = (t) => TYPE_LABEL[t] || String(t || '').replace(/_/g, ' ');
@@ -50,5 +48,5 @@ const roleLabel   = (r) => ROLE_LABEL[r] || String(r || '').replace(/_/g, ' ');
 
 module.exports = {
   ROLE_LABEL, STATUS_LABEL, TYPE_LABEL, statusLabel, typeLabel, roleLabel,
-  RESEARCH_TYPES, GRANT_TYPES, SUBMIT_TYPES, NEEDS_SPOTLIGHT,
+  RESEARCH_TYPES, GRANT_TYPES, SUBMIT_TYPES,
 };

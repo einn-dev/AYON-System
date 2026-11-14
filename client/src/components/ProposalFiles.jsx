@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import './ProposalFiles.css';
+import { GrantFormView, mainDocLabel } from './GrantForms';
 
 /* ─────────────────────────────────────────────────────────────
    The documents of a proposal.
@@ -41,8 +42,10 @@ export const filesOf = (p) => {
 /* ── Read-only list ── */
 export const ProposalFiles = ({ proposal, files, title = 'Documents', compact = false }) => {
   const list = files || filesOf(proposal);
+  const mainLabel = mainDocLabel(proposal) || MAIN_LABEL;      // an MSIRC form names its own main document
   return (
     <div className={`pf ${compact ? 'pf-compact' : ''}`}>
+      <GrantFormView proposal={proposal} />
       {/* Travel Subsidy and Oral Presentation: the approved Research Spotlight it is for */}
       {proposal?.spotlight_title && (
         <p className="pf-spotlight"><b>For Research Spotlight:</b> {proposal.spotlight_title}</p>
@@ -56,11 +59,11 @@ export const ProposalFiles = ({ proposal, files, title = 'Documents', compact = 
             <li key={f.file_id || `${f.kind}-${i}`}>
               <FaFileLines className="pf-ic" aria-hidden="true" />
               <div className="pf-text">
-                <b>{f.kind === 'main' ? MAIN_LABEL : f.label}</b>
+                <b>{f.kind === 'main' ? mainLabel : f.label}</b>
                 <small>{nameOf(f)}{sizeText(f.file_size) ? ` · ${sizeText(f.file_size)}` : ''}</small>
               </div>
               <a className="btn btn-outline btn-sm" href={fileHref(f.file_path)} target="_blank" rel="noreferrer"
-                aria-label={`View ${f.kind === 'main' ? MAIN_LABEL : f.label}`}>
+                aria-label={`View ${f.kind === 'main' ? mainLabel : f.label}`}>
                 View <FaArrowUpRightFromSquare className="ic-r" />
               </a>
             </li>
