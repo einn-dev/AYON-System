@@ -28,7 +28,7 @@ const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-PH', { month: 'short'
 const actionPage = (role, base, p) => {
   const s = p.status;
   switch (role) {
-    case 'researcher': return { path: `${base}/proposals`, label: 'My Proposals' };
+    case 'researcher': return { path: `${base}/proposals`, label: 'My Research' };
     case 'chairperson':
     case 'research_coordinator':
     case 'college_dean':

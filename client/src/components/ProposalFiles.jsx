@@ -43,6 +43,10 @@ export const ProposalFiles = ({ proposal, files, title = 'Documents', compact = 
   const list = files || filesOf(proposal);
   return (
     <div className={`pf ${compact ? 'pf-compact' : ''}`}>
+      {/* Travel Subsidy and Oral Presentation: the approved Research Spotlight it is for */}
+      {proposal?.spotlight_title && (
+        <p className="pf-spotlight"><b>For Research Spotlight:</b> {proposal.spotlight_title}</p>
+      )}
       {title && <p className="pf-title">{title}{list.length > 0 && <span> ({list.length})</span>}</p>}
       {list.length === 0 ? (
         <p className="pf-none">No documents attached.</p>

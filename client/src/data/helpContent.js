@@ -75,7 +75,7 @@ export const GUIDES = {
       id: 'submit',
       title: 'Submit a proposal',
       steps: [
-        'Go to **My Proposals** and click **Submit Proposal**.',
+        'Go to **My Research** and click **Submit Research**. My Research is for Research Spotlight, Internally Funded and Externally Funded research.',
         'Choose the **proposal type**, then click **Next**.',
         'Type the **research title** and the **abstract**, then click **Next**.',
         'Attach the **Main Proposal Document** (required). Click **Add Supporting Document** for up to 4 more (for example the Line-Item Budget), and choose a label for each. PDF, DOC or DOCX, up to 10 MB each.',
@@ -88,7 +88,7 @@ export const GUIDES = {
       steps: [
         'On any step of **Submit Proposal**, click **Save as Draft**. Only the proposal type is needed; the title can wait.',
         'Only you can see a draft. Nobody is notified and nothing is signed.',
-        'To continue, open **My Proposals** and click **Continue Editing** next to the draft.',
+        'To continue, open **My Research** (or **Grants and Incentives** for an application) and click **Continue Editing** next to the draft.',
         'When it is ready, go to the last step and click **Submit Proposal**. To throw a draft away, click **Delete**.',
       ],
     },
@@ -96,7 +96,7 @@ export const GUIDES = {
       id: 'track',
       title: 'Track where your proposal is',
       steps: [
-        'Open **My Proposals**. The **Status** column shows the status and, under it, who has the proposal now.',
+        'Open **My Research** or **Grants and Incentives**. The **Status** column shows the status and, under it, who has the proposal now.',
         'Click **View Details** to see the tracker: the college steps (Chairperson, Research Coordinator, Dean) and the office steps (Special Assistant, MSIRC Director, OVCRED).',
         'The **Signatures** section shows who has signed and who is next.',
         'You also get a notification (and an email) each time it moves.',
@@ -106,7 +106,7 @@ export const GUIDES = {
       id: 'resubmit',
       title: 'Edit and resubmit a returned proposal',
       steps: [
-        'A returned proposal shows a red **Returned for Revision** badge and a banner at the top of My Proposals.',
+        'A returned proposal shows a red **Returned for Revision** badge and a banner at the top of the page.',
         'Click **Edit and Resubmit**. The reason from the person who returned it is shown at the top.',
         'Change the title or the abstract, replace the Main Proposal Document, or add or remove supporting documents.',
         'Click **Resubmit**. It starts again from the **Department Chairperson** (a new round).',
@@ -116,10 +116,11 @@ export const GUIDES = {
       id: 'grants',
       title: 'Apply for a grant or incentive',
       steps: [
-        'Go to **Grants and Incentives**. Your **approved** proposals are listed.',
-        'Click **Apply for Grant** next to the proposal and choose the grant type.',
-        'Fill in the details the form asks for, then submit.',
-        'The result appears under **My Grant Applications**.',
+        'Go to **Grants and Incentives** and click **Submit Application**.',
+        'Choose **Travel Subsidy**, **Oral Presentation** or **Publication Incentive**.',
+        'Travel Subsidy and Oral Presentation need an **approved Research Spotlight** first. Choose which one the application is for.',
+        'Fill in the details, attach the documents, and click **Submit Application**. You can also **Save as Draft**.',
+        'It goes through the same offices as your research: Chairperson, Research Coordinator, Dean, Special Assistant, Director and OVCRED. Follow it on the same page.',
       ],
     },
     {
@@ -320,8 +321,8 @@ export const FAQ = [
   ['I did not receive the email.', 'Check your Spam folder. Then use the resend link on the login page, or ask the Administrator.'],
   ['Why can\'t I endorse this proposal?', 'It is not your turn yet (the tracker shows who has it), you have not set up your **Digital Signature** in My Profile, or the box under your signature is not ticked.'],
   ['Why is the Endorse and Sign button grey?', 'Write your remarks (at least 10 characters) and tick the box under your signature.'],
-  ['My proposal was returned. What now?', 'Open it from **My Proposals**, read the reason, click **Edit and Resubmit**, fix it, and resubmit.'],
-  ['Can I stop in the middle of the form?', 'Yes. Click **Save as Draft** on any step. Continue later from **My Proposals** with **Continue Editing**.'],
+  ['My proposal was returned. What now?', 'Open it from **My Research** or **Grants and Incentives**, read the reason, click **Edit and Resubmit**, fix it, and resubmit.'],
+  ['Can I stop in the middle of the form?', 'Yes. Click **Save as Draft** on any step. Continue later from **My Research** or **Grants and Incentives** with **Continue Editing**.'],
   ['Can I change my college or department?', 'Yes, in your profile. If your role depends on your college (Coordinator, Chairperson, Dean), ask the Administrator first.'],
   ['Who can see my proposal?', 'You, the endorsers of your college or department, the MSIRC office, OVCRED and the Administrator. MSIRC Staff see only the title, status and dates.'],
 ];

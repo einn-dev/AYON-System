@@ -77,7 +77,7 @@ const FAQ = [
   ['What files can I upload?',
    'One Main Proposal Document (required) and up to 4 supporting documents, such as the Line-Item Budget or an endorsement letter. Each can be a PDF, DOC or DOCX file of up to 10 MB.'],
   ['Can I save my proposal and finish it later?',
-   'Yes. Click Save as Draft on any step of the form. Only you can see a draft, and you can continue it from My Proposals.'],
+   'Yes. Click Save as Draft on any step of the form. Only you can see a draft, and you can continue it from My Research or Grants and Incentives.'],
   ['How will I know what happened to my proposal?',
    'The status on your dashboard updates at every stage, and you get an in-app notification and an email at each decision point.'],
   ['Where do approved proposals go?',

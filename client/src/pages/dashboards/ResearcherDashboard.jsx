@@ -5,7 +5,6 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import API    from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import '../../components/Layout.css';
-import GrantsPage from './GrantsPage';
 import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
 import ResubmitModal from '../../components/ResubmitModal';
@@ -15,14 +14,14 @@ import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
-import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL } from '../../utils/terms';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, NEEDS_SPOTLIGHT, isGrantType } from '../../utils/terms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
-  { path: '/researcher/proposals',   label: 'My Proposals',      icon: <FaFileLines /> },
+  { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines /> },
   { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
   { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
@@ -30,13 +29,47 @@ const NAV_ITEMS = [
   
 ];
 
-const PROPOSAL_TYPES = [
-  { value: 'research_spotlight',    label: 'Research Spotlight' },
-  { value: 'internally_funded',     label: 'Internally Funded Research' },
-  { value: 'publication_incentive', label: 'Publication Incentive' },
-  { value: 'travel_oral',           label: 'Travel Subsidy / Oral Presentation' },
-  { value: 'externally_funded',     label: 'Externally Funded Research' },
-];
+/* every type, for showing a label */
+const PROPOSAL_TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }));
+
+/* The two pages that share the same list and the same 3-step form.
+   My Research: Research Spotlight, Internally Funded, Externally Funded.
+   Grants and Incentives: Travel Subsidy, Oral Presentation, Publication Incentive. */
+const TYPE_NOTE = {
+  research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight.',
+  internally_funded:     'Research funded by the University through MSIRC.',
+  externally_funded:     'Research funded by an agency outside the University.',
+  travel_subsidy:        'Travel authority and assistance to present a paper (Form 001). Needs an approved Research Spotlight.',
+  oral_presentation:     'Cash incentive for a paper you presented (Form 003). Needs an approved Research Spotlight.',
+  publication_incentive: 'Cash incentive for a published article (Form 002).',
+};
+const KINDS = {
+  research: {
+    base: '/researcher/proposals', page: 'My Research', types: RESEARCH_TYPES,
+    sub: 'Research Spotlight, Internally Funded and Externally Funded research. Track their status and finish your drafts.',
+    submit: 'Submit Research', one: 'research', search: 'Search research...', typeHead: 'Research Type',
+    formSub: 'Fill in the form below to submit your research to MSIRC. You can save it as a draft at any step and finish it later.',
+    pick: 'Select the type of research you want to submit:', steps: ['Research Type', 'Details', 'Documents and Submit'],
+    titleLabel: 'Research Title', titleHint: 'Enter your research title',
+    descLabel: 'Abstract', descHint: 'Briefly describe your research...',
+    docsHint: 'The Main Proposal Document is required to submit. Add up to 4 supporting documents, each with a label.',
+    empty: 'Nothing here yet. Click "Submit Research" to get started.',
+  },
+  grants: {
+    base: '/researcher/grants', page: 'Grants and Incentives', types: GRANT_TYPES,
+    sub: 'Travel Subsidy, Oral Presentation and Publication Incentive applications. Track their status and finish your drafts.',
+    submit: 'Submit Application', one: 'application', search: 'Search applications...', typeHead: 'Application Type',
+    formSub: 'Fill in the form below to apply. You can save it as a draft at any step and finish it later.',
+    pick: 'Select what you want to apply for:', steps: ['Application Type', 'Details', 'Documents and Submit'],
+    titleLabel: 'Title of the Paper or Article', titleHint: 'Title of the paper you will present, presented, or published',
+    descLabel: 'Details', descHint: 'For example: the conference, place and dates, or the journal, volume and year published...',
+    docsHint: 'The main document (your request letter or filled-in form) is required to submit. Add up to 4 supporting documents, each with a label.',
+    empty: 'No applications yet. Click "Submit Application" to get started.',
+  },
+};
+const kindOf = (type) => (isGrantType(type) ? 'grants' : 'research');
+const typeText = (t) => TYPE_LABEL[t] || t;
+
 
 
 /* ─────────── Overview ─────────── */
@@ -62,7 +95,12 @@ const Overview = ({ proposals: all, user }) => {
       {drafts > 0 && (
         <div className="rs-banner" style={{ background: '#f7f4f4', borderColor: '#e3d6d8', color: '#5e5155' }}>
           <span>You have {drafts} unfinished draft{drafts === 1 ? '' : 's'}.</span>
-          <Link to="/researcher/proposals" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Open My Proposals</Link>
+          {all.some(p => p.status === 'draft' && kindOf(p.proposal_type) === 'research') && (
+            <Link to="/researcher/proposals" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Open My Research</Link>
+          )}
+          {all.some(p => p.status === 'draft' && kindOf(p.proposal_type) === 'grants') && (
+            <Link to="/researcher/grants" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Open Grants and Incentives</Link>
+          )}
         </div>
       )}
 
@@ -124,7 +162,7 @@ const Overview = ({ proposals: all, user }) => {
             {proposals.length === 0 && (
               <tr><td colSpan={4}>
                 <div className="empty-state">
-                  <p>No proposals yet. Go to My Proposals and click "Submit Proposal" to get started.</p>
+                  <p>Nothing submitted yet. Go to My Research and click "Submit Research" to get started.</p>
                 </div>
               </td></tr>
             )}
@@ -134,13 +172,13 @@ const Overview = ({ proposals: all, user }) => {
 
       {/* Quick Guide */}
       <div className="panel">
-        <div className="panel-header"><h2>How to Submit a Proposal</h2></div>
+        <div className="panel-header"><h2>How to Submit</h2></div>
         <div className="panel-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
             {[
-              { step: '1', title: 'Fill the Form',    desc: 'Open My Proposals, click Submit Proposal and fill in all required fields.' },
+              { step: '1', title: 'Fill the Form',    desc: 'Open My Research and click Submit Research. For a grant or incentive, open Grants and Incentives and click Submit Application.' },
               { step: '2', title: 'Upload Documents', desc: 'Attach your proposal file and required documents.' },
-              { step: '3', title: 'Track Status',     desc: 'Monitor your proposal status in My Proposals.' },
+              { step: '3', title: 'Track Status',     desc: 'Follow the status on the same page where you submitted it.' },
               { step: '4', title: 'Get Notified',     desc: 'Receive in-app notifications on every status update.' },
             ].map(s => (
               <div key={s.step} style={{
@@ -164,7 +202,7 @@ const Overview = ({ proposals: all, user }) => {
   );
 };
 
-/* ─────────── My Proposals ─────────── */
+/* ─────────── My Research, and Grants and Incentives (the same list, different types) ─────────── */
 const dateOf  = (p) => p.submitted_at || p.created_at || null;
 const yearOf  = (p) => (dateOf(p) ? String(new Date(dateOf(p)).getFullYear()) : '');
 const shortDate = (d) => (d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
@@ -212,10 +250,12 @@ const DeleteDraftModal = ({ proposal, onClose, onDone }) => {
 
 const EMPTY_FILTERS = { search: '', status: 'all', type: '', year: '', sort: 'new' };
 
-const MyProposals = ({ proposals, onRefresh }) => {
+const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) => {
+  const K = KINDS[kind];
+  const proposals = everything.filter(p => kindOf(p.proposal_type) === kind);
   const location = useLocation();
   // show the note from the form once; clear it so a page refresh does not show it again
-  const [fromForm] = useState(location.state?.notice || (location.state?.submitted ? 'Proposal submitted successfully.' : null));
+  const [fromForm] = useState(location.state?.notice || (location.state?.submitted ? 'Submitted successfully.' : null));
   useEffect(() => {
     if (fromForm) window.history.replaceState({}, document.title);
   }, [fromForm]);
@@ -263,12 +303,12 @@ const MyProposals = ({ proposals, onRefresh }) => {
     <>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1>My Proposals</h1>
-          <p>Track the status of all your proposals, and finish your drafts.</p>
+          <h1>{K.page}</h1>
+          <p>{K.sub}</p>
         </div>
-        <Link to="/researcher/proposals/new" className="btn btn-primary"
+        <Link to={`${K.base}/new`} className="btn btn-primary"
           style={{ textDecoration: 'none', display: 'inline-block', padding: '10px 18px' }}>
-          <FaCirclePlus className="ic" />Submit Proposal
+          <FaCirclePlus className="ic" />{K.submit}
         </Link>
       </div>
 
@@ -278,7 +318,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
       {returnedCount > 0 && (
         <div className="rs-banner">
           <span>
-            <FaTriangleExclamation className="ic" />{returnedCount} proposal{returnedCount === 1 ? ' was' : 's were'} returned and
+            <FaTriangleExclamation className="ic" />{returnedCount} {returnedCount === 1 ? 'was' : 'were'} returned and
             {returnedCount === 1 ? ' needs' : ' need'} your changes.
           </span>
           {f.status !== 'returned' && (
@@ -293,16 +333,16 @@ const MyProposals = ({ proposals, onRefresh }) => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar" style={{ width: '100%' }}>
-            <input className="search-input" placeholder="Search proposals..." aria-label="Search proposals"
+            <input className="search-input" placeholder={K.search} aria-label={K.search}
               value={f.search} onChange={set('search')} style={{ flex: '1 1 180px' }} />
             <select className="search-input" aria-label="Status" value={f.status} onChange={set('status')}>
               <option value="all">All Statuses</option>
               <option value="draft">{STATUS_LABEL.draft}{draftCount ? ` (${draftCount})` : ''}</option>
               {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
-            <select className="search-input" aria-label="Proposal type" value={f.type} onChange={set('type')}>
+            <select className="search-input" aria-label={K.typeHead} value={f.type} onChange={set('type')}>
               <option value="">All Types</option>
-              {PROPOSAL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {K.types.map(t => <option key={t} value={t}>{typeText(t)}</option>)}
             </select>
             <select className="search-input" aria-label="Year" value={f.year} onChange={set('year')}>
               <option value="">All Years</option>
@@ -324,8 +364,8 @@ const MyProposals = ({ proposals, onRefresh }) => {
           <thead>
             <tr>
               <th>#</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>{K.typeHead}</th>
               <th>Status</th>
               <th>Date Submitted</th>
               <th>Action</th>
@@ -337,6 +377,9 @@ const MyProposals = ({ proposals, onRefresh }) => {
                 <td style={{ color: '#a0aec0' }}>{i + 1}</td>
                 <td>
                   <strong><TitleOf p={p} /></strong>
+                  {p.spotlight_title && (
+                    <div style={{ fontSize: '0.75rem', color: '#718096' }}>For Research Spotlight: {p.spotlight_title}</div>
+                  )}
                   {Number(p.revision_count) > 0 && (
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>
                       Revision {Number(p.revision_count) + 1}
@@ -362,7 +405,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
                 <td>
                   {p.status === 'draft' ? (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <Link to={`/researcher/proposals/${p.proposal_id}/edit`} className="btn btn-primary btn-sm"
+                      <Link to={`${K.base}/${p.proposal_id}/edit`} className="btn btn-primary btn-sm"
                         style={{ textDecoration: 'none' }}>Continue Editing</Link>
                       <button type="button" className="btn btn-sm btn-danger-soft" onClick={() => setDeleting(p)}>Delete</button>
                     </div>
@@ -379,7 +422,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
             {filtered.length === 0 && (
               <tr><td colSpan={6}>
                 <div className="empty-state">
-                  <p>{proposals.length ? 'No proposals match these filters.' : 'No proposals yet. Click "Submit Proposal" to get started.'}</p>
+                  <p>{proposals.length ? 'Nothing matches these filters.' : K.empty}</p>
                 </div>
               </td></tr>
             )}
@@ -397,7 +440,7 @@ const MyProposals = ({ proposals, onRefresh }) => {
             <ProposalSignatures proposal={selected} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', marginBottom: 16 }}>
               {[
-                { label: 'Proposal Type', value: PROPOSAL_TYPES.find(t => t.value === selected.proposal_type)?.label },
+                { label: K.typeHead, value: typeText(selected.proposal_type) },
                 { label: 'Status',      value: statusLabel(selected.status) },
                 { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
@@ -457,12 +500,17 @@ const MyProposals = ({ proposals, onRefresh }) => {
   );
 };
 
-/* ─────────── Submit Proposal (new, or continue a draft) ─────────── */
+/* ─────────── The 3-step form (new, or continue a draft) for both pages ─────────── */
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
-const STEPS = ['Proposal Type', 'Details', 'Documents and Submit'];
 
-const SubmitProposal = ({ onRefresh }) => {
+const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
+  const K = KINDS[kind];
+  const STEPS = K.steps;
+  /* Travel Subsidy and Oral Presentation are for a Research Spotlight that is already approved */
+  const spotlights = proposals
+    .filter(p => p.proposal_type === 'research_spotlight' && p.status === 'approved')
+    .sort((x, y) => String(x.title || '').localeCompare(String(y.title || ''), undefined, { sensitivity: 'base' }));   // A to Z
   const navigate = useNavigate();
   const location = useLocation();
   const { id: draftParam } = useParams();
@@ -473,7 +521,7 @@ const SubmitProposal = ({ onRefresh }) => {
   const [loading, setLoading] = useState(!!draftParam);
   const [blocked, setBlocked] = useState('');           // the draft cannot be edited (already submitted, not found)
   const [savedAt, setSavedAt] = useState(location.state?.savedAt || null);
-  const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '' });
+  const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '', spotlight_id: '' });
   const [docs,    setDocs]    = useState(() => docsFromFiles([]));
 
   /* continue a draft: load it */
@@ -482,10 +530,18 @@ const SubmitProposal = ({ onRefresh }) => {
       const res = await API.get(`/proposals/${id}`);
       const p = res.data.proposal;
       if (p.status !== 'draft') {
-        setBlocked('This proposal was already submitted, so it is no longer a draft. You can follow it in My Proposals.');
+        setBlocked(`This was already submitted, so it is no longer a draft. You can follow it in ${K.page}.`);
         return;
       }
-      setForm({ proposal_type: p.proposal_type || '', title: p.title || '', description: p.description || '' });
+      if (kindOf(p.proposal_type) !== kind) {           // opened from the other page's address
+        navigate(`${KINDS[kindOf(p.proposal_type)].base}/${id}/edit`, { replace: true });
+        return;
+      }
+      setForm({
+        proposal_type: K.types.includes(p.proposal_type) ? p.proposal_type : '',
+        title: p.title || '', description: p.description || '',
+        spotlight_id: p.spotlight_id ? String(p.spotlight_id) : '',
+      });
       setDocs(docsFromFiles(p.files || []));
       setSavedAt(prev => prev || p.updated_at || null);
     } catch (err) {
@@ -495,20 +551,22 @@ const SubmitProposal = ({ onRefresh }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [K, kind, navigate]);
 
   useEffect(() => {
     if (draftParam) { setDraftId(Number(draftParam)); loadDraft(draftParam); }
   }, [draftParam, loadDraft]);
 
+  const needsSpotlight = NEEDS_SPOTLIGHT.includes(form.proposal_type);
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const fail = (msg) => { setAlert({ type: 'error', msg }); return false; };
 
   const textOk = (needTitle) => {
-    if (!form.proposal_type) return fail('Please select a proposal type.');
-    if (needTitle && !form.title.trim()) return fail('Please enter the research title.');
+    if (!form.proposal_type) return fail('Please select a type.');
+    if (needTitle && needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for (step 1).');
+    if (needTitle && !form.title.trim()) return fail('Please enter the title.');
     if (form.title.trim().length > TITLE_MAX) return fail(`Title must be ${TITLE_MAX} characters or fewer.`);
-    if (form.description.trim().length > DESC_MAX) return fail(`Abstract must be ${DESC_MAX} characters or fewer.`);
+    if (form.description.trim().length > DESC_MAX) return fail(`${K.descLabel} must be ${DESC_MAX} characters or fewer.`);
     return true;
   };
 
@@ -518,6 +576,7 @@ const SubmitProposal = ({ onRefresh }) => {
     data.append('proposal_type', form.proposal_type);
     data.append('title',         form.title.trim());
     data.append('description',   form.description.trim());
+    data.append('spotlight_id',  needsSpotlight ? form.spotlight_id : '');
     appendDocs(data, docs);
     return data;
   };
@@ -537,12 +596,12 @@ const SubmitProposal = ({ onRefresh }) => {
       const at  = new Date().toISOString();
       if (onRefresh) await onRefresh();
       setSavedAt(at);
-      setAlert({ type: 'success', msg: 'Draft saved. You can finish it later from My Proposals.' });
+      setAlert({ type: 'success', msg: `Draft saved. You can finish it later from ${K.page}.` });
       if (!draftId) {
         /* the new draft gets its own address, so a refresh or the back button finds it again */
-        navigate(`/researcher/proposals/${id}/edit`, {
+        navigate(`${K.base}/${id}/edit`, {
           replace: true,
-          state: { step, savedAt: at, savedNote: 'Draft saved. You can finish it later from My Proposals.' },
+          state: { step, savedAt: at, savedNote: `Draft saved. You can finish it later from ${K.page}.` },
         });
         return;
       }
@@ -565,7 +624,7 @@ const SubmitProposal = ({ onRefresh }) => {
     try {
       const res = await send('submit');
       if (onRefresh) await onRefresh();
-      navigate('/researcher/proposals', { state: { notice: res.data?.message || 'Proposal submitted successfully.' } });
+      navigate(K.base, { state: { notice: res.data?.message || 'Submitted successfully.' } });
     } catch (err) {
       if (err.response?.data?.code === 'NOT_DRAFT') setBlocked(err.response.data.message);
       else fail(err.response?.data?.message || 'Submission failed.');
@@ -578,13 +637,14 @@ const SubmitProposal = ({ onRefresh }) => {
       {busy === 'draft' ? 'Saving...' : 'Save as Draft'}
     </button>
   );
-  const typeLabel = PROPOSAL_TYPES.find(t => t.value === form.proposal_type)?.label;
+  const typeLabel = typeText(form.proposal_type);
+  const spotlightTitle = spotlights.find(p => String(p.proposal_id) === String(form.spotlight_id))?.title;
   const willHave  = docsSummary(docs);
 
   const back = (
-    <Link to="/researcher/proposals" className="btn btn-outline btn-sm"
+    <Link to={K.base} className="btn btn-outline btn-sm"
       style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 14 }}>
-      <FaArrowLeft className="ic" />Back to My Proposals
+      <FaArrowLeft className="ic" />Back to {K.page}
     </Link>
   );
 
@@ -596,8 +656,8 @@ const SubmitProposal = ({ onRefresh }) => {
       {back}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h1>{draftId ? 'Continue Your Draft' : 'Submit Proposal'}</h1>
-          <p>Fill in the form below to submit your research proposal to MSIRC. You can save it as a draft at any step and finish it later.</p>
+          <h1>{draftId ? 'Continue Your Draft' : K.submit}</h1>
+          <p>{K.formSub}</p>
         </div>
         {savedAt && <span className="saved-at"><FaCheck className="ic" />Draft saved {dateTime(savedAt)}</span>}
       </div>
@@ -635,32 +695,72 @@ const SubmitProposal = ({ onRefresh }) => {
         <div className="panel-body">
           <form onSubmit={handleSubmit}>
 
-            {/* Step 1 — Proposal Type */}
+            {/* Step 1: the type (and, for Travel Subsidy and Oral Presentation, the Research Spotlight) */}
             {step === 1 && (
               <>
-                <p style={{ fontWeight: 600, color: '#1a3a5c', marginBottom: 16 }}>
-                  Select the type of proposal you want to submit:
-                </p>
+                <p style={{ fontWeight: 600, color: '#1a3a5c', marginBottom: 16 }}>{K.pick}</p>
+                {kind === 'grants' && spotlights.length === 0 && (
+                  <div className="alert alert-info" role="note">
+                    <strong>Travel Subsidy</strong> and <strong>Oral Presentation</strong> open once you have an
+                    approved <strong>Research Spotlight</strong>. Submit one in{' '}
+                    <Link to="/researcher/proposals">My Research</Link>. Publication Incentive is open now.
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-                  {PROPOSAL_TYPES.map(t => (
-                    <div key={t.value} role="button" tabIndex={0}
-                      aria-pressed={form.proposal_type === t.value}
-                      onClick={() => { setForm({ ...form, proposal_type: t.value }); setAlert(null); }}
-                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setForm({ ...form, proposal_type: t.value }); setAlert(null); } }}
-                      style={{
-                        border: `2px solid ${form.proposal_type === t.value ? '#1a3a5c' : '#e8edf2'}`,
-                        borderRadius: 10, padding: '16px',
-                        cursor: 'pointer', transition: 'border-color 0.2s',
-                        background: form.proposal_type === t.value ? '#f0f6ff' : '#fff',
-                      }}>
-                      <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px', fontSize: '0.9rem' }}>{t.label}</p>
-                    </div>
-                  ))}
+                  {K.types.map(t => {
+                    const locked = NEEDS_SPOTLIGHT.includes(t) && spotlights.length === 0;
+                    const on = form.proposal_type === t;
+                    const pick = () => {
+                      if (locked) return;
+                      setForm({ ...form, proposal_type: t, spotlight_id: NEEDS_SPOTLIGHT.includes(t) ? (form.spotlight_id || (spotlights.length === 1 ? String(spotlights[0].proposal_id) : '')) : '' });
+                      setAlert(null);
+                    };
+                    return (
+                      <div key={t} role="button" tabIndex={locked ? -1 : 0} data-type={t}
+                        aria-pressed={on} aria-disabled={locked}
+                        onClick={pick}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
+                        style={{
+                          border: `2px solid ${on ? '#1a3a5c' : '#e8edf2'}`,
+                          borderRadius: 10, padding: '16px',
+                          cursor: locked ? 'not-allowed' : 'pointer', transition: 'border-color 0.2s',
+                          background: locked ? '#f7f7f8' : on ? '#f0f6ff' : '#fff',
+                          opacity: locked ? 0.65 : 1,
+                        }}>
+                        <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px', fontSize: '0.9rem' }}>{typeText(t)}</p>
+                        <p style={{ color: '#718096', margin: 0, fontSize: '0.78rem', lineHeight: 1.4 }}>{TYPE_NOTE[t]}</p>
+                        {locked && <p style={{ color: '#9b2c2c', margin: '6px 0 0', fontSize: '0.76rem', fontWeight: 600 }}>No approved Research Spotlight yet</p>}
+                      </div>
+                    );
+                  })}
                 </div>
+                {needsSpotlight && (
+                  <fieldset className="spot-list" id="sp-spot">
+                    <legend>Research Spotlight this application is for</legend>
+                    <p className="spot-hint">Only your Research Spotlight entries that are already Approved are listed. Choose one.</p>
+                    {spotlights.map(p => {
+                      const on = String(form.spotlight_id) === String(p.proposal_id);
+                      return (
+                        <label key={p.proposal_id} className={`spot-item${on ? ' on' : ''}`}>
+                          <input type="radio" name="spotlight_id" value={p.proposal_id} checked={on} onChange={(e) => { handleChange(e); setAlert(null); }} />
+                          <span className="spot-text">
+                            <b>{p.title}</b>
+                            <small>Research Spotlight · Approved{p.submitted_at ? ` · Submitted ${shortDate(p.submitted_at)}` : ''}</small>
+                          </span>
+                          <span className="badge badge-green">Approved</span>
+                        </label>
+                      );
+                    })}
+                  </fieldset>
+                )}
                 <div style={{ marginTop: 24, display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   {draftButton}
                   <button type="button" className="btn btn-primary"
-                    onClick={() => { if (!form.proposal_type) return fail('Please select a type.'); setAlert(null); setStep(2); }}>
+                    onClick={() => {
+                      if (!form.proposal_type) return fail('Please select a type.');
+                      if (needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for.');
+                      setAlert(null); setStep(2);
+                    }}>
                     Next <FaArrowRight className="ic-r" />
                   </button>
                 </div>
@@ -671,14 +771,14 @@ const SubmitProposal = ({ onRefresh }) => {
             {step === 2 && (
               <>
                 <div className="form-group">
-                  <label htmlFor="sp-title">Research Title</label>
+                  <label htmlFor="sp-title">{K.titleLabel}</label>
                   <input id="sp-title" name="title" value={form.title} onChange={handleChange}
-                    maxLength={TITLE_MAX + 50} placeholder="Enter your research title" />
+                    maxLength={TITLE_MAX + 50} placeholder={K.titleHint} />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="sp-desc">Abstract</label>
+                  <label htmlFor="sp-desc">{K.descLabel}</label>
                   <textarea id="sp-desc" name="description" value={form.description} onChange={handleChange}
-                    rows={5} placeholder="Briefly describe your research proposal..."
+                    rows={5} placeholder={K.descHint}
                     style={{ resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -697,7 +797,7 @@ const SubmitProposal = ({ onRefresh }) => {
               <>
                 <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px' }}>Documents</p>
                 <p style={{ fontSize: '0.84rem', color: '#718096', margin: '0 0 12px' }}>
-                  The Main Proposal Document is required to submit. Add up to 4 supporting documents, each with a label.
+                  {K.docsHint}
                 </p>
                 <DocumentsEditor value={docs} onChange={setDocs} disabled={!!busy}
                   onError={(m) => (m ? fail(m) : setAlert(null))} />
@@ -706,8 +806,9 @@ const SubmitProposal = ({ onRefresh }) => {
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, border: '1px solid #e8edf2', marginBottom: 20 }}>
                   <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 10px' }}>Review your submission:</p>
                   {[
-                    { label: 'Proposal Type',  value: typeLabel },
-                    { label: 'Research Title', value: form.title.trim() || '—' },
+                    { label: K.typeHead,  value: typeLabel },
+                    ...(needsSpotlight ? [{ label: 'Research Spotlight', value: spotlightTitle || '—' }] : []),
+                    { label: 'Title', value: form.title.trim() || '—' },
                     { label: 'Documents',      value: willHave.length ? willHave.join(', ') : 'No documents attached' },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
@@ -721,7 +822,7 @@ const SubmitProposal = ({ onRefresh }) => {
                   <button type="button" className="btn btn-outline" onClick={() => { setAlert(null); setStep(2); }}><FaArrowLeft className="ic" />Back</button>
                   {draftButton}
                   <button type="submit" className="btn btn-success" disabled={!!busy}>
-                    {busy === 'submit' ? 'Submitting...' : <><FaCheck className="ic" />Submit Proposal</>}
+                    {busy === 'submit' ? 'Submitting...' : <><FaCheck className="ic" />{K.submit}</>}
                   </button>
                 </div>
               </>
@@ -846,11 +947,13 @@ const ResearcherDashboard = () => {
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"  element={<Overview proposals={proposals} user={user} />} />
-        <Route path="proposals"  element={<MyProposals proposals={proposals} onRefresh={fetchProposals} />} />
-        <Route path="proposals/new" element={<SubmitProposal onRefresh={fetchProposals} />} />
-        <Route path="proposals/:id/edit" element={<SubmitProposal onRefresh={fetchProposals} />} />
+        <Route path="proposals"  element={<MyProposals key="research" proposals={proposals} onRefresh={fetchProposals} />} />
+        <Route path="proposals/new" element={<SubmitProposal key="r-new" onRefresh={fetchProposals} proposals={proposals} />} />
+        <Route path="proposals/:id/edit" element={<SubmitProposal key="r-edit" onRefresh={fetchProposals} proposals={proposals} />} />
         <Route path="submit"     element={<Navigate to="/researcher/proposals/new" replace />} />
-        <Route path="grants"     element={<GrantsPage proposals={proposals} />} />
+        <Route path="grants"     element={<MyProposals key="grants" kind="grants" proposals={proposals} onRefresh={fetchProposals} />} />
+        <Route path="grants/new" element={<SubmitProposal key="g-new" kind="grants" onRefresh={fetchProposals} proposals={proposals} />} />
+        <Route path="grants/:id/edit" element={<SubmitProposal key="g-edit" kind="grants" onRefresh={fetchProposals} proposals={proposals} />} />
         <Route path="external"   element={<ExternalResearchPage />} />
         <Route path="repository" element={<Repository />} />
         <Route path="notifications" element={<NotificationsPage />} />

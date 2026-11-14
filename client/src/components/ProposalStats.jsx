@@ -102,7 +102,9 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Proposal 
         count: list.filter(p => whenOf(p) && new Date(whenOf(p)).getMonth() === i).length,
       }));
 
-  const byType = TYPE_ORDER.map(t => ({ name: TYPE_LABELS[t], count: list.filter(p => p.proposal_type === t).length }));
+  /* the older combined type is listed only if some records still use it */
+  const typeOrder = TYPE_ORDER.filter(t => t !== 'travel_oral' || all.some(p => p.proposal_type === t));
+  const byType = typeOrder.map(t => ({ name: TYPE_LABELS[t], count: list.filter(p => p.proposal_type === t).length }));
   const byStatus = STATUS_ORDER
     .map(s => ({ name: STATUS_LABEL[s], count: list.filter(p => p.status === s).length }))
     .filter(r => r.count > 0);
@@ -120,7 +122,7 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Proposal 
   /* type x year table (always all years, so the years can be compared) */
   const tableYears = [...years].slice(0, YEARS_SHOWN).reverse();
   const cell = (t, y) => all.filter(p => p.proposal_type === t && yearOf(p) === y).length;
-  const cellMax = Math.max(1, ...TYPE_ORDER.flatMap(t => tableYears.map(y => cell(t, y))));
+  const cellMax = Math.max(1, ...typeOrder.flatMap(t => tableYears.map(y => cell(t, y))));
   const shade = (n) => (n ? `rgba(141, 27, 45, ${0.08 + (n / cellMax) * 0.42})` : 'transparent');
 
   return (
@@ -170,7 +172,7 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Proposal 
         </div>
         <div className="ps-card">
           <h3>By Proposal Type</h3>
-          <div className="ps-card-sub">The five proposal types{year === 'all' ? '' : `, ${year}`}</div>
+          <div className="ps-card-sub">Research, grants and incentives{year === 'all' ? '' : `, ${year}`}</div>
           <HBars rows={byType} total={total} bind={bind} />
         </div>
       </div>
@@ -209,7 +211,7 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Proposal 
               </tr>
             </thead>
             <tbody>
-              {TYPE_ORDER.map(t => {
+              {typeOrder.map(t => {
                 const row = tableYears.map(y => cell(t, y));
                 const sum = all.filter(p => p.proposal_type === t).length;
                 return (

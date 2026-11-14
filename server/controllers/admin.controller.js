@@ -1,5 +1,6 @@
 const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
+const { attachSpotlight } = require('../utils/spotlight');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
@@ -729,8 +730,8 @@ const PH_OFFSET_MS = 8 * 60 * 60 * 1000;      // months are counted in Philippin
 const OPEN_STATUSES    = ['for_endorsement', 'submitted', 'under_review', 'endorsed'];
 const DECIDED_STATUSES = ['approved', 'rejected'];
 const PROPOSAL_TYPES   = [
-  'research_spotlight', 'internally_funded', 'publication_incentive',
-  'travel_oral', 'externally_funded',
+  'research_spotlight', 'internally_funded', 'externally_funded',
+  'travel_subsidy', 'oral_presentation', 'publication_incentive',
 ];
 
 /* Supabase returns at most 1000 rows per request, so read big tables page by page */
@@ -1049,6 +1050,7 @@ const listProposals = async (req, res) => {
       })
       .sort((a, b) => b.days_waiting - a.days_waiting);
     await attachFiles(rows);
+    await attachSpotlight(rows);
 
     /* how many people each office has (shown on the Remind button) */
     const office_counts = {};

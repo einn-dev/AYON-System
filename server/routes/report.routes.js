@@ -17,7 +17,7 @@ const REPORT_ROLES = ['admin', 'msric_staff', 'msric_director', 'ovcred'];
      type    : proposal type, empty = all        (proposals and summary)
    ───────────────────────────────────────────────────────────── */
 const STATUSES = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
-const TYPES    = ['research_spotlight', 'internally_funded', 'publication_incentive', 'travel_oral', 'externally_funded'];
+const TYPES    = ['research_spotlight', 'internally_funded', 'externally_funded', 'travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const PERIODS  = ['all', 'year', '90', '30', 'custom'];
 
 const { STATUS_LABEL, TYPE_LABEL } = require('../utils/terms');

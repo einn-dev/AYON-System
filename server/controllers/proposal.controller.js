@@ -3,7 +3,8 @@ const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/roleNotify');
 const { notifyUser } = require('../utils/notify');
-const { statusLabel, TYPE_LABEL } = require('../utils/terms');
+const { statusLabel, SUBMIT_TYPES, GRANT_TYPES } = require('../utils/terms');
+const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
@@ -41,6 +42,7 @@ const getMyProposals = async (req, res) => {
     if (error) throw error;
     await attachTrail(data || []);
     await attachFiles(data || []);
+    await attachSpotlight(data || []);
     return res.status(200).json({ proposals: data || [] });
   } catch (err) {
     console.error('getMyProposals error:', err);
@@ -51,6 +53,7 @@ const getMyProposals = async (req, res) => {
 /* ── POST submit proposal, or save it as a draft ──
    multipart body:
      proposal_type, title, description
+     spotlight_id       the approved Research Spotlight (Travel Subsidy and Oral Presentation only)
      save_as            'draft' | 'submit' (default 'submit')
      file               the Main Proposal Document (required to submit, optional for a draft)
      supporting[]       up to 4 supporting documents
@@ -63,9 +66,19 @@ const submitProposal = async (req, res) => {
   const title   = String(body.title ?? '').trim();
   const desc    = String(body.description ?? '').trim();
 
-  if (!TYPE_LABEL[type]) return res.status(400).json({ message: 'Please choose a proposal type.' });
+  if (!SUBMIT_TYPES.includes(type)) return res.status(400).json({ message: 'Please choose a type.' });
   const textProblem = checkText({ title, desc, needTitle: !asDraft });
   if (textProblem) return res.status(400).json(textProblem);
+
+  let spotlightId = null;
+  try {
+    const sp = await checkSpotlight({ type, raw: body.spotlight_id, userId: req.user.user_id, required: !asDraft });
+    if (sp.fail) return res.status(sp.fail[0]).json(sp.fail[1]);
+    spotlightId = sp.id;
+  } catch (err) {
+    console.error('submitProposal spotlight error:', err);
+    return res.status(500).json({ message: 'Server error.' });
+  }
 
   const up = readUpload(req);
   if (up.error) return res.status(400).json({ message: up.error });
@@ -89,6 +102,7 @@ const submitProposal = async (req, res) => {
       .insert({
         user_id: req.user.user_id,
         proposal_type: type,
+        ...(spotlightId ? { spotlight_id: spotlightId } : {}),
         title,
         description: desc || null,
         file_path:   main ? main.file_path : null,
@@ -110,7 +124,7 @@ const submitProposal = async (req, res) => {
 
     if (asDraft) {
       return res.status(201).json({
-        message:     'Draft saved. You can finish it later from My Proposals.',
+        message:     `Draft saved. You can finish it later from ${GRANT_TYPES.includes(type) ? 'Grants and Incentives' : 'My Research'}.`,
         proposal_id: proposal.proposal_id,
         status:      'draft',
       });
@@ -197,8 +211,8 @@ const startReview = async (req, proposal) => {
 
   return {
     message: stage
-      ? `Proposal submitted. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
-      : 'Proposal submitted successfully.',
+      ? `Submitted. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
+      : 'Submitted successfully.',
     status: stage ? 'for_endorsement' : 'submitted',
   };
 };
@@ -235,9 +249,15 @@ const updateDraft = async (req, res) => {
     const type  = body.proposal_type !== undefined ? String(body.proposal_type).trim() : draft.proposal_type;
     const title = body.title !== undefined ? String(body.title).trim() : String(draft.title || '').trim();
     const desc  = body.description !== undefined ? String(body.description).trim() : String(draft.description || '').trim();
-    if (!TYPE_LABEL[type]) return res.status(400).json({ message: 'Please choose a proposal type.' });
+    if (!SUBMIT_TYPES.includes(type)) return res.status(400).json({ message: 'Please choose a type.' });
     const textProblem = checkText({ title, desc, needTitle: submit });
     if (textProblem) return res.status(400).json(textProblem);
+
+    const sp = await checkSpotlight({
+      type, userId: req.user.user_id, required: submit,
+      raw: body.spotlight_id !== undefined ? body.spotlight_id : draft.spotlight_id,
+    });
+    if (sp.fail) return res.status(sp.fail[0]).json(sp.fail[1]);
 
     const up = readUpload(req);
     if (up.error) return res.status(400).json({ message: up.error });
@@ -263,6 +283,7 @@ const updateDraft = async (req, res) => {
     const { data: changed, error: updErr } = await supabase.from('research_proposals')
       .update({
         proposal_type: type,
+        ...(sp.id || draft.spotlight_id ? { spotlight_id: sp.id } : {}),
         title,
         description: desc || null,
         file_path:   newMain ? newMain.file_path : (keptMain ? keptMain.file_path : null),
@@ -427,6 +448,7 @@ const getAllProposals = async (req, res) => {
     }
 
     await attachFiles(proposals);
+    await attachSpotlight(proposals);
     return res.status(200).json({ proposals });
   } catch (err) {
     console.error('getAllProposals error:', err);
@@ -475,6 +497,7 @@ const getProposalById = async (req, res) => {
 
     await attachTrail([data]);
     await attachFiles([data]);
+    await attachSpotlight([data]);
     return res.status(200).json({
       proposal: {
         ...data,

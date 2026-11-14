@@ -59,3 +59,10 @@
 /* inside the narrower Edit and Resubmit window: label and buttons, then the file */
 .rs-modal .pf-row { grid-template-columns: minmax(0, 1fr) auto; }
 .rs-modal .pf-cell-file { grid-column: 1 / -1; order: 3; }
+
+/* the approved Research Spotlight a Travel Subsidy or Oral Presentation is for */
+.pf-spotlight {
+  margin: 0 0 12px; padding: 9px 12px; font-size: 0.85rem; color: #3d3235; line-height: 1.45;
+  background: #faf7f7; border: 1px solid #efe5e6; border-left: 3px solid #8d1b2d; border-radius: 8px;
+  overflow-wrap: anywhere;
+}
