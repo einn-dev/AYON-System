@@ -24,7 +24,7 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const NAV_ITEMS = [
   { path: '/director/dashboard',     label: 'Dashboard',          icon: <FaTableCellsLarge /> },
   { path: '/director/for-review',    label: 'For Review',         icon: <FaClipboardList /> },
-  { path: '/director/endorsed',      label: 'Endorsed to OVCRED', icon: <FaPaperPlane /> },
+  { path: '/director/endorsed',      label: 'Endorsed to VCRED', icon: <FaPaperPlane /> },
   { path: '/director/approved',      label: 'Approved Proposals', icon: <FaCircleCheck /> },
   { path: '/director/rejected',      label: 'Rejected Proposals', icon: <FaCircleXmark /> },
   { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
@@ -42,7 +42,7 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>MSIRC Director Dashboard</h1>
-        <p>Review validated proposals and make approval decisions for MSIRC.</p>
+        <p>Review validated proposals and applications and make approval decisions for MSIRC.</p>
       </div>
 
       <div className="stats-grid">
@@ -59,7 +59,7 @@ const Overview = ({ proposals }) => {
           <span className="stat-value">{rejected}</span>
         </div>
         <div className="stat-card blue">
-          <span className="stat-label">Endorsed to OVCRED</span>
+          <span className="stat-label">Endorsed to VCRED</span>
           <span className="stat-value">{endorsed}</span>
         </div>
       </div>
@@ -126,13 +126,14 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [saving,   setSaving]   = useState(false);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
-  const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the Director's step on an MSIRC form
+  const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the MSIRC Director's step on an MSIRC form
   const hl = useOpenHighlight(proposals.length > 0);
 
   const filtered = proposals.filter(p => p.status === statusFilter);
 
   /* send it back to the researcher; after they resubmit it starts again from the college */
   const handleReturn = async (reason) => {
+    const w = wordFor(returning);
     await API.patch(`/proposals/${returning.proposal_id}/status`, { status: 'returned', reason });
     try {
       await API.post(`/proposals/${returning.proposal_id}/review`, { decision: 'return', remarks: reason });
@@ -140,7 +141,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
     setReturning(null);
     setSelected(null);
     setRemarks('');
-    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Department Chairperson.' });
+    setAlert({ type: 'success', msg: `${w.P} returned to the researcher. After they resubmit, it starts again from the College Chairperson.` });
     onRefresh();
   };
 
@@ -162,12 +163,12 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         : { status: decision, ...(decision === 'rejected' ? { reason: remarks.trim() } : {}) });
 
       if (decision === 'approved' || decision === 'endorsed') {
-        /* the review record only knows approve / reject / return: endorsing to OVCRED is an approval */
+        /* the review record only knows approve / reject / return: endorsing to VCRED is an approval */
         await API.post(`/proposals/${proposalId}/review`, {
           decision: 'approve',
           remarks: remarks || (decision === 'endorsed'
-            ? 'Approved and endorsed to OVCRED by the MSIRC Director.'
-            : 'Proposal approved by the MSIRC Director.'),
+            ? 'Approved and endorsed to VCRED by the MSIRC Director.'
+            : `${wordFor(selected).P} approved by the MSIRC Director.`),
         });
       } else if (decision === 'rejected') {
         await API.post(`/proposals/${proposalId}/review`, {
@@ -176,7 +177,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         });
       }
 
-      setAlert({ type: 'success', msg: { endorsed: 'Proposal signed and endorsed to OVCRED.', approved: 'Proposal signed and approved.', rejected: 'Proposal rejected.' }[decision] || 'Decision saved.' });
+      const W = wordFor(selected).P;
+      setAlert({ type: 'success', msg: { endorsed: `${W} signed and endorsed to VCRED.`, approved: `${W} signed and approved.`, rejected: `${W} rejected.` }[decision] || 'Decision saved.' });
       setSelected(null);
       setRemarks('');
       onRefresh();
@@ -191,7 +193,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
     under_review: 'For Review',
     approved:     'Approved Proposals',
     rejected:     'Rejected Proposals',
-    endorsed:     'Endorsed to OVCRED',
+    endorsed:     'Endorsed to VCRED',
   }[statusFilter] || 'Proposals';
 
   return (
@@ -201,7 +203,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         <h1>{pageTitle}</h1>
         <p>
           {statusFilter === 'under_review'
-            ? 'Review validated proposals forwarded by the Special Assistant.'
+            ? 'Review validated proposals and applications forwarded by the MSIRC Special Assistant.'
             : `All proposals with the status "${statusLabel(statusFilter)}".`}
         </p>
       </div>
@@ -269,7 +271,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
+          <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
 
             {/* Left — Proposal Details */}
             <div className="panel">
@@ -337,7 +339,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             {statusFilter === 'under_review' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div className="panel">
-                  <div className="panel-header"><h2>Director's Decision</h2></div>
+                  <div className="panel-header"><h2>MSIRC Director's Decision</h2></div>
                   <div className="panel-body">
                     <FormChecklist proposal={selected} role="msric_director" value={formCheck} disabled={saving}
                       onChange={(v) => { setFormCheck(v); setAlert(null); }} />
@@ -353,14 +355,14 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       </p>
                     </div>
 
-                    <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="approve" disabled={saving} />
+                    <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="approve" noun={wordFor(selected).p} disabled={saving} />
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-                      {/* Approve + Endorse to OVCRED (signs) */}
+                      {/* Approve + Endorse to VCRED (signs) */}
                       <button className="btn btn-success"
                         disabled={saving || !signReady}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
-                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to OVCRED</>}
+                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to VCRED</>}
                       </button>
 
                       {/* Approve only (signs) */}
@@ -388,11 +390,11 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     <div style={{ marginTop: 12, padding: 12,
                       background: '#fffbeb', borderRadius: 8,
                       border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
-                      <strong>Note:</strong> "Endorse to OVCRED" approves the proposal and forwards it to OVCRED
+                      <strong>Note:</strong> "Endorse to VCRED" approves the {wordFor(selected).p} and forwards it to VCRED
                       for final approval. "Approve" keeps it within MSIRC.
-                      Both place your signature on the proposal.
+                      Both place your signature on the {wordFor(selected).p}.
                       "Return to Researcher" sends it back for changes; after resubmission it
-                      starts again from the Department Chairperson. Returning or rejecting does not sign.
+                      starts again from the College Chairperson. Returning or rejecting does not sign.
                     </div>
                   </div>
                 </div>
@@ -431,7 +433,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   );
 };
 
-/* ─────────── Main Director Dashboard ─────────── */
+/* ─────────── Main MSIRC Director Dashboard ─────────── */
 const DirectorDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -469,7 +471,7 @@ const DirectorDashboard = () => {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
-            intro="Proposals the Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />
+            intro="Proposals the MSIRC Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />
       </Routes>
     </Layout>
   );

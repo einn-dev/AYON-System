@@ -13,7 +13,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
-import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
+import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
 import { personName } from '../../utils/names';
 
 
@@ -39,7 +39,7 @@ const Overview = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>OVCRED Dashboard</h1>
+        <h1>VCRED Dashboard</h1>
         <p>Office of the Vice Chancellor for Research, Extension, and Development.</p>
       </div>
 
@@ -131,6 +131,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
   /* send it back to the researcher; after they resubmit it starts again from the college */
   const handleReturn = async (reason) => {
+    const w = wordFor(returning);
     await API.patch(`/proposals/${returning.proposal_id}/status`, { status: 'returned', reason });
     try {
       await API.post(`/proposals/${returning.proposal_id}/review`, { decision: 'return', remarks: reason });
@@ -138,7 +139,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
     setReturning(null);
     setSelected(null);
     setRemarks('');
-    setAlert({ type: 'success', msg: 'Proposal returned to the researcher. After they resubmit, it starts again from the Department Chairperson.' });
+    setAlert({ type: 'success', msg: `${w.P} returned to the researcher. After they resubmit, it starts again from the College Chairperson.` });
     onRefresh();
   };
 
@@ -158,10 +159,11 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
       await API.post(`/proposals/${selected.proposal_id}/review`, {
         decision: decision === 'approve' ? 'approve' : 'reject',
-        remarks:  remarks || `Proposal ${newStatus} by OVCRED.`,
+        remarks:  remarks || `${wordFor(selected).P} ${newStatus} by VCRED.`,
       });
 
-      if (decision === 'approve' && storeToRepo) {
+      const archive = decision === 'approve' && storeToRepo && !isGrantType(selected.proposal_type);   // applications are not research to archive
+      if (archive) {
         await API.post('/repository', {
           proposal_id: selected.proposal_id,
           title:       selected.title,
@@ -177,7 +179,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
       setAlert({
         type: 'success',
-        msg: `Proposal ${newStatus === 'approved' ? 'signed and approved' : 'rejected'}.${decision === 'approve' && storeToRepo ? ' It was stored in the Research Repository.' : ''}`,
+        msg: `${wordFor(selected).P} ${newStatus === 'approved' ? 'signed and approved' : 'rejected'}.${archive ? ' It was stored in the Research Repository.' : ''}`,
       });
       setSelected(null);
       setRemarks('');
@@ -194,7 +196,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
       <OpenNotice state={hl} where="your endorsement queue" />
       <div className="page-header">
         <h1>For Final Approval</h1>
-        <p>Review proposals endorsed by the MSIRC Director and give the final OVCRED decision.</p>
+        <p>Review proposals and applications endorsed by the MSIRC Director and give the final VCRED decision.</p>
       </div>
 
       {alert && !selected && (
@@ -259,13 +261,13 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
+          <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
 
             {/* Left — Proposal Details */}
             <div className="panel">
               <div className="panel-header">
                 <h2>{wordFor(selected).P} Details</h2>
-                <span className="badge badge-purple">Endorsed by Director</span>
+                <span className="badge badge-purple">Endorsed by MSIRC Director</span>
               </div>
               <div className="panel-body">
                 <ProposalTracker proposal={selected} />
@@ -325,10 +327,10 @@ const ForApproval = ({ proposals, onRefresh }) => {
               </div>
             </div>
 
-            {/* Right — OVCRED Decision */}
+            {/* Right — VCRED Decision */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="panel">
-                <div className="panel-header"><h2>OVCRED Decision</h2></div>
+                <div className="panel-header"><h2>VCRED Decision</h2></div>
                 <div className="panel-body">
                   <div className="form-group">
                     <label>Remarks / Reason for Rejecting</label>
@@ -342,8 +344,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     </p>
                   </div>
 
-                  {/* Store to repository toggle */}
-                  <div style={{
+                  {/* Store to repository toggle (research only: applications are not archived) */}
+                  {!isGrantType(selected.proposal_type) && <div style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '12px', background: '#f8fafc',
                     borderRadius: 8, border: '1px solid #e8edf2',
@@ -367,9 +369,9 @@ const ForApproval = ({ proposals, onRefresh }) => {
                         Automatically archive this research upon approval
                       </p>
                     </div>
-                  </div>
+                  </div>}
 
-                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="grant final approval to" disabled={saving} />
+                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="grant final approval to" noun={wordFor(selected).p} disabled={saving} />
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <button className="btn btn-success"
@@ -394,8 +396,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     borderRadius: 8, border: '1px solid #9ae6b4',
                     fontSize: '0.78rem', color: '#276749',
                   }}>
-                    <strong>Final approval</strong> places your signature on the proposal and notifies the researcher and the MSIRC Director.
-                    If "Store to Repository" is checked, the research will be archived automatically.
+                    <strong>Final approval</strong> places your signature on the {wordFor(selected).p} and notifies the researcher and the MSIRC Director.
+                    {!isGrantType(selected.proposal_type) && ' If "Store to Repository" is checked, the research will be archived automatically.'}
                   </div>
                 </div>
               </div>
@@ -425,8 +427,8 @@ const FilteredList = ({ proposals, statusFilter }) => {
         <h1>{title}</h1>
         <p>
           {statusFilter === 'approved'
-            ? 'Research proposals that received final OVCRED approval.'
-            : 'Proposals that were rejected by OVCRED.'}
+            ? 'Research proposals that received final VCRED approval.'
+            : 'Proposals that were rejected by VCRED.'}
         </p>
       </div>
       <div className="panel">
@@ -717,7 +719,7 @@ const StoreToRepository = ({ proposals }) => {
   );
 };
 
-/* ─────────── Main OVCRED Dashboard ─────────── */
+/* ─────────── Main VCRED Dashboard ─────────── */
 const OvcredDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -739,7 +741,7 @@ const OvcredDashboard = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <Layout navItems={NAV_ITEMS} role="OVCRED">
+    <Layout navItems={NAV_ITEMS} role="VCRED">
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"

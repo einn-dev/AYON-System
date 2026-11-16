@@ -10,6 +10,7 @@ import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
+import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
@@ -406,16 +407,49 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
 
           {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+          <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 20, alignItems: 'start' }}>
 
-            {/* Left — Checklist */}
-            <div className="panel">
+            {/* Left: the record (same layout as the other offices) */}
+            <div className="panel" style={{ minWidth: 0 }}>
               <div className="panel-header">
-                <h2>Document Checklist</h2>
-                {!hasForm && <span className="badge badge-blue">{complete}/{total} complete</span>}
+                <h2>{wordFor(selected).P} Details</h2>
+                <span className={`badge ${statusBadge(selected.status)}`}>{statusLabel(selected.status)}</span>
               </div>
               <div className="panel-body">
+                <ProposalTracker proposal={selected} />
+                <ProposalSignatures proposal={selected} />
 
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 28px', marginBottom: 20 }}>
+                  {[
+                    { label: 'Researcher', value: personName(selected) },
+                    { label: 'Email',      value: selected.email || '—' },
+                    { label: 'College',    value: selected.college || '—' },
+                    { label: 'Department', value: selected.department || '—' },
+                    { label: 'Type', value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
+                    { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' }}>{item.label}</p>
+                      <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, overflowWrap: 'anywhere' }}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
+                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '1.05rem', lineHeight: 1.5 }}>{selected.title}</p>
+                </div>
+                <ProposalFiles proposal={selected} />
+              </div>
+            </div>
+
+            {/* Right: the checklist, remarks and actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+              <div className="panel">
+                <div className="panel-header">
+                  <h2>Document Checklist</h2>
+                  {!hasForm && <span className="badge badge-blue">{complete}/{total} complete</span>}
+                </div>
+                <div className="panel-body">
                 {hasForm ? (
                   <FormChecklist proposal={selected} role="special_assistant" value={formCheck} disabled={saving}
                     onChange={(v) => { setFormCheck(v); setAlert(null); }} />
@@ -477,36 +511,6 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     If you return this {wordFor(selected).p}, these remarks are sent to the researcher as the reason.
                   </span>
                 </div>
-
-                <ProposalSignatures proposal={selected} />
-              </div>
-            </div>
-
-            {/* Right — Submission Info + Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="panel">
-                <div className="panel-header"><h2>{wordFor(selected).P} Details</h2></div>
-                <div className="panel-body">
-                  {[
-                    { label: 'Researcher', value: personName(selected) },
-                    { label: 'Email',      value: selected.email },
-                    { label: 'College',    value: selected.college || '—' },
-                    { label: 'Department', value: selected.department || '—' },
-                    { label: 'Type', value: PROPOSAL_TYPES[selected.proposal_type] },
-                    { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
-                  ].map(item => (
-                    <div key={item.label} style={{ marginBottom: 12 }}>
-                      <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{item.label}</p>
-                      <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem' }}>{item.value}</p>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 4 }}>
-                    <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
-                    <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{selected.title}</p>
-                  </div>
-                  <div style={{ marginTop: 14 }}>
-                    <ProposalFiles proposal={selected} compact />
-                  </div>
                 </div>
               </div>
 

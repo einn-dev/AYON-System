@@ -213,7 +213,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
 
       {alert && <div className={`alert alert-${alert.type}`} role="alert">{alert.msg}</div>}
 
-      <div className="endorse-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20 }}>
+      <div className="endorse-grid detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20 }}>
         <div className="panel">
           <div className="panel-header">
             <h2>{wordFor(selected).P} Details</h2>

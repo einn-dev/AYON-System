@@ -416,3 +416,9 @@ html.ayon-app { font-size: 112.5%; }
 .spot-text small { color: #718096; font-size: 0.76rem; }
 
 .spot-item.off { opacity: 0.6; cursor: not-allowed; background: #f7f7f8; }
+
+/* A record page: details on the left, the office's own panel on the right.
+   On a narrow screen the two stack, so the form and documents keep the full width. */
+@media (max-width: 1180px) {
+  .detail-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
