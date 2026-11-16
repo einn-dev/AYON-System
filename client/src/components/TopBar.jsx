@@ -40,7 +40,7 @@ const actionPage = (role, base, p) => {
         ? { path: `${base}/validate`, label: 'For Validation' }
         : { path: `${base}/submissions`, label: 'All Proposals' };
     case 'msric_director': {
-      const m = { under_review: ['for-review', 'For Review'], endorsed: ['endorsed', 'Endorsed to OVCRED'],
+      const m = { under_review: ['for-review', 'For Review'], endorsed: ['endorsed', 'Endorsed to VCRED'],
                   approved: ['approved', 'Approved Proposals'], rejected: ['rejected', 'Rejected Proposals'] }[s];
       return m ? { path: `${base}/${m[0]}`, label: m[1] } : null;
     }

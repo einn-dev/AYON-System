@@ -43,10 +43,10 @@ const COLLEGE = [
     steps: [
       'Go to **For Endorsement**. Only proposals waiting for **you** are listed.',
       'Click **Review**. Read the details, the filled-in form (Form 005, the Research Spotlight entry, or Forms 001 to 004 and 008) and each document.',
-      'If the form has a checklist for you, tick each item, or choose the answer it asks for (for example the Coordinator\'s clearance on Form 001). An item that is missing is a reason to return it instead.',
+      'If the form has a checklist for you, tick each item, or choose the answer it asks for (for example the College Coordinator\'s clearance on Form 001). An item that is missing is a reason to return it instead.',
       'Write your **remarks** (at least 10 characters).',
       'Tick the box under your signature, then click **Endorse and Sign**. It cannot be signed until your checklist is complete.',
-      'It goes to the next person: Chairperson → Research Coordinator → College Dean → Special Assistant.',
+      'It goes to the next person: College Chairperson → College Coordinator → College Dean → MSIRC Special Assistant.',
     ],
   },
   {
@@ -56,7 +56,7 @@ const COLLEGE = [
       'Open the proposal from **For Endorsement**.',
       'Write what the researcher needs to fix in **Remarks** (at least 10 characters).',
       'Click **Return to Researcher**, then **Yes, Return It**. Returning never signs.',
-      'After the researcher resubmits, it starts again from the Department Chairperson.',
+      'After the researcher resubmits, it starts again from the College Chairperson.',
     ],
   },
   {
@@ -90,7 +90,7 @@ export const GUIDES = {
         '**Research Spotlight:** read the guidelines at the top, then fill in the abstract (300 words at most), keywords, research cluster, Oral or Poster, the authors and the presenting author. The title can have at most 15 words.',
         '**Internally Funded Research:** fill in Form 005 section by section: proponents, executive summary (300 words at most), introduction, objectives, significance, expected output, R&D priority area, literature, methodology, references, the 5-month work plan, the budget and duties. The budget adds up by itself and cannot be over ₱50,000.00.',
         'Attach the documents. Each type lists what it needs; those marked * are required. PDF, DOC or DOCX, up to 10 MB each.',
-        'Check the summary and click **Submit Research**. It goes first to your **Department Chairperson**.',
+        'Check the summary and click **Submit Research**. It goes first to your **College Chairperson**.',
       ],
     },
     {
@@ -108,7 +108,7 @@ export const GUIDES = {
       title: 'Track where your proposal is',
       steps: [
         'Open **My Research** or **Grants and Incentives**. The **Status** column shows the status and, under it, who has the proposal now.',
-        'Click **View Details** to see the tracker: the college steps (Chairperson, Research Coordinator, Dean) and the office steps (Special Assistant, MSIRC Director, OVCRED).',
+        'Click **View Details** to see the tracker: the college steps (College Chairperson, College Coordinator, College Dean) and the office steps (MSIRC Special Assistant, MSIRC Director, VCRED).',
         'The **Signatures** section shows who has signed and who is next.',
         'You also get a notification (and an email) each time it moves.',
       ],
@@ -120,7 +120,7 @@ export const GUIDES = {
         'A returned proposal shows a red **Returned for Revision** badge and a banner at the top of the page.',
         'Click **Edit and Resubmit**. The reason from the person who returned it is shown at the top.',
         'Fix what was asked: the title, the form\'s fields (for example the conference, dates, budget or work plan), and the documents. Replace a document or attach one that was missing; documents you leave alone are kept.',
-        'Click **Resubmit**. It starts again from the **Department Chairperson** (a new round).',
+        'Click **Resubmit**. It starts again from the **College Chairperson** (a new round).',
       ],
     },
     {
@@ -134,19 +134,19 @@ export const GUIDES = {
         '**Publication Incentive:** Form 002 for a journal article, or Form 004 for a book or book chapter.',
         'For Form 001 and Form 003, choose which of your **approved Research Spotlight** entries the application is for.',
         'Fill in the form\'s details, attach each document it asks for, and click **Submit Application**. You can also **Save as Draft**.',
-        'It goes through the same offices as your research: Chairperson, Research Coordinator, Dean, Special Assistant, Director and OVCRED. Each one ticks its part of the form.',
+        'It goes through the same offices as your research: College Chairperson, College Coordinator, College Dean, MSIRC Special Assistant, MSIRC Director and VCRED. Each one ticks its part of the form.',
       ],
     },
     {
       id: 'amounts',
       title: 'Grant and incentive amounts',
       steps: [
-        'The amounts are set by the University\'s policies. The **Special Assistant** checks your eligibility and enters the amount; AYON does not compute it.',
+        'The amounts are set by the University\'s policies. The **MSIRC Special Assistant** checks your eligibility and enters the amount; AYON does not compute it.',
         '**Journal article (Form 002, BOR Res. No. 327, s. 2024):** SCOPUS-indexed journal Q1 ₱60,000, Q2 ₱55,000, Q3 ₱50,000, Q4 ₱45,000. A full paper in a SCOPUS-indexed conference proceeding: ₱20,000.',
         '**Book or book chapter (Form 004, BOR Res. No. 223, s. 2024):** Book: international circulation ₱50,000, national ₱40,000, limited ₱20,000. Book chapter: ₱20,000, ₱10,000 or ₱5,000.',
         '**Paper presentation (Form 003, BOR Res. No. 272, s. 2019):** depends on the type of presentation. Ask MSIRC for the current amounts.',
         '**Internally Funded Research (Form 005, BOR Res. No. 221, s. 2024):** up to ₱50,000.00 for one semester, for up to 2 projects per college.',
-        '**Travel Subsidy (Form 001, BOR Res. No. 222, s. 2024):** the Director recommends official time only, or financial assistance from college or research funds, subject to available funds.',
+        '**Travel Subsidy (Form 001, BOR Res. No. 222, s. 2024):** the MSIRC Director recommends official time only, or financial assistance from college or research funds, subject to available funds.',
       ],
     },
     {
@@ -156,7 +156,7 @@ export const GUIDES = {
         'Go to **External Research**. It is for finished research funded outside MSU, and it does not go through the offices.',
         'Fill in every field marked *: title, funding agency, researchers or co-authors, abstract (300 words at most), amount and dates. Keywords are optional. Attach the document (PDF or Word, up to 10 MB).',
         'Click **Upload and Store to Repository**. It is stored in the Research Repository right away and appears under **My External Research**.',
-        'It is always **private**: only you, your college (Chairperson, Research Coordinator, Dean) and the MSIRC offices can see it. Other researchers cannot see or search it.',
+        'It is always **private**: only you, your college (College Chairperson, College Coordinator, College Dean) and the MSIRC offices can see it. Other researchers cannot see or search it.',
       ],
     },
     PROFILE,
@@ -195,13 +195,13 @@ export const GUIDES = {
     SIGNATURE,
     {
       id: 'review',
-      title: 'Endorse to OVCRED or approve',
+      title: 'Endorse to VCRED or approve',
       steps: [
         'Go to **For Review** and click **Review**.',
         'For Form 001 and Form 008, choose your **recommendation**: on official time only, or with financial assistance (and, for Form 001, chargeable against college or research funds; for Form 008, the amount).',
         'Write your remarks (optional).',
         'Tick the box under your signature.',
-        'Click **Endorse to OVCRED** (OVCRED gives final approval) or **Approve** (it stays within MSIRC).',
+        'Click **Endorse to VCRED** (VCRED gives final approval) or **Approve** (it stays within MSIRC).',
       ],
     },
     {
@@ -260,7 +260,7 @@ export const GUIDES = {
       id: 'list',
       title: 'View proposals',
       steps: [
-        'Go to **All Proposals**. You see proposals that reached the Special Assistant: title, researcher, college, type, status and date.',
+        'Go to **All Proposals**. You see proposals that reached the MSIRC Special Assistant: title, researcher, college, type, status and date.',
         'You cannot open the proposal contents or change anything.',
       ],
     },
@@ -329,20 +329,20 @@ export const GUIDES = {
 /* What each status means (in the order a proposal moves) */
 export const STATUS_HELP = [
   ['draft',           'Not submitted yet.'],
-  ['for_endorsement', 'At the college: the Chairperson, Research Coordinator and Dean endorse it, in that order.'],
-  ['submitted',       'With the Special Assistant, who checks the documents.'],
+  ['for_endorsement', 'At the college: the College Chairperson, College Coordinator and College Dean endorse it, in that order.'],
+  ['submitted',       'With the MSIRC Special Assistant, who checks the documents.'],
   ['under_review',    'With the MSIRC Director.'],
-  ['endorsed',        'Endorsed by the Director; waiting for OVCRED\'s final approval.'],
-  ['returned',        'Sent back to the researcher to fix. After resubmitting, it starts again from the Chairperson.'],
+  ['endorsed',        'Endorsed by the MSIRC Director; waiting for VCRED\'s final approval.'],
+  ['returned',        'Sent back to the researcher to fix. After resubmitting, it starts again from the College Chairperson.'],
   ['approved',        'Approved.'],
   ['rejected',        'Not approved. It cannot be resubmitted.'],
 ];
 
 export const WHO_SIGNS = [
-  ['Chairperson, Research Coordinator, College Dean', '**Endorse and Sign**'],
-  ['Special Assistant',                               '**Validate and Forward**'],
-  ['MSIRC Director',                                  '**Endorse to OVCRED** or **Approve**'],
-  ['OVCRED',                                          '**Grant Final Approval**'],
+  ['College Chairperson, College Coordinator, College Dean', '**Endorse and Sign**'],
+  ['MSIRC Special Assistant',                               '**Validate and Forward**'],
+  ['MSIRC Director',                                  '**Endorse to VCRED** or **Approve**'],
+  ['VCRED',                                          '**Grant Final Approval**'],
 ];
 
 export const FAQ = [
@@ -353,11 +353,11 @@ export const FAQ = [
   ['Why are Travel Subsidy and Oral Presentation locked?', 'Presenting a paper (Form 001) and the presentation incentive (Form 003) need a **Research Spotlight** of yours that is already **Approved**. Submit one in **My Research** first. Attending a conference (Form 008) and Publication Incentive are open.'],
   ['Which form do I use?', 'AYON picks it for you from what you choose: Research Spotlight entry, Form 005 (Internally Funded), Form 001 or 008 (Travel Subsidy), Form 003 (Oral Presentation), Form 002 or 004 (Publication Incentive). You fill it in inside AYON; no paper form is needed.'],
   ['Why can\'t I submit my Form 005 proposal?', 'Check the budget: the total cannot be over ₱50,000.00. Every required section and the CV must be filled in. A note about Personal Services and the 45% rule does not stop you, but MSIRC may ask you about it.'],
-  ['Who decides how much incentive I get?', 'The amounts follow the University\'s policies (see **Grant and incentive amounts**). The Special Assistant checks your application and enters the amount.'],
+  ['Who decides how much incentive I get?', 'The amounts follow the University\'s policies (see **Grant and incentive amounts**). The MSIRC Special Assistant checks your application and enters the amount.'],
   ['My proposal was returned. What now?', 'Open it from **My Research** or **Grants and Incentives**, read the reason, click **Edit and Resubmit**, fix it, and resubmit.'],
   ['Can I stop in the middle of the form?', 'Yes. Click **Save as Draft** on any step. Continue later from **My Research** or **Grants and Incentives** with **Continue Editing**.'],
-  ['Can I change my college or department?', 'Yes, in your profile. If your role depends on your college (Coordinator, Chairperson, Dean), ask the Administrator first.'],
-  ['Who can see my proposal?', 'You, the endorsers of your college or department, the MSIRC office, OVCRED and the Administrator. MSIRC Staff see only the title, status and dates.'],
+  ['Can I change my college or department?', 'Yes, in your profile. If your role depends on your college (College Coordinator, College Chairperson, College Dean), ask the Administrator first.'],
+  ['Who can see my proposal?', 'You, the endorsers of your college or department, the MSIRC office, VCRED and the Administrator. MSIRC Staff see only the title, status and dates.'],
 ];
 
 export const guidesFor = (role) => GUIDES[role] || [];

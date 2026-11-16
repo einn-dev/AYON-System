@@ -6,8 +6,8 @@ import './ProposalStats.css';
    Proposal Statistics: a dashboard section built from the proposals
    the person can already see (no extra request to the server).
      <ProposalStats proposals={list} groupBy="college" />
-   groupBy: 'college' (MSIRC offices), 'department' (the Dean),
-            or null (Chairperson, Coordinator, Researcher: no group chart)
+   groupBy: 'college' (MSIRC offices), 'department' (the College Dean),
+            or null (College Chairperson, College Coordinator, Researcher: no group chart)
    ───────────────────────────────────────────────────────────── */
 
 const TYPE_LABELS = TYPE_LABEL;

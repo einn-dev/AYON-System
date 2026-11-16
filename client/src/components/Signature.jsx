@@ -13,10 +13,10 @@ import { personName } from '../utils/names';
                           (no signature yet → a button that opens My Profile on that tab)
      ProposalSignatures : the signature lines on a proposal's details
    Who signs, and when:
-     Chairperson, Research Coordinator, College Dean → Endorse and Sign
-     Special Assistant → Validate and Forward
-     MSIRC Director    → Endorse to OVCRED / Approve
-     OVCRED            → Grant Final Approval
+     College Chairperson, College Coordinator, College Dean → Endorse and Sign
+     MSIRC Special Assistant → Validate and Forward
+     MSIRC Director    → Endorse to VCRED / Approve
+     VCRED            → Grant Final Approval
    Returning or rejecting never signs.
    ───────────────────────────────────────────────────────────── */
 
@@ -276,7 +276,7 @@ export const MySignature = ({ onSaved }) => {
       </div>
       <p className="sig-hint">
         Used when you {user?.role === 'special_assistant' ? 'validate and forward'
-          : user?.role === 'msric_director' ? 'endorse to OVCRED or approve'
+          : user?.role === 'msric_director' ? 'endorse to VCRED or approve'
           : user?.role === 'ovcred' ? 'grant final approval' : 'endorse'} a proposal.
         Returning or rejecting never signs.
       </p>
@@ -387,8 +387,9 @@ export const MySignature = ({ onSaved }) => {
 
 /* ── "Your signature + I confirm" box on a signing action ──
    Calls onReady(true) only when a signature is saved AND the box is ticked.
-   `verb` completes the sentence "I, <name> (<role>), ___ this proposal ..." */
-export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => {
+   `verb` completes the sentence "I, <name> (<role>), ___ this <noun> ..."
+   `noun` is "proposal" (research) or "application" (grants and incentives) */
+export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disabled = false }) => {
   const { user } = useAuth();
   const { sig, loading, error } = useMySignature();
   const [checked, setChecked] = useState(false);
@@ -425,7 +426,7 @@ export const SignConfirm = ({ onReady, verb = 'endorse', disabled = false }) => 
           <input type="checkbox" checked={checked} disabled={disabled}
             onChange={(e) => setChecked(e.target.checked)} />
           <span>
-            I, <b>{fullName(user) || 'the signer'}</b> ({ROLE_LABEL[user?.role] || 'official'}), {verb} this proposal
+            I, <b>{fullName(user) || 'the signer'}</b> ({ROLE_LABEL[user?.role] || 'official'}), {verb} this {noun}{' '}
             and agree that my electronic signature is placed on it.
           </span>
         </label>

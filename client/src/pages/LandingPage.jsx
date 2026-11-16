@@ -14,18 +14,18 @@ import './LandingPage.css';
 
 /* ───────────── data ───────────── */
 /* the sample proposal in the hero: the same path and status names as in AYON */
-const STAGES = ['Submitted', 'College', 'Validation', 'Director', 'OVCRED', 'Approved'];
+const STAGES = ['Submitted', 'College', 'Validation', 'MSIRC Director', 'VCRED', 'Approved'];
 const STAGE_STATUS = [
   'Submitted', 'For College Endorsement', 'For Validation',
-  'For Director Review', 'For OVCRED Approval', 'Approved',
+  'For MSIRC Director Review', 'For VCRED Approval', 'Approved',
 ];
 
 const FEED = [
   'The researcher submitted the proposal and its documents.',
-  'The Chairperson, Research Coordinator and College Dean are endorsing it.',
-  'The Special Assistant is checking the documents against the checklist.',
+  'The College Chairperson, College Coordinator and College Dean are endorsing it.',
+  'The MSIRC Special Assistant is checking the documents against the checklist.',
   'The MSIRC Director is reviewing the proposal.',
-  'Waiting for the final approval of OVCRED.',
+  'Waiting for the final approval of VCRED.',
   'Approved and signed. Everyone involved was notified.',
 ];
 
@@ -45,7 +45,7 @@ const FEATURES = [
 ];
 
 const STATS = [
-  [9, 'user roles', 'from Researcher to OVCRED'],
+  [9, 'user roles', 'from Researcher to VCRED'],
   [5, 'proposal types', 'one place for every submission'],
   [6, 'approval stages', 'each one tracked and visible'],
   [1, 'digital repository', 'for all approved research'],
@@ -54,11 +54,11 @@ const STATS = [
 /* [icon, who, what, details, the status while it is at this step] */
 const STEPS = [
   [FaUserGraduate,    'Researcher',        'Uploads the proposal',      'Pick the proposal type, fill in the details, and attach the Main Proposal Document plus any supporting documents. Save it as a draft anytime and submit when it is ready.', 'Draft, then Submitted'],
-  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The Department Chairperson, then the Research Coordinator, then the College Dean endorse it with their e-signature, or return it with remarks.', 'For College Endorsement'],
-  [FaUserCheck,       'Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded to the Director or returned for correction.', 'For Validation'],
-  [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal, then endorses it to OVCRED, approves it, or returns it.', 'For Director Review'],
-  [FaStamp,           'OVCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs the final approval.', 'For OVCRED Approval'],
-  [FaDatabase,        'Repository',        'Shared with the campus',    'OVCRED or the Administrator adds the approved research to the Research Repository, where it can be searched later.', 'Approved'],
+  [FaBuildingColumns, 'College level',     'Endorses the proposal',     'The College Chairperson, then the College Coordinator, then the College Dean endorse it with their e-signature, or return it with remarks.', 'For College Endorsement'],
+  [FaUserCheck,       'MSIRC Special Assistant', 'Validates completeness',    'Documents are checked against the digital checklist, then forwarded to the MSIRC Director or returned for correction.', 'For Validation'],
+  [FaUserTie,         'MSIRC Director',    'Reviews and decides',       'The MSIRC Director reviews the validated proposal, then endorses it to VCRED, approves it, or returns it.', 'For MSIRC Director Review'],
+  [FaStamp,           'VCRED',            'Gives the final approval',  'The Office of the Vice Chancellor for Research and Extension Development signs the final approval.', 'For VCRED Approval'],
+  [FaDatabase,        'Repository',        'Shared with the campus',    'VCRED or the Administrator adds the approved research to the Research Repository, where it can be searched later.', 'Approved'],
 ];
 
 const TYPES = [
@@ -81,7 +81,7 @@ const FAQ = [
   ['How will I know what happened to my proposal?',
    'The status on your dashboard updates at every stage, and you get an in-app notification and an email at each decision point.'],
   ['Where do approved proposals go?',
-   'OVCRED or the Administrator adds them to the Research Repository, where they can be searched later.'],
+   'VCRED or the Administrator adds them to the Research Repository, where they can be searched later.'],
   ['Who do I contact for help?',
    `The Mamitua Saber Institute of Research and Creation (MSIRC): ${CONTACT.email}, ${CONTACT.hours}.`],
 ];

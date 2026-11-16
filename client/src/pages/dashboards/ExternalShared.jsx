@@ -8,7 +8,7 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 /* ─────────────────────────────────────────────────────────────
    External Research (externally funded research, Repository only)
      ExternalDetails      the details of one item, in a window   (everyone who can see it)
-     CollegeExternalPage  read-only list of one college's items  (Chairperson, Coordinator, Dean)
+     CollegeExternalPage  read-only list of one college's items  (College Chairperson, College Coordinator, College Dean)
    Always private: only the researcher, their college and the MSIRC offices see it.
    ───────────────────────────────────────────────────────────── */
 
@@ -71,7 +71,7 @@ export const ExternalDetails = ({ item, onClose }) => {
   );
 };
 
-/* ── Chairperson, Research Coordinator and Dean: their college's External Research (read only) ── */
+/* ── College Chairperson, College Coordinator and College Dean: their college's External Research (read only) ── */
 export const CollegeExternalPage = () => {
   const [items, setItems]   = useState([]);
   const [college, setCollege] = useState('');
@@ -103,7 +103,7 @@ export const CollegeExternalPage = () => {
       </div>
       <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
         <FaLock style={{ marginTop: 3, flexShrink: 0 }} />
-        <span>These are <b>private</b> in the Research Repository: only the researcher, their college (Chairperson, Research Coordinator, Dean) and the MSIRC offices can see them. Other researchers cannot see or search them.</span>
+        <span>These are <b>private</b> in the Research Repository: only the researcher, their college (College Chairperson, College Coordinator, College Dean) and the MSIRC offices can see them. Other researchers cannot see or search them.</span>
       </div>
       {failed && <div className="alert alert-error" role="alert">{failed}</div>}
       <div className="panel">

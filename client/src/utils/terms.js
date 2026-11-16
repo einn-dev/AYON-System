@@ -10,13 +10,13 @@ export const OFFICE = 'MSIRC';
 /* ── roles ── */
 export const ROLE_LABEL = {
   researcher:           'Researcher',
-  research_coordinator: 'Research Coordinator',
-  chairperson:          'Chairperson',
+  research_coordinator: 'College Coordinator',
+  chairperson:          'College Chairperson',
   college_dean:         'College Dean',
   msric_staff:          'MSIRC Staff',
-  special_assistant:    'Special Assistant',
+  special_assistant:    'MSIRC Special Assistant',
   msric_director:       'MSIRC Director',
-  ovcred:               'OVCRED',
+  ovcred:               'VCRED',
   admin:                'Administrator',
 };
 
@@ -25,8 +25,8 @@ export const STATUS_LABEL = {
   draft:           'Draft',
   for_endorsement: 'For College Endorsement',
   submitted:       'For Validation',
-  under_review:    'For Director Review',
-  endorsed:        'For OVCRED Approval',
+  under_review:    'For MSIRC Director Review',
+  endorsed:        'For VCRED Approval',
   returned:        'Returned for Revision',
   approved:        'Approved',
   rejected:        'Rejected',

@@ -23,18 +23,18 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const STATUS_LABELS  = STATUS_LABEL;
 
 const OFFICE_LABELS = {
-  research_coordinator: 'Research Coordinator',
-  chairperson:       'Chairperson',
+  research_coordinator: 'College Coordinator',
+  chairperson:       'College Chairperson',
   college_dean:      'College Dean',
-  special_assistant: 'Special Assistant',
+  special_assistant: 'MSIRC Special Assistant',
   msric_director:    'MSIRC Director',
-  ovcred:            'OVCRED',
+  ovcred:            'VCRED',
 };
 
 /* where an Admin may send a proposal back to */
 const MOVE_OPTIONS = [
   { value: 'returned',     label: 'Back to the Researcher' },
-  { value: 'submitted',    label: 'Special Assistant (document check)' },
+  { value: 'submitted',    label: 'MSIRC Special Assistant (document check)' },
   { value: 'under_review', label: 'MSIRC Director (review)' },
 ];
 
@@ -206,7 +206,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
               <label htmlFor="po-reason">Reason (the researcher will see this)</label>
               <textarea id="po-reason" value={reason} maxLength={REASON_MAX}
                 onChange={e => setReason(e.target.value)}
-                placeholder="e.g. The checklist was never finished and the Special Assistant is on leave." />
+                placeholder="e.g. The checklist was never finished and the MSIRC Special Assistant is on leave." />
               <div className={`po-hint${reason.length && reason.trim().length < REASON_MIN ? ' err' : ''}`}>
                 <span>At least {REASON_MIN} characters. Saved in the Audit Log.</span>
                 <span>{reason.length}/{REASON_MAX}</span>

@@ -5,8 +5,8 @@ import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from 'react-icons/
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:
-     College:  Chairperson → Research Coordinator → College Dean
-     Office:   Special Assistant → MSIRC Director → OVCRED → Decision
+     College:  College Chairperson → College Coordinator → College Dean
+     Office:   MSIRC Special Assistant → MSIRC Director → VCRED → Decision
    and the endorsement history (every round), with the notes.
 
    The proposal needs (the server adds these):
@@ -20,12 +20,12 @@ const OFFICE_CHAIN = ['special_assistant', 'msric_director', 'ovcred'];
 export { ROLE_LABEL };
 
 const SHORT = {
-  research_coordinator: 'Coordinator',
-  chairperson:          'Chairperson',
-  college_dean:         'Dean',
-  special_assistant:    'Special Assistant',
-  msric_director:       'Director',
-  ovcred:               'OVCRED',
+  research_coordinator: 'College Coordinator',
+  chairperson:          'College Chairperson',
+  college_dean:         'College Dean',
+  special_assistant:    'MSIRC Special Assistant',
+  msric_director:       'MSIRC Director',
+  ovcred:               'VCRED',
 };
 
 /* where the proposal is in the office stage */
@@ -33,15 +33,15 @@ const OFFICE_AT = { submitted: 0, under_review: 1, endorsed: 2 };
 
 export const roundOf = (p) => Number(p?.round) || (Number(p?.revision_count) || 0) + 1;
 
-/* "With the Chairperson", "Returned to you", ... */
+/* "With the College Chairperson", "Returned to you", ... */
 export const whereNow = (p) => {
   if (!p) return '';
   switch (p.status) {
     case 'draft':           return 'Not submitted yet';
     case 'for_endorsement': return `Waiting for the ${ROLE_LABEL[p.endorsement_stage] || 'college'}`;
-    case 'submitted':       return 'With the Special Assistant';
+    case 'submitted':       return 'With the MSIRC Special Assistant';
     case 'under_review':    return 'With the MSIRC Director';
-    case 'endorsed':        return 'With OVCRED for final approval';
+    case 'endorsed':        return 'With VCRED for final approval';
     case 'returned':        return `Returned for revision${p.returned_by_role ? ` by the ${ROLE_LABEL[p.returned_by_role] || 'office'}` : ''}`;
     default:                return statusLabel(p.status);
   }
@@ -57,7 +57,7 @@ export const stageLabel = (p) => {
   return '—';
 };
 
-/* state of every step: done | now | todo | skip | returned | rejected */
+/* state of every step: done | now | todo | skip | returned | rejected | unreached */
 const buildSteps = (p) => {
   const round   = roundOf(p);
   const rows    = (p.endorsements || []).filter(e => Number(e.round || 1) === round);
@@ -79,10 +79,17 @@ const buildSteps = (p) => {
   });
 
   const officeAt = OFFICE_AT[p.status];
+  const decided  = p.status === 'approved' || p.status === 'rejected';
+  const decider  = decided ? OFFICE_CHAIN.indexOf(p.decided_by_role) : -1;   // the office that decided, if known
   const office = OFFICE_CHAIN.map((role, i) => {
     let state = 'todo';
     if (atCollege)                                          state = 'todo';
-    else if (p.status === 'approved' || p.status === 'rejected') state = 'done';
+    else if (decided && decider >= 0) {
+      if (i < decider)                                      state = 'done';
+      else if (i === decider)                               state = p.status === 'rejected' ? 'rejected' : 'done';
+      else                                                  state = p.status === 'rejected' ? 'unreached' : 'skip';
+    }
+    else if (decided)                                       state = 'done';    // decided before decision details were saved
     else if (officeAt !== undefined)                        state = i < officeAt ? 'done' : (i === officeAt ? 'now' : 'todo');
     else if (p.status === 'returned')                       state = retOffice < 0 ? 'todo' : (i < retOffice ? 'done' : (i === retOffice ? 'returned' : 'todo'));
     return { key: role, label: SHORT[role], state };
@@ -97,8 +104,8 @@ const buildSteps = (p) => {
   return [...college, ...office, decision];
 };
 
-const MARK = { done: <FaCheck />, now: <FaCircle style={{ fontSize: '0.45rem' }} />, skip: <FaMinus />, returned: <FaExclamation />, rejected: <FaXmark /> };
-const NOTE = { skip: 'Not Needed', returned: 'Returned', now: 'Current' };
+const MARK = { done: <FaCheck />, now: <FaCircle style={{ fontSize: '0.45rem' }} />, skip: <FaMinus />, returned: <FaExclamation />, rejected: <FaXmark />, unreached: <FaMinus /> };
+const NOTE = { skip: 'Not Needed', returned: 'Returned', now: 'Current', unreached: 'Not Reached' };
 
 const fmt = (d) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 
@@ -124,6 +131,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
             <span className="pt-dot">{MARK[s.state] || i + 1}</span>
             <span className="pt-label">{s.label}</span>
             {NOTE[s.state] && <span className="pt-note">{NOTE[s.state]}</span>}
+            {s.state === 'rejected' && s.key !== 'decision' && <span className="pt-note">Rejected</span>}
           </li>
         ))}
       </ol>
@@ -134,7 +142,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
           <b>Returned for Revision{proposal.returned_by_role ? ` by the ${ROLE_LABEL[proposal.returned_by_role] || 'office'}` : ''}</b>
           {proposal.returned_at && <small> · {fmt(proposal.returned_at)}</small>}
           <p>{proposal.return_reason}</p>
-          <small>After the researcher edits and resubmits, it starts again from the Department Chairperson.</small>
+          <small>After the researcher edits and resubmits, it starts again from the College Chairperson.</small>
         </div>
       )}
 

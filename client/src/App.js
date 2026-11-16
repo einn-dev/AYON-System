@@ -1,15 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute   from './components/ProtectedRoute';
 
-import LandingPage      from './pages/LandingPage';
 import LoginPage        from './pages/LoginPage';
 import RegisterPage     from './pages/RegisterPage';
-import TermsPage        from './pages/TermsPage';
-import PrivacyPage      from './pages/PrivacyPage';
 import Unauthorized     from './pages/Unauthorized';
-import VerifyEmailPage  from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage  from './pages/ResetPasswordPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
@@ -22,6 +18,9 @@ import CollegeDeanDashboard     from './pages/dashboards/CollegeDeanDashboard';
 import SpecialAssistantDashboard from './pages/dashboards/SpecialAssistantDashboard';
 import DirectorDashboard        from './pages/dashboards/DirectorDashboard';
 import OvcredDashboard          from './pages/dashboards/OvcredDashboard';
+import LandingPage from './pages/LandingPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 import AdminDashboard           from './pages/dashboards/AdminDashboard';
 
 function App() {
@@ -30,13 +29,13 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/"              element={<LandingPage />} />
-          <Route path="/login"         element={<LoginPage />} />
-          <Route path="/register"      element={<RegisterPage />} />
-          <Route path="/terms"         element={<TermsPage />} />
-          <Route path="/privacy"        element={<PrivacyPage />} />
-          <Route path="/unauthorized"   element={<Unauthorized />} />
-          <Route path="/verify-email"    element={<VerifyEmailPage />} />
+          <Route path="/"           element={<Navigate to="/login" replace />} />
+          <Route path="/login"      element={<LoginPage />} />
+          <Route path="/home" element={<LandingPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/register"   element={<RegisterPage />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password"  element={<ResetPasswordPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
@@ -55,14 +54,14 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Research Coordinator */}
+          {/* College Coordinator */}
           <Route path="/coordinator/*" element={
             <ProtectedRoute allowedRoles={['research_coordinator']}>
               <CoordinatorDashboard />
             </ProtectedRoute>
           } />
 
-          {/* Chairperson */}
+          {/* College Chairperson */}
           <Route path="/chairperson/*" element={
             <ProtectedRoute allowedRoles={['chairperson']}>
               <ChairpersonDashboard />
@@ -76,21 +75,21 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Special Assistant */}
+          {/* MSIRC Special Assistant */}
           <Route path="/special-assistant/*" element={
             <ProtectedRoute allowedRoles={['special_assistant']}>
               <SpecialAssistantDashboard />
             </ProtectedRoute>
           } />
 
-          {/* MSRIC Director */}
+          {/* MSIRC Director */}
           <Route path="/director/*" element={
             <ProtectedRoute allowedRoles={['msric_director']}>
               <DirectorDashboard />
             </ProtectedRoute>
           } />
 
-          {/* OVCRED */}
+          {/* VCRED */}
           <Route path="/ovcred/*" element={
             <ProtectedRoute allowedRoles={['ovcred']}>
               <OvcredDashboard />
@@ -105,7 +104,7 @@ function App() {
           } />
 
           {/* Catch all */}
-          <Route path="*" element={<LandingPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

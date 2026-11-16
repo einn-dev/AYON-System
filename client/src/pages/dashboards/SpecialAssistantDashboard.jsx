@@ -50,7 +50,7 @@ const Overview = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Special Assistant Dashboard</h1>
+        <h1>MSIRC Special Assistant Dashboard</h1>
         <p>Validate proposals and forward complete documents to the MSIRC Director.</p>
       </div>
 
@@ -251,7 +251,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [alert,      setAlert]      = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
-  const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the Special Assistant's step on an MSIRC form
+  const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the MSIRC Special Assistant's step on an MSIRC form
 
   const pending = proposals.filter(p => p.status === 'submitted');
   const hl = useOpenHighlight(proposals.length > 0 && !selected);
@@ -273,7 +273,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
     }));
   };
 
-  /* an application whose MSIRC form has a Special Assistant step uses that checklist
+  /* an application whose MSIRC form has a MSIRC Special Assistant step uses that checklist
      instead of the general one (Form 005 has none, so it keeps the general one) */
   const hasForm = !!stepOf(selected, 'special_assistant');
   const formProblem = hasForm ? stepProblem(stepOf(selected, 'special_assistant'), formCheck) : '';
@@ -513,7 +513,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               <div className="panel">
                 <div className="panel-header"><h2>Actions</h2></div>
                 <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="validate and forward" disabled={saving} />
+                  <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="validate and forward" noun={wordFor(selected).p} disabled={saving} />
                   <button
                     className="btn btn-success"
                     onClick={handleForward}
@@ -599,7 +599,7 @@ const Forwarded = ({ proposals }) => {
   );
 };
 
-/* ─────────── Main Special Assistant Dashboard ─────────── */
+/* ─────────── Main MSIRC Special Assistant Dashboard ─────────── */
 const SpecialAssistantDashboard = () => {
   const [proposals, setProposals] = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -621,7 +621,7 @@ const SpecialAssistantDashboard = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
-    <Layout navItems={NAV_ITEMS} role="Special Assistant">
+    <Layout navItems={NAV_ITEMS} role="MSIRC Special Assistant">
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"    element={<Overview proposals={proposals} />} />

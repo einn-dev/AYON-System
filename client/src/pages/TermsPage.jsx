@@ -19,7 +19,7 @@ const SECTIONS = [
   {
     title: 'Your account',
     list: [
-      'Anyone who registers on the AYON website is given a Researcher account. Accounts for MSIRC staff, college officers, the Special Assistant, the Director, OVCRED, and administrators are created only by the system administrator.',
+      'Anyone who registers on the AYON website is given a Researcher account. Accounts for MSIRC staff, college officers, the MSIRC Special Assistant, the MSIRC Director, VCRED, and administrators are created only by the system administrator.',
       'You must give accurate and complete information, including an email address that you can open. We send a verification link to that address, and your account stays locked until you confirm it.',
       'Keep your password private. You are responsible for everything done through your account, so do not share it with anyone.',
       'Tell the MSIRC office right away if you think someone else has used your account.',
@@ -41,7 +41,7 @@ const SECTIONS = [
   {
     title: 'Review and approval',
     body: [
-      'Submitting a proposal or a grant application does not guarantee that it will be approved or funded. Proposals pass through endorsement, document validation, review by the MSIRC Director, and final approval by OVCRED. Any of these officers may approve, return, or reject a submission and may add remarks.',
+      'Submitting a proposal or a grant application does not guarantee that it will be approved or funded. Proposals pass through endorsement, document validation, review by the MSIRC Director, and final approval by VCRED. Any of these officers may approve, return, or reject a submission and may add remarks.',
       'Decisions are made by the responsible university officers. AYON only records and delivers them.',
     ],
   },

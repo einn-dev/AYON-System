@@ -121,7 +121,7 @@ const detailsText = (log) => {
     case 'repository_created':
       return `Access: ${show(d.access_type)} · ${show(d.source_type)}`;
     case 'repository_updated': {
-      /* the OVCRED page sends { access_type: {from,to} }; the Admin page sends { changes: {...} } */
+      /* the VCRED page sends { access_type: {from,to} }; the Admin page sends { changes: {...} } */
       const parts = [];
       const ch = d.changes || (d.access_type ? { access_type: d.access_type } : {});
       if (ch.access_type) parts.push(`Access: ${show(ch.access_type.from)} → ${show(ch.access_type.to)}`);

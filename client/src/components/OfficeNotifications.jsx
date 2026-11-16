@@ -6,7 +6,7 @@ import './OfficeNotifications.css';
 import { useLiveRefresh } from '../utils/liveRefresh';
 import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
-/* Notifications page for the Special Assistant, MSIRC Director, OVCRED and MSIRC Staff.
+/* Notifications page for the MSIRC Special Assistant, MSIRC Director, VCRED and MSIRC Staff.
      queuePath:   where "Open" goes (their queue), for example "/director/for-review"
      openLabel:   the button text (default "Review")
      filters:     the filter list, [value, label, test(n)] (default: the office filters)

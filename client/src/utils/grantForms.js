@@ -85,7 +85,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Extended Abstract', required: true, hint: '1,200 to 2,000 words, following the guidelines above.' },
       { label: 'Certification and Endorsement', required: true,
-        hint: 'Certifies that the paper has not been presented elsewhere and is a product of a research work, endorsed by the Research Coordinator, Chairman and Dean.' },
+        hint: 'Certifies that the paper has not been presented elsewhere and is a product of a research work, endorsed by the College Coordinator, Chairman and College Dean.' },
       { label: 'Faculty Waiver Form', hint: 'Only for a student thesis entry presented by the adviser.' },
     ],
     steps: {
@@ -415,9 +415,9 @@ const fieldsProblem = (form, data) => {
 };
 
 /* What the offices decided on a grant or incentive application, from its checks:
-   amount         the incentive the Special Assistant entered (Forms 002, 003, 004),
-                  or the financial assistance the Director entered (Form 008)
-   recommendation the Director's recommendation (Forms 001 and 008)
+   amount         the incentive the MSIRC Special Assistant entered (Forms 002, 003, 004),
+                  or the financial assistance the MSIRC Director entered (Form 008)
+   recommendation the MSIRC Director's recommendation (Forms 001 and 008)
    chargeable     College or Research Funds (Form 001)                              */
 const awardOf = (p) => {
   const checks = (p && p.form_checks) || [];
