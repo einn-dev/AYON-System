@@ -12,7 +12,7 @@ import '../../components/Resubmit.css';
 import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures } from '../../components/Signature';
-import { ProposalFiles, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
+import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsProblem, fieldsWarning, titleProblem } from '../../utils/grantForms';
@@ -20,7 +20,6 @@ import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide } from '../../components/GrantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
@@ -1009,11 +1008,7 @@ const Repository = () => {
                   <td>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
                   <td>
                     {r.file_path ? (
-                      <a href={fileHref(r.file_path)}
-                        target="_blank" rel="noreferrer"
-                        className="btn btn-outline btn-sm">
-                        View Document
-                      </a>
+                      <FileButtons path={r.file_path} label={r.title} />
                     ) : <span style={{ color: '#a0aec0', fontSize: '0.82rem' }}>No file</span>}
                   </td>
                 </tr>

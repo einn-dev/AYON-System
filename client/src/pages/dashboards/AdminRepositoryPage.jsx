@@ -5,7 +5,8 @@ import '../../components/Layout.css';
 import './AdminModule.css';
 import './AdminCatalog.css';
 import { errText, Pager } from './adminShared';
-import { ConfirmBox, fileHref, cap, fmtDate } from './AdminCatalogShared';
+import { ConfirmBox, cap, fmtDate } from './AdminCatalogShared';
+import { FileButtons } from '../../components/ProposalFiles';
 
 const PAGE_SIZE = 25;
 
@@ -63,7 +64,7 @@ const ItemModal = ({ item, onSaved, onClose }) => {
           <dt>Stored</dt><dd>{fmtDate(item.store_date)}</dd>
           <dt>File</dt>
           <dd>{item.file_path
-            ? <a href={fileHref(item.file_path)} target="_blank" rel="noreferrer">Open the stored file</a>
+            ? <FileButtons path={item.file_path} label="the stored file" />
             : 'No file attached'}</dd>
         </dl>
 

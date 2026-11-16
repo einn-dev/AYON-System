@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FaArrowUpRightFromSquare, FaLock } from 'react-icons/fa6';
+import { FaLock } from 'react-icons/fa6';
 import API from '../../services/authService';
-import { fileHref } from '../../components/ProposalFiles';
+import { FileButtons } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 
@@ -59,11 +59,7 @@ export const ExternalDetails = ({ item, onClose }) => {
           <p style={{ margin: '0 0 14px' }}><b>Keywords:</b> {item.keywords}</p>
         )}
         <div className="modal-actions" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          {item.file_path && (
-            <a className="btn btn-outline" href={fileHref(item.file_path)} target="_blank" rel="noreferrer">
-              View Document <FaArrowUpRightFromSquare className="ic-r" />
-            </a>
-          )}
+          <FileButtons path={item.file_path} label="the research document" small={false} />
           <button type="button" className="btn btn-primary" onClick={onClose}>Close</button>
         </div>
       </div>

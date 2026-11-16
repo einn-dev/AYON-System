@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
+import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare, FaDownload } from 'react-icons/fa6';
 import './ProposalFiles.css';
 import { GrantFormView, mainDocLabel } from './GrantForms';
 
@@ -23,7 +23,38 @@ const LABEL_MAX = 60;
 const ALLOWED   = ['pdf', 'doc', 'docx'];
 
 /* Files are stored as full web addresses; older records may hold a server path */
-export const fileHref = (fp) => (/^https?:\/\//i.test(fp || '') ? fp : `http://localhost:5000/${fp}`);
+const rawHref = (fp) => (/^https?:\/\//i.test(fp || '') ? fp : `http://localhost:5000/${fp}`);
+const isWord  = (fp) => /\.docx?$/i.test(String(fp || '').split('?')[0]);
+
+/* The link behind every "View" button: it opens in a new tab.
+   A PDF opens as it is. A browser cannot show a Word file (it downloads it), so a
+   Word file opens in Microsoft's online viewer, which reads it from its public link. */
+export const fileHref = (fp) => {
+  const url = rawHref(fp);
+  return isWord(fp) && /^https:\/\//i.test(url)
+    ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+    : url;
+};
+
+/* The link behind "Download": saves the file itself (Supabase sends it as a download with ?download=) */
+export const downloadHref = (fp, name) => {
+  const url = rawHref(fp);
+  if (!/supabase\.co\/storage\//i.test(url)) return url;
+  const file = name || decodeURIComponent(url.split('?')[0].split('/').pop() || 'document');
+  return `${url}${url.includes('?') ? '&' : '?'}download=${encodeURIComponent(file)}`;
+};
+
+/* View + Download, side by side */
+export const FileButtons = ({ path, name, label = 'document', small = true }) => (path ? (
+  <span className="pf-btns">
+    <a className={`btn btn-outline ${small ? 'btn-sm' : ''}`} href={fileHref(path)} target="_blank" rel="noreferrer" aria-label={`View ${label} in a new tab`}>
+      View <FaArrowUpRightFromSquare className="ic-r" />
+    </a>
+    <a className={`btn btn-outline ${small ? 'btn-sm' : ''}`} href={downloadHref(path, name)} download={name || true} aria-label={`Download ${label}`}>
+      <FaDownload className="ic" />Download
+    </a>
+  </span>
+) : null);
 
 const extOf  = (name) => String(name || '').split('?')[0].split('.').pop().toLowerCase();
 const nameOf = (f) => f.file_name || decodeURIComponent(String(f.file_path || '').split('?')[0].split('/').pop() || 'Document');
@@ -62,10 +93,7 @@ export const ProposalFiles = ({ proposal, files, title = 'Documents', compact = 
                 <b>{f.kind === 'main' ? mainLabel : f.label}</b>
                 <small>{nameOf(f)}{sizeText(f.file_size) ? ` · ${sizeText(f.file_size)}` : ''}</small>
               </div>
-              <a className="btn btn-outline btn-sm" href={fileHref(f.file_path)} target="_blank" rel="noreferrer"
-                aria-label={`View ${f.kind === 'main' ? mainLabel : f.label}`}>
-                View <FaArrowUpRightFromSquare className="ic-r" />
-              </a>
+              <FileButtons path={f.file_path} name={f.file_name} label={f.kind === 'main' ? mainLabel : f.label} />
             </li>
           ))}
         </ul>

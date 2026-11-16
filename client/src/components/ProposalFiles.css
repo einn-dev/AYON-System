@@ -66,3 +66,13 @@
   background: #faf7f7; border: 1px solid #efe5e6; border-left: 3px solid #8d1b2d; border-radius: 8px;
   overflow-wrap: anywhere;
 }
+
+/* View and Download, side by side (they wrap under the name on a narrow screen) */
+.pf-btns { display: inline-flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+.pf-btns .btn { text-decoration: none; white-space: nowrap; }
+@media (max-width: 560px) {
+  .pf-list li { flex-wrap: wrap; }
+  .pf-list li .pf-text { flex: 1 1 60%; min-width: 0; }
+  .pf-list li .pf-btns { width: 100%; }
+  .pf-list li .pf-btns .btn { flex: 1; justify-content: center; text-align: center; }
+}

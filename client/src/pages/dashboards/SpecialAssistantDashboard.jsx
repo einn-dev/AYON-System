@@ -12,13 +12,12 @@ import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, 
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
-import { ProposalFiles } from '../../components/ProposalFiles';
+import { ProposalFiles, fileHref } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { stepOf, stepProblem } from '../../utils/grantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 

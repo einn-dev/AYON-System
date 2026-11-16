@@ -7,7 +7,7 @@ import { ROLE_LABEL, STATUS_LABEL, statusBadge, typeLabel } from '../utils/terms
 import { helpIndex } from '../data/helpContent';
 import ProposalTracker from './ProposalTracker';
 import { ProposalSignatures } from './Signature';
-import { ProposalFiles } from './ProposalFiles';
+import { ProposalFiles, FileButtons } from './ProposalFiles';
 import {
   FaMagnifyingGlass, FaCircleQuestion, FaXmark, FaFileLines, FaBoxArchive,
   FaUser, FaArrowRight, FaBookOpen, FaBars,
@@ -21,7 +21,6 @@ import NotificationBell from './NotificationBell';
    ───────────────────────────────────────────────────────────── */
 
 const MIN = 2;
-const fileHref = (fp) => (/^https?:\/\//i.test(fp) ? fp : `http://localhost:5000/${fp}`);
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
 
 /* Where a role acts on a proposal, by status (the page opens with ?open=<id>) */
@@ -132,9 +131,7 @@ const Summary = ({ item, role, base, onClose }) => {
               <div><span>Year Stored</span><b>{d.year || '—'}</b></div>
             </div>
             {d.file_path && (
-              <a className="btn btn-outline btn-sm" href={fileHref(d.file_path)} target="_blank" rel="noreferrer">
-                <FaFileLines className="ic" />Open the File
-              </a>
+              <FileButtons path={d.file_path} label="the file" />
             )}
           </>
         )}
