@@ -448,6 +448,9 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                 { label: 'Status',      value: statusLabel(selected.status) },
                 { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
+                ...(['approved', 'rejected'].includes(selected.status) && selected.decided_at
+                  ? [{ label: 'Decided On', value: new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }]
+                  : []),
                 ...(Number(selected.revision_count) > 0
                   ? [{ label: 'Revisions Sent', value: String(selected.revision_count) }]
                   : []),
@@ -458,6 +461,17 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                 </div>
               ))}
             </div>
+            {selected.status === 'rejected' && (
+              <div className="rs-returned">
+                <strong>
+                  Rejected{selected.decided_by_role ? ` by the ${ROLE_LABEL[selected.decided_by_role] || 'office'}` : ''}
+                </strong>
+                {selected.decided_at && (
+                  <small>{new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</small>
+                )}
+                <p>{selected.decision_reason || 'No written reason was saved. Please check your Notifications, or contact MSIRC.'}</p>
+              </div>
+            )}
             {selected.status === 'returned' && (
               <div className="rs-returned">
                 <strong>

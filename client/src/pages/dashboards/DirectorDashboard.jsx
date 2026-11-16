@@ -145,8 +145,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   };
 
   const handleDecision = async (proposalId, decision) => {
-    if (!remarks.trim() && decision === 'rejected') {
-      return setAlert({ type: 'error', msg: 'Please provide remarks before rejecting.' });
+    if (decision === 'rejected' && remarks.trim().length < 10) {
+      return setAlert({ type: 'error', msg: 'Please write why it is rejected (at least 10 characters). The researcher will see it.' });
     }
     const signs = decision === 'approved' || decision === 'endorsed';   // rejecting never signs
     if (signs) {
@@ -158,7 +158,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
     }
     setSaving(true);
     try {
-      await API.patch(`/proposals/${proposalId}/status`, signs ? { status: decision, attest: true, ...(formOf(selected) ? { form_check: formCheck } : {}) } : { status: decision });
+      await API.patch(`/proposals/${proposalId}/status`, signs ? { status: decision, attest: true, ...(formOf(selected) ? { form_check: formCheck } : {}) }
+        : { status: decision, ...(decision === 'rejected' ? { reason: remarks.trim() } : {}) });
 
       if (decision === 'approved' || decision === 'endorsed') {
         /* the review record only knows approve / reject / return: endorsing to OVCRED is an approval */
@@ -341,11 +342,15 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     <FormChecklist proposal={selected} role="msric_director" value={formCheck} disabled={saving}
                       onChange={(v) => { setFormCheck(v); setAlert(null); }} />
                     <div className="form-group">
-                      <label>Remarks</label>
-                      <textarea rows={5} value={remarks}
+                      <label>Remarks / Reason for Rejecting</label>
+                      <textarea rows={5} value={remarks} maxLength={500}
                         onChange={e => setRemarks(e.target.value)}
-                        placeholder={`Add your remarks about this ${wordFor(selected).p}...`}
+                        placeholder={`Add your remarks about this ${wordFor(selected).p}. To reject, tell the researcher why.`}
                         style={{ resize: 'vertical' }} />
+                      <p className="field-hint" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#718096', margin: '4px 0 0' }}>
+                        <span>Required to reject, at least 10 characters. If you reject, the researcher sees this as the reason.</span>
+                        <span>{remarks.trim().length}/500</span>
+                      </p>
                     </div>
 
                     <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="approve" disabled={saving} />

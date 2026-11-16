@@ -1235,6 +1235,19 @@ const moveProposal = async (req, res) => {
       return res.status(409).json({ message: 'This proposal was just changed by someone else. Please reload and try again.' });
     }
 
+    /* a final decision records when, by whom and why; reopening clears it */
+    if (DECIDED_STATUSES.includes(status) || reopening) {
+      const decided = DECIDED_STATUSES.includes(status);
+      const { error: dErr } = await withOptionalColumns(
+        (payload) => supabase.from('research_proposals').update(payload).eq('proposal_id', proposal.proposal_id),
+        { updated_at: nowIso },
+        decided
+          ? { decided_at: nowIso, decided_by: req.user.user_id, decision_reason: status === 'rejected' ? why : null }
+          : { decided_at: null, decided_by: null, decision_reason: null },
+      );
+      if (dErr) console.error('moveProposal decision details not saved:', dErr.message || dErr);
+    }
+
     /* tell the researcher (a failed notification never undoes the move) */
     const { error: nErr } = await supabase.from('notifications').insert({
       user_id:     proposal.user_id,

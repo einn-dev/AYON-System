@@ -143,8 +143,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
   };
 
   const handleDecision = async (decision) => {
-    if (decision === 'rejected' && !remarks.trim()) {
-      return setAlert({ type: 'error', msg: 'Please provide remarks before rejecting.' });
+    if (decision === 'rejected' && remarks.trim().length < 10) {
+      return setAlert({ type: 'error', msg: 'Please write why it is rejected (at least 10 characters). The researcher will see it.' });
     }
     if (decision === 'approve' && !signReady) {
       return setAlert({ type: 'error', msg: 'Please tick the box to confirm your signature first.' });
@@ -154,7 +154,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
       const newStatus = decision === 'approve' ? 'approved' : 'rejected';
       /* final approval signs; rejecting never signs */
       await API.patch(`/proposals/${selected.proposal_id}/status`,
-        decision === 'approve' ? { status: newStatus, attest: true } : { status: newStatus });
+        decision === 'approve' ? { status: newStatus, attest: true } : { status: newStatus, reason: remarks.trim() });
 
       await API.post(`/proposals/${selected.proposal_id}/review`, {
         decision: decision === 'approve' ? 'approve' : 'reject',
@@ -331,11 +331,15 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <div className="panel-header"><h2>OVCRED Decision</h2></div>
                 <div className="panel-body">
                   <div className="form-group">
-                    <label>Remarks</label>
-                    <textarea rows={4} value={remarks}
+                    <label>Remarks / Reason for Rejecting</label>
+                    <textarea rows={4} value={remarks} maxLength={500}
                       onChange={e => setRemarks(e.target.value)}
-                      placeholder="Add your remarks..."
+                      placeholder="Add your remarks. To reject, tell the researcher why."
                       style={{ resize: 'vertical' }} />
+                    <p className="field-hint" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#718096', margin: '4px 0 0' }}>
+                      <span>Required to reject, at least 10 characters. If you reject, the researcher sees this as the reason.</span>
+                      <span>{remarks.trim().length}/500</span>
+                    </p>
                   </div>
 
                   {/* Store to repository toggle */}

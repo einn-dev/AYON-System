@@ -105,6 +105,7 @@ const roundOf = (proposal) => (Number(proposal?.revision_count) || 0) + 1;
 /* Adds to each proposal (best effort, never throws):
      endorsements     : [{ endorser_role, endorse_status, remarks, date, round, endorser_name }]
      returned_by_role : role of the person who returned it (when returned)
+     decided_by_role  : role of the person who approved or rejected it
      round            : current round                                          */
 const attachTrail = async (proposals) => {
   const list = proposals || [];
@@ -121,7 +122,7 @@ const attachTrail = async (proposals) => {
     if (error) throw error;
 
     const people = new Set((rows || []).map(r => r.endorser_id));
-    list.forEach(p => { if (p.returned_by) people.add(p.returned_by); });
+    list.forEach(p => { if (p.returned_by) people.add(p.returned_by); if (p.decided_by) people.add(p.decided_by); });
 
     let names = {};
     let roles = {};
@@ -151,6 +152,7 @@ const attachTrail = async (proposals) => {
     list.forEach(p => {
       p.endorsements = byProposal[p.proposal_id] || [];
       if (p.returned_by) p.returned_by_role = roles[p.returned_by] || null;
+      if (p.decided_by) p.decided_by_role = roles[p.decided_by] || null;
     });
   } catch (err) {
     console.error('attachTrail failed:', err.message || err);

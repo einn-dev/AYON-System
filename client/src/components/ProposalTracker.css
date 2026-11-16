@@ -68,3 +68,7 @@
   .pt-step { min-width: 64px; font-size: 0.64rem; }
   .pt-legend { display: none; }
 }
+
+/* a rejection, with its reason (same box as a return, in red) */
+.pt-reject-box { background: #fdf0f0; border-color: #f1c6c6; border-left-color: #c53030; }
+.pt-reject-box b { color: #9b2c2c; }

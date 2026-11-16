@@ -130,8 +130,8 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
 
       if (error) throw error;
 
-      /* a return already told the researcher (with the reason) when the status changed */
-      if (decision !== 'return') {
+      /* a return or a rejection already told the researcher (with the reason) when the status changed */
+      if (decision === 'approve') {
         const done = { approve: 'approved', reject: 'rejected' }[decision];
         const who  = req.user.role === 'ovcred' ? 'OVCRED' : req.user.role === 'admin' ? 'the Administrator' : 'the MSIRC Director';
         await supabase.from('notifications').insert({

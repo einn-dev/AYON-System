@@ -544,6 +544,19 @@ const updateProposalStatus = async (req, res) => {
     return res.status(400).json({ message: 'Invalid status.' });
   }
 
+  /* a rejection needs a reason too: the researcher sees it */
+  if (status === 'rejected') {
+    if (reason.length < REASON_MIN) {
+      return res.status(400).json({
+        message: `Please tell the researcher why it is rejected (at least ${REASON_MIN} characters).`,
+        code: 'REASON_REQUIRED',
+      });
+    }
+    if (reason.length > REASON_MAX) {
+      return res.status(400).json({ message: `The reason must be ${REASON_MAX} characters or fewer.` });
+    }
+  }
+
   if (status === 'returned') {
     if (reason.length < REASON_MIN) {
       return res.status(400).json({
@@ -645,6 +658,16 @@ const updateProposalStatus = async (req, res) => {
       return res.status(409).json({ message: 'This proposal was just handled. Please reload the page.', code: 'ALREADY_HANDLED' });
     }
 
+    /* a final decision: when, by whom and (for a rejection) why */
+    if (['approved', 'rejected'].includes(status)) {
+      const { error: dErr } = await withOptionalColumns(
+        (payload) => supabase.from('research_proposals').update(payload).eq('proposal_id', id),
+        { updated_at: new Date().toISOString() },
+        { decided_at: new Date().toISOString(), decided_by: req.user.user_id, decision_reason: status === 'rejected' ? reason : null },
+      );
+      if (dErr) console.error('decision details not saved:', dErr.message || dErr);
+    }
+
     if (signAs) {
       await saveStep(proposal, req.user.role, req.user, formStep.value);
       const round = roundOf(proposal);
@@ -658,8 +681,10 @@ const updateProposalStatus = async (req, res) => {
       user_id:     proposal.user_id,
       proposal_id: parseInt(id),
       notif_type:  'review',
-      title:       `${wordFor(proposal).P} Status Updated`,
-      message:     `The status of your ${wordFor(proposal).p} "${proposal.title}" is now: ${statusLabel(status)}.`,
+      title:       status === 'rejected' ? `${wordFor(proposal).P} Rejected` : `${wordFor(proposal).P} Status Updated`,
+      message:     status === 'rejected'
+        ? `Your ${wordFor(proposal).p} "${proposal.title}" was rejected by the ${ROLE_LABEL[req.user.role] || 'office'}. Reason: ${reason}`
+        : `The status of your ${wordFor(proposal).p} "${proposal.title}" is now: ${statusLabel(status)}.`,
     });
 
     /* tell the office that now has it on its desk (only when the stage really changed) */
@@ -691,7 +716,7 @@ const updateProposalStatus = async (req, res) => {
         title:       `${wordFor(proposal).P} ${status === 'approved' ? 'approved' : 'rejected'}`,
         message:     status === 'approved'
           ? `"${proposal.title}" by ${nameAndCollege(owner)} was ${req.user.role === 'ovcred' ? 'given final approval by OVCRED' : `approved by the ${decidedBy}`}.`
-          : `"${proposal.title}" by ${nameAndCollege(owner)} was rejected by the ${decidedBy}.`,
+          : `"${proposal.title}" by ${nameAndCollege(owner)} was rejected by the ${decidedBy}. Reason: ${reason}`,
       });
     }
 

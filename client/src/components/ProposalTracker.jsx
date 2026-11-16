@@ -138,6 +138,14 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
         </div>
       )}
 
+      {showReturn && proposal.status === 'rejected' && (
+        <div className="pt-return pt-reject-box">
+          <b>Rejected{proposal.decided_by_role ? ` by the ${ROLE_LABEL[proposal.decided_by_role] || 'office'}` : ''}</b>
+          {proposal.decided_at && <small> · {fmt(proposal.decided_at)}</small>}
+          <p>{proposal.decision_reason || 'No written reason was saved for this rejection.'}</p>
+        </div>
+      )}
+
       {showHistory && history.length > 0 && (
         <div className="pt-history">
           <h4>Endorsement History</h4>
