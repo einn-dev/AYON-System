@@ -64,7 +64,8 @@ export const TYPE_LABEL = {
 };
 
 /* The Researcher's two pages: My Research, and Grants and Incentives */
-export const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded', 'externally_funded'];
+/* externally funded research is not submitted here: it goes to External Research (Repository only) */
+export const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded'];
 export const GRANT_TYPES     = ['travel_subsidy', 'oral_presentation', 'publication_incentive'];
 /* these need an approved Research Spotlight first */
 export const NEEDS_SPOTLIGHT = ['travel_subsidy', 'oral_presentation'];
@@ -74,9 +75,11 @@ export const isGrantType = (t) => GRANT_TYPES.includes(t) || t === 'travel_oral'
 export const wordFor = (p) => (isGrantType(p && p.proposal_type)
   ? { p: 'application', P: 'Application' } : { p: 'proposal', P: 'Proposal' });
 
-/* the types to offer in filters (the old combined type only while records still use it) */
+/* the types to offer in filters (older types only while records still use them:
+   the combined Travel Subsidy / Oral Presentation, and Externally Funded, which moved to External Research) */
+const OLD_TYPES = ['travel_oral', 'externally_funded'];
 export const typeChoices = (records = []) => Object.entries(TYPE_LABEL)
-  .filter(([k]) => k !== 'travel_oral' || records.some((r) => r.proposal_type === k));
+  .filter(([k]) => !OLD_TYPES.includes(k) || records.some((r) => r.proposal_type === k));
 export const typeLabel = (t) => TYPE_LABEL[t] || String(t || '').replace(/_/g, ' ');
 
 /* grant application statuses */

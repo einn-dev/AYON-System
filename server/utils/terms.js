@@ -38,7 +38,8 @@ const TYPE_LABEL = {
 };
 
 /* My Research and Grants and Incentives (the Researcher's two pages) */
-const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded', 'externally_funded'];
+/* externally funded research is not submitted here: it goes to External Research (Repository only) */
+const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded'];
 const GRANT_TYPES     = ['travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const SUBMIT_TYPES    = [...RESEARCH_TYPES, ...GRANT_TYPES];
 

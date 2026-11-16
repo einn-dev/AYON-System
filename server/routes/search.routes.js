@@ -108,12 +108,29 @@ router.get('/', verifyToken, async (req, res) => {
     let repository = [];
     if (!idMatch) {
       let rq = supabase.from('repository')
-        .select('repo_id, title, author, college, keywords, access_type, store_date, file_path')
+        .select('repo_id, title, author, college, keywords, access_type, source_type, external_id, store_date, file_path')
         .order('store_date', { ascending: false }).limit(SCAN);
-      if (!ALL_REPO.includes(role)) rq = rq.eq('access_type', 'public');
       const { data, error } = await rq;
       if (error) throw error;
-      repository = (data || []).filter(r => has(r.title, r.author, r.keywords, r.college)).slice(0, LIMIT)
+
+      /* private items: the offices see all; a college endorser sees its college's
+         externally funded research; a researcher sees their own; no one else */
+      let canSee = () => true;
+      if (!ALL_REPO.includes(role)) {
+        let myCollege = null;
+        let myExternal = new Set();
+        if (['chairperson', 'research_coordinator', 'college_dean'].includes(role)) {
+          const { data: me } = await supabase.from('users').select('college').eq('user_id', req.user.user_id).maybeSingle();
+          myCollege = clean(me?.college) || null;
+        } else if (role === 'researcher') {
+          const { data: mine } = await supabase.from('externally_funded').select('external_id').eq('user_id', req.user.user_id);
+          myExternal = new Set((mine || []).map(e => e.external_id));
+        }
+        canSee = (r) => r.access_type === 'public'
+          || (r.source_type === 'external' && myCollege && clean(r.college) === myCollege)
+          || (r.source_type === 'external' && myExternal.has(r.external_id));
+      }
+      repository = (data || []).filter(canSee).filter(r => has(r.title, r.author, r.keywords, r.college)).slice(0, LIMIT)
         .map(r => ({
           repo_id: r.repo_id, title: r.title, author: r.author || null, college: r.college || null,
           access_type: r.access_type, file_path: r.file_path || null, year: r.store_date ? new Date(r.store_date).getFullYear() : null,

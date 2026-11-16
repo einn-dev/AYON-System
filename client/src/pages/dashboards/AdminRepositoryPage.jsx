@@ -86,10 +86,14 @@ const ItemModal = ({ item, onSaved, onClose }) => {
             </div>
             <div className="form-group">
               <label htmlFor="rp-acc">Access</label>
-              <select id="rp-acc" value={access} onChange={(e) => setAccess(e.target.value)} disabled={saving}>
+              <select id="rp-acc" value={access} onChange={(e) => setAccess(e.target.value)}
+                disabled={saving || item.source_type === 'external'}>
                 <option value="public">Public</option>
                 <option value="private">Private</option>
               </select>
+              {item.source_type === 'external' && (
+                <small style={{ color: '#718096' }}>Externally funded research always stays private: only the researcher, their college and the MSIRC offices can see it.</small>
+              )}
             </div>
           </div>
         </div>
@@ -298,9 +302,11 @@ const AdminRepositoryPage = () => {
                   <td>
                     <div className="am-actions">
                       <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelected(i)}>View Details</button>
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => askToggle(i)}>
-                        Make {i.access_type === 'public' ? 'Private' : 'Public'}
-                      </button>
+                      {i.source_type !== 'external' && (
+                        <button type="button" className="btn btn-outline btn-sm" onClick={() => askToggle(i)}>
+                          Make {i.access_type === 'public' ? 'Private' : 'Public'}
+                        </button>
+                      )}
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => askRemove(i)}>Remove</button>
                     </div>
                   </td>

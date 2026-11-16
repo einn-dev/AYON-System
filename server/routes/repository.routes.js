@@ -109,9 +109,14 @@ router.patch('/:id', verifyToken, authorizeRoles('ovcred', 'admin'),
     try {
       const { data: before } = await supabase
         .from('repository')
-        .select('title, access_type')
+        .select('title, access_type, source_type')
         .eq('repo_id', req.params.id)
         .maybeSingle();
+
+      /* externally funded research is always private (only its college and the offices see it) */
+      if (before?.source_type === 'external' && access_type !== 'private') {
+        return res.status(400).json({ message: 'Externally funded research always stays private.', code: 'EXTERNAL_PRIVATE' });
+      }
 
       const { error } = await supabase
         .from('repository')

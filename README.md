@@ -194,6 +194,7 @@ In Supabase, open **SQL Editor** and run these files **in this order**:
 14. `add_grant_types.sql` (Travel Subsidy and Oral Presentation as two types, and the Research Spotlight link)
 15. `add_grant_forms.sql` (the MSIRC forms and each office's checklist)
 16. `add_decision_details.sql` (decision date and rejection reason, faster lookups, one role per account)
+17. `update_external_research.sql` (External Research: researchers and keywords, always private; moves old Externally Funded records out of My Research)
 
 Each file is safe to run more than once. For a demo, `demo_data.sql` can be run after these; keep it out of a public repository, because it holds the shared demo password.
 

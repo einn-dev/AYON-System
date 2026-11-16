@@ -67,6 +67,15 @@ const COLLEGE = [
       'Each row shows what you did, your remarks, the round, and where the proposal is now.',
     ],
   },
+  {
+    id: 'external-college',
+    title: 'See your college\'s externally funded research',
+    steps: [
+      'Open **External Research** in the sidebar. It lists the externally funded research uploaded by researchers of your college, with their department.',
+      'Use the search box or the department filter, then click **View** for the details and the document.',
+      'These need no endorsement. They are private in the Research Repository: only the researcher, their college and the MSIRC offices can see them.',
+    ],
+  },
   PROFILE,
 ];
 
@@ -76,11 +85,10 @@ export const GUIDES = {
       id: 'submit',
       title: 'Submit research',
       steps: [
-        'Go to **My Research** and click **Submit Research**. My Research is for **Research Spotlight**, **Internally Funded Research** and **Externally Funded Research**.',
+        'Go to **My Research** and click **Submit Research**. My Research is for **Research Spotlight** and **Internally Funded Research**. Externally funded research goes on **External Research** instead (see below).',
         'Choose the type, then click **Next**.',
         '**Research Spotlight:** read the guidelines at the top, then fill in the abstract (300 words at most), keywords, research cluster, Oral or Poster, the authors and the presenting author. The title can have at most 15 words.',
         '**Internally Funded Research:** fill in Form 005 section by section: proponents, executive summary (300 words at most), introduction, objectives, significance, expected output, R&D priority area, literature, methodology, references, the 5-month work plan, the budget and duties. The budget adds up by itself and cannot be over ₱50,000.00.',
-        '**Externally Funded Research:** type the title and the abstract.',
         'Attach the documents. Each type lists what it needs; those marked * are required. PDF, DOC or DOCX, up to 10 MB each.',
         'Check the summary and click **Submit Research**. It goes first to your **Department Chairperson**.',
       ],
@@ -145,9 +153,10 @@ export const GUIDES = {
       id: 'external',
       title: 'Record externally funded research',
       steps: [
-        'Go to **External Research**.',
-        'Fill in the title, funding agency, amount, dates and abstract, and attach the document.',
-        'Click **Upload and Archive**. It appears under **My External Research**.',
+        'Go to **External Research**. It is for finished research funded outside MSU, and it does not go through the offices.',
+        'Fill in every field marked *: title, funding agency, researchers or co-authors, abstract (300 words at most), amount and dates. Keywords are optional. Attach the document (PDF or Word, up to 10 MB).',
+        'Click **Upload and Store to Repository**. It is stored in the Research Repository right away and appears under **My External Research**.',
+        'It is always **private**: only you, your college (Chairperson, Research Coordinator, Dean) and the MSIRC offices can see it. Other researchers cannot see or search it.',
       ],
     },
     PROFILE,

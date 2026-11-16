@@ -36,7 +36,8 @@ const NAV_ITEMS = [
 const PROPOSAL_TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }));
 
 /* The two pages that share the same list and the same 3-step form.
-   My Research: Research Spotlight, Internally Funded, Externally Funded.
+   My Research: Research Spotlight, Internally Funded.
+   (Externally funded research is uploaded on External Research: Repository only, no office chain.)
    Grants and Incentives: Travel Subsidy, Oral Presentation, Publication Incentive. */
 const TYPE_NOTE = {
   research_spotlight:    'Present your research at the MSU Main Campus Research Spotlight. Needed before a travel grant or presentation incentive.',
@@ -49,7 +50,7 @@ const TYPE_NOTE = {
 const KINDS = {
   research: {
     base: '/researcher/proposals', page: 'My Research', types: RESEARCH_TYPES,
-    sub: 'Research Spotlight, Internally Funded and Externally Funded research. Track their status and finish your drafts.',
+    sub: 'Research Spotlight and Internally Funded research. Track their status and finish your drafts.',
     submit: 'Submit Research', one: 'research', search: 'Search research...', typeHead: 'Research Type',
     formSub: 'Fill in the form below to submit your research to MSIRC. You can save it as a draft at any step and finish it later.',
     pick: 'Select the type of research you want to submit:', steps: ['Research Type', 'Details', 'Documents and Submit'],
@@ -793,6 +794,12 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                     );
                   })}
                 </div>
+                {K === KINDS.research && (
+                  <p style={{ fontSize: '0.82rem', color: '#4a5568', margin: '10px 0 0' }}>
+                    Externally funded research? Upload it on the <Link to="/researcher/external">External Research</Link> page.
+                    It goes straight to the Research Repository as private, with no office endorsement.
+                  </p>
+                )}
                 {formChoices.length > 1 && (
                   <fieldset className="spot-list" id="sp-form">
                     <legend>Which one applies?</legend>

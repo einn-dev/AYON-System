@@ -5,7 +5,8 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge } from 'react-icons/fa6';
+import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
+import { CollegeExternalPage } from './ExternalShared';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { path: '/chairperson/dashboard',       label: 'Dashboard',        icon: <FaTableCellsLarge /> },
   { path: '/chairperson/for-endorsement', label: 'For Endorsement',  icon: <FaClipboardList /> },
   { path: '/chairperson/endorsed',        label: 'Endorsed Proposals', icon: <FaCircleCheck /> },
+  { path: '/chairperson/external',       label: 'External Research', icon: <FaGlobe /> },
   { path: '/chairperson/notifications',   label: 'Notifications',     icon: <FaBell /> },
 ];
 
@@ -106,6 +108,7 @@ const ChairpersonDashboard = () => {
           </>
         } />
         <Route path="endorsed"      element={<EndorsedHistory />} />
+        <Route path="external"      element={<CollegeExternalPage />} />
         <Route path="notifications" element={<Notifications />} />
       </Routes>
     </Layout>

@@ -172,6 +172,11 @@ const updateRepositoryItem = async (req, res) => {
     if (error) throw error;
     if (!before) return res.status(404).json({ message: 'Repository item not found.' });
 
+    /* externally funded research is always private (only its college and the offices see it) */
+    if (before.source_type === 'external' && next.access_type && next.access_type !== 'private') {
+      return res.status(400).json({ message: 'Externally funded research always stays private.', code: 'EXTERNAL_PRIVATE' });
+    }
+
     /* only what really changed */
     const changed = {};
     Object.keys(next).forEach((k) => {
