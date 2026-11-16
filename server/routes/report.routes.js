@@ -20,7 +20,10 @@ const STATUSES = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'r
 const TYPES    = ['research_spotlight', 'internally_funded', 'externally_funded', 'travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const PERIODS  = ['all', 'year', '90', '30', 'custom'];
 
-const { STATUS_LABEL, TYPE_LABEL } = require('../utils/terms');
+const { STATUS_LABEL, TYPE_LABEL, GRANT_TYPES } = require('../utils/terms');
+const { attachFormChecks } = require('../utils/formChecks');
+const { GRANT_FORMS, awardOf } = require('../utils/grantForms');
+const isGrantType = (t) => GRANT_TYPES.includes(t) || t === 'travel_oral';   // the old combined type too
 const PERIOD_LABEL = { all: 'All Time', year: 'This Year', 90: 'Last 90 Days', 30: 'Last 30 Days' };
 const STAGE_LABEL = {        // in endorsement order
   chairperson: 'Chairperson', research_coordinator: 'Research Coordinator', college_dean: 'College Dean',
@@ -229,7 +232,6 @@ const csvCell = (v) => {
 };
 const toCsv = (header, rows) => '﻿' + [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 const cap = (v) => (v ? String(v).charAt(0).toUpperCase() + String(v).slice(1) : '');
-const grantStatus = cap;
 const day = (v) => (v ? new Date(v).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }) : '');
 
 /* ── report contents ── */
@@ -253,21 +255,27 @@ const proposalRows = (list) => list
     submitted:  day(p.when),
   }));
 
-const loadGrants = async (f) => {
-  const rows = await fetchAll('grant_applications',
-    'grant_id, grant_type, status, date_applied, research_proposals ( title, users ( first_name, middle_name, last_name, college ) )', 'grant_id');
-  return rows
-    .map(g => ({
-      proposal:   g.research_proposals?.title || '—',
-      researcher: fullName(g.research_proposals?.users) || '—',
-      college:    g.research_proposals?.users?.college || '',
-      type:       TYPE_LABEL[g.grant_type] || String(g.grant_type || '').replace(/_/g, ' '),
-      status:     String(g.status || ''),
-      applied:    g.date_applied,
-    }))
-    .filter(g => inPeriod(f, g.applied) && (!f.college || g.college === f.college))
-    .sort((a, b) => String(b.applied || '').localeCompare(String(a.applied || '')));
+/* Grants and Incentives: the applications on their MSIRC forms
+   (Travel Subsidy, Oral Presentation, Publication Incentive). */
+const loadGrants = async (req, f) => {
+  const list = filterProposals((await loadProposals(req)).filter(p => isGrantType(p.proposal_type)), f);
+  await attachFormChecks(list);
+  const current = list.map(p => {
+    const form  = GRANT_FORMS[p.form_no];
+    const award = awardOf(p);
+    return {
+      proposal:   p.title,
+      researcher: p.researcher,
+      college:    p.college,
+      type:       `${TYPE_LABEL[p.proposal_type] || p.proposal_type}${form ? ` (Form ${form.no})` : ''}`,
+      status:     STATUS_LABEL[p.status] || p.status,
+      amount:     award.amount,
+      applied:    p.when,
+    };
+  });
+  return current.sort((a, b) => String(b.applied || '').localeCompare(String(a.applied || '')));
 };
+const peso = (n) => (n === null || n === undefined ? '—' : `PHP ${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 
 const loadRepository = async (f) => {
   const rows = await fetchAll('repository', 'repo_id, title, author, college, department, access_type, source_type, store_date', 'repo_id');
@@ -302,7 +310,7 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
   }
 
   const f = readFilters(req.query);
-  const words = filterWords(f, { withStatus: type === 'proposals' || type === 'summary' });
+  const words = filterWords(f, { withStatus: type !== 'repository' });
   const who = fullName(req.user) || null;
 
   try {
@@ -310,7 +318,7 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
     let rows = [];
     let summary = null;
     if (type === 'proposals')  rows = proposalRows(filterProposals(await loadProposals(req), f));
-    if (type === 'grants')     rows = await loadGrants(f);
+    if (type === 'grants')     rows = await loadGrants(req, f);
     if (type === 'repository') rows = await loadRepository(f);
     if (type === 'summary')    summary = buildSummary(await loadProposals(req), f);
 
@@ -323,8 +331,8 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
         csv = toCsv(['Research Title', 'Researcher', 'College', 'Proposal Type', 'Status', 'Waiting On', 'Date Submitted'],
           rows.map(r => [r.title, r.researcher, r.college, r.type, r.status, r.waiting, r.submitted]));
       } else if (type === 'grants') {
-        csv = toCsv(['Research Title', 'Researcher', 'College', 'Grant Type', 'Status', 'Date Applied'],
-          rows.map(g => [g.proposal, g.researcher, g.college || '', g.type, grantStatus(g.status), day(g.applied)]));
+        csv = toCsv(['Title', 'Researcher', 'College', 'Type and Form', 'Status', 'Incentive Amount', 'Date Submitted'],
+          rows.map(g => [g.proposal, g.researcher, g.college || '', g.type, g.status, g.amount === null ? '' : g.amount.toFixed(2), day(g.applied)]));
       } else {
         csv = toCsv(['Research Title', 'Author', 'College', 'Department', 'Access', 'Source', 'Date Stored'],
           rows.map(r => [r.title, r.author || '', r.college || '', r.department || '', cap(r.access_type), r.source_type === 'external' ? 'Externally Funded Research' : 'Proposal', day(r.store_date)]));
@@ -347,11 +355,12 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
         drawTotal(doc, `Total Proposals: ${rows.length}`);
       }
       if (type === 'grants') {
-        const widths = [140, 85, 75, 85, 50, 60];
-        drawRow(doc, ['Research Title', 'Researcher', 'College', 'Grant Type', 'Status', 'Date Applied'], widths, true);
-        rows.forEach(g => drawRow(doc, [g.proposal, g.researcher, g.college || '—', g.type, grantStatus(g.status), day(g.applied)], widths));
-        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No grant applications match these filters.', 50);
-        drawTotal(doc, `Total Applications: ${rows.length}`);
+        const widths = [115, 75, 55, 85, 65, 55, 50];
+        drawRow(doc, ['Title', 'Researcher', 'College', 'Type and Form', 'Status', 'Amount', 'Submitted'], widths, true);
+        rows.forEach(g => drawRow(doc, [g.proposal, g.researcher, g.college || '—', g.type, g.status, peso(g.amount), day(g.applied)], widths));
+        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No grant or incentive applications match these filters.', 50);
+        const total = rows.reduce((a, g) => a + (g.amount || 0), 0);
+        drawTotal(doc, `Total Applications: ${rows.length}${total ? `   ·   Total incentive amount entered: ${peso(total)}` : ''}`);
       }
       if (type === 'repository') {
         const widths = [170, 100, 90, 55, 80];

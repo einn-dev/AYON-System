@@ -1,225 +1,92 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import './AdminCatalog.css';
-import { errText, Pager, ROLE_LABELS, fmtWhen } from './adminShared';
-import { ConfirmBox, cap, fmtDate } from './AdminCatalogShared';
-import { personName } from '../../utils/names';
+import { errText, Pager } from './adminShared';
+import { fmtDate } from './AdminCatalogShared';
+import { STATUS_LABEL, STATUS_ORDER, statusBadge, TYPE_LABEL, GRANT_TYPES as APP_TYPES } from '../../utils/terms';
+import { GRANT_FORMS, FORMS_OF_TYPE, awardOf } from '../../utils/grantForms';
+import { whereNow } from '../../components/ProposalTracker';
 
 const PAGE_SIZE = 25;
-
-const GRANT_TYPES = {
-  research_spotlight:    'Research Spotlight',
-  internally_funded:     'Internally Funded Research',
-  publication_incentive: 'Publication Incentive',
-  travel_oral:           'Travel Subsidy / Oral Presentation',
-};
-
-const STATUS_BADGE = { pending: 'badge-amber', approved: 'badge-green', rejected: 'badge-red' };
 
 const money = (v) => (v === null || v === undefined || v === ''
   ? '—'
   : `₱${Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 
-/* What the researcher filled in, as label / value pairs, for each kind of grant */
-const detailRows = (type, d) => {
-  if (!d) return [];
-  const t = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
-  switch (type) {
-    case 'internally_funded':
-      return [['Funding amount', money(d.funding_amount)], ['Funding source', t(d.funding_source)],
-              ['Start date', fmtDate(d.start_date)], ['End date', fmtDate(d.end_date)]];
-    case 'publication_incentive':
-      return [['Journal', t(d.journal_name)], ['Volume / issue', t(d.volume_issue)],
-              ['Publication date', fmtDate(d.publication_date)], ['Index', t(d.index_type)]];
-    case 'travel_oral':
-      return [['Event', t(d.event_name)], ['Location', t(d.location)],
-              ['Event date', fmtDate(d.event_date)], ['Conference type', cap(t(d.conference_type))]];
-    case 'research_spotlight':
-      return [['Spotlight title', t(d.spotlight_title)], ['Description', t(d.spotlight_description)],
-              ['Spotlight date', fmtDate(d.spotlight_date)]];
-    default:
-      return [];
-  }
-};
+/* ─────────── Applications on the MSIRC forms (the current system) ───────────
+   They are submissions, so they come from the same list as All Proposals;
+   "Open" shows the full details, tracker and Admin tools there. */
+const isApp = (p) => APP_TYPES.includes(p.proposal_type) || p.proposal_type === 'travel_oral';
+const DONE  = ['approved', 'rejected'];
+const yearOf = (d) => (d ? new Date(d).getFullYear() : null);
 
-const historyLine = (h) => {
-  const who  = [h.actor_name, h.actor_role && `(${ROLE_LABELS[h.actor_role] || h.actor_role})`].filter(Boolean).join(' ') || 'Someone';
-  const d    = h.details || {};
-  const what = d.to === 'pending' ? 'reopened it' : (d.to ? `${d.to} it` : 'changed it');
-  return `${fmtWhen(h.created_at)}: ${who} ${what}${d.reason ? `. Reason: ${d.reason}` : ''}`;
-};
-
-/* ─────────── Details pop-up ─────────── */
-const GrantModal = ({ grantId, onDecide, onClose }) => {
-  const [data,  setData]  = useState(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let alive = true;
-    API.get(`/admin/grants/${grantId}`)
-      .then(res => { if (alive) setData(res.data); })
-      .catch(err => { if (alive) setError(errText(err, 'Could not load this application.')); });
-    return () => { alive = false; };
-  }, [grantId]);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const g    = data?.grant;
-  const rows = g ? detailRows(g.grant_type, data.details) : [];
-
-  return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal ac-wide" role="dialog" aria-modal="true" aria-label="Grant application"
-        onClick={(e) => e.stopPropagation()}>
-        <h3>{g ? GRANT_TYPES[g.grant_type] || g.grant_type : 'Grant application'}</h3>
-        <p className="am-modal-sub">Application #{grantId}</p>
-
-        {error && <div className="alert alert-error" role="alert">{error}</div>}
-        {!g && !error && <div className="empty-state"><p>Loading...</p></div>}
-
-        {g && (
-          <>
-            <dl className="ac-dl">
-              <dt>Researcher</dt><dd>{personName(g) || '—'}{g.college ? ` · ${g.college}` : ''}</dd>
-              <dt>Research Title</dt><dd>{g.proposal_title || '—'}</dd>
-              <dt>Date Applied</dt><dd>{fmtDate(g.date_applied)}</dd>
-              <dt>Status</dt><dd><span className={`badge ${STATUS_BADGE[g.status] || 'badge-gray'}`}>{cap(g.status)}</span></dd>
-            </dl>
-
-            <div className="ac-box">
-              <h4>Application Details</h4>
-              {rows.length
-                ? <dl className="ac-dl">{rows.map(([k, v]) => (<React.Fragment key={k}><dt>{k}</dt><dd>{v}</dd></React.Fragment>))}</dl>
-                : <span className="am-muted">No extra details were saved with this application.</span>}
-            </div>
-
-            <div className="ac-box">
-              <h4>History</h4>
-              <ul className="ac-hist">
-                <li>{fmtWhen(g.date_applied)}: the researcher applied</li>
-                {(data.history || []).map(h => <li key={h.audit_id}>{historyLine(h)}</li>)}
-              </ul>
-            </div>
-          </>
-        )}
-
-        <div className="modal-footer">
-          <button type="button" className="btn btn-outline" onClick={onClose}>Close</button>
-          {g && (g.status === 'pending' ? (
-            <div className="ac-modal-actions">
-              <button type="button" className="btn btn-success" onClick={() => onDecide(g, 'approved')}>Approve</button>
-              <button type="button" className="btn btn-danger"  onClick={() => onDecide(g, 'rejected')}>Reject</button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-outline" onClick={() => onDecide(g, 'pending')}>Reopen</button>
-          ))}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-};
-
-/* ─────────── The page ─────────── */
-const AdminGrantsPage = () => {
-  const [grants,  setGrants]  = useState([]);
+const Applications = () => {
+  const navigate = useNavigate();
+  const [apps,    setApps]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
-  const [message, setMessage] = useState('');
-
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [type,   setType]   = useState('all');
+  const [year,   setYear]   = useState('all');
   const [page,   setPage]   = useState(1);
 
-  const [openId,  setOpenId]  = useState(null);
-  const [confirm, setConfirm] = useState(null);
-
-  const load = useCallback(async () => {
-    setError('');
-    try {
-      const res = await API.get('/admin/grants');
-      setGrants(res.data.grants || []);
-    } catch (err) {
-      setError(errText(err, 'Could not load the grant applications.'));
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    let alive = true;
+    API.get('/admin/proposals')
+      .then(res => { if (alive) setApps((res.data.proposals || []).filter(isApp)
+        .sort((x, y) => String(y.submitted_at || '').localeCompare(String(x.submitted_at || '')))); })   // newest first
+      .catch(err => { if (alive) setError(errText(err, 'Could not load the applications.')); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const years = useMemo(() => [...new Set(apps.map(a => yearOf(a.submitted_at)).filter(Boolean))].sort((a, b) => b - a), [apps]);
+  const typesShown = useMemo(() => [...APP_TYPES, ...(apps.some(a => a.proposal_type === 'travel_oral') ? ['travel_oral'] : [])], [apps]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return grants.filter(g =>
-      (status === 'all' || g.status === status) &&
-      (type   === 'all' || g.grant_type === type) &&
-      (!q || `${personName(g)} ${g.proposal_title || ''}`.toLowerCase().includes(q)));
-  }, [grants, search, status, type]);
-
-  useEffect(() => { setPage(1); }, [search, status, type]);
+    return apps.filter(a =>
+      (status === 'all' || (status === 'open' ? !DONE.includes(a.status) : a.status === status)) &&
+      (type   === 'all' || a.proposal_type === type) &&
+      (year   === 'all' || yearOf(a.submitted_at) === Number(year)) &&
+      (!q || `${a.researcher} ${a.title} ${a.college || ''}`.toLowerCase().includes(q)));
+  }, [apps, search, status, type, year]);
+  useEffect(() => { setPage(1); }, [search, status, type, year]);
 
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const n = (k) => grants.filter(g => g.status === k).length;
-
-  const decide = (g, to) => {
-    setOpenId(null);
-    const verb = { approved: 'Approve', rejected: 'Reject', pending: 'Reopen' }[to];
-    const text = {
-      approved: 'The researcher will be told it was approved.',
-      rejected: 'The researcher will be told it was rejected, with your reason.',
-      pending:  'The application goes back to the MSIRC Director and OVCRED list as pending. The researcher is not notified.',
-    }[to];
-    setConfirm({
-      title: `${verb} this application?`,
-      text: `${GRANT_TYPES[g.grant_type] || g.grant_type} for "${g.proposal_title}". ${text}`,
-      reason: true,
-      confirmLabel: verb,
-      danger: to === 'rejected',
-      run: async (reason) => {
-        const res = await API.post(`/admin/grants/${g.grant_id}/decision`, { status: to, reason });
-        setConfirm(null);
-        setMessage(res.data.message);
-        await load();
-      },
-    });
+  const awarded  = apps.filter(a => a.status === 'approved').reduce((t, a) => t + (awardOf(a).amount || 0), 0);
+  const filtersOn = !!(search.trim() || status !== 'all' || type !== 'all' || year !== 'all');
+  const formText = (a) => {
+    const f = GRANT_FORMS[a.form_no];
+    if (!f) return '';
+    return (FORMS_OF_TYPE[a.proposal_type] || []).length > 1 ? `Form ${f.no}: ${f.short}` : `Form ${f.no}`;
   };
-
-  const filtersOn = !!(search.trim() || status !== 'all' || type !== 'all');
 
   return (
     <>
-      <div className="page-header">
-        <h1>Grants and Incentives</h1>
-        <p>All grant and incentive applications, with the details the researcher filled in. The Administrator can step in when the MSIRC Director or OVCRED is unavailable.</p>
-      </div>
-
-      {error   && <div className="alert alert-error" role="alert">{error}</div>}
-      {message && <div className="alert alert-success" role="status">{message}</div>}
+      {error && <div className="alert alert-error" role="alert">{error}</div>}
 
       <div className="stats-grid">
-        <div className="stat-card blue"><span className="stat-label">Total Applications</span><span className="stat-value">{grants.length}</span></div>
-        <div className="stat-card amber"><span className="stat-label">Pending</span><span className="stat-value">{n('pending')}</span></div>
-        <div className="stat-card green"><span className="stat-label">Approved</span><span className="stat-value">{n('approved')}</span></div>
-        <div className="stat-card red"><span className="stat-label">Rejected</span><span className="stat-value">{n('rejected')}</span></div>
+        <div className="stat-card blue"><span className="stat-label">Total Applications</span><span className="stat-value">{apps.length}</span></div>
+        <div className="stat-card amber"><span className="stat-label">In Progress</span><span className="stat-value">{apps.filter(a => !DONE.includes(a.status)).length}</span></div>
+        <div className="stat-card green"><span className="stat-label">Approved</span><span className="stat-value">{apps.filter(a => a.status === 'approved').length}</span></div>
+        <div className="stat-card red"><span className="stat-label">Rejected</span><span className="stat-value">{apps.filter(a => a.status === 'rejected').length}</span></div>
+        <div className="stat-card purple"><span className="stat-label">Incentives Approved</span><span className="stat-value" style={{ fontSize: '1.35rem' }}>{money(awarded)}</span></div>
       </div>
 
       <div className="panel">
         <div className="panel-header"><strong style={{ color: '#5e1420' }}>Applications by Type</strong></div>
         <div className="ac-bars">
-          {Object.entries(GRANT_TYPES).map(([k, label]) => {
-            const c = grants.filter(g => g.grant_type === k).length;
+          {typesShown.map(k => {
+            const c = apps.filter(a => a.proposal_type === k).length;
             return (
               <div className="ac-bar" key={k}>
-                <span>{label}</span>
-                <span className="ac-bar-track"><span className="ac-bar-fill" style={{ width: `${grants.length ? (c / grants.length) * 100 : 0}%` }} /></span>
+                <span>{TYPE_LABEL[k] || k}</span>
+                <span className="ac-bar-track"><span className="ac-bar-fill" style={{ width: `${apps.length ? (c / apps.length) * 100 : 0}%` }} /></span>
                 <b>{c}</b>
               </div>
             );
@@ -230,21 +97,24 @@ const AdminGrantsPage = () => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search researcher or proposal..."
+            <input className="search-input" placeholder="Search title, researcher or college..." aria-label="Search applications"
               value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select className="search-input" value={type} onChange={(e) => setType(e.target.value)} aria-label="Type">
+              <option value="all">All Types</option>
+              {typesShown.map(k => <option key={k} value={k}>{TYPE_LABEL[k] || k}</option>)}
+            </select>
             <select className="search-input" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
               <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="open">In Progress (any)</option>
+              {STATUS_ORDER.filter(k => k !== 'draft').map(k => <option key={k} value={k}>{STATUS_LABEL[k]}</option>)}
             </select>
-            <select className="search-input" value={type} onChange={(e) => setType(e.target.value)} aria-label="Grant type">
-              <option value="all">All Grant Types</option>
-              {Object.entries(GRANT_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            <select className="search-input" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
+              <option value="all">All Years</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
             {filtersOn && (
               <button type="button" className="btn btn-outline btn-sm"
-                onClick={() => { setSearch(''); setStatus('all'); setType('all'); }}>Clear Filters</button>
+                onClick={() => { setSearch(''); setStatus('all'); setType('all'); setYear('all'); }}>Clear Filters</button>
             )}
           </div>
           <span className="badge badge-blue">{filtered.length} shown</span>
@@ -253,59 +123,73 @@ const AdminGrantsPage = () => {
         <div className="am-scroll">
           <table className="data-table">
             <thead>
-              <tr><th>Researcher</th><th>Research Title</th><th>Grant Type</th><th>Date Applied</th><th>Status</th><th>Actions</th></tr>
+              <tr><th>Title</th><th>Researcher</th><th>Type and Form</th><th>Status</th><th>Amount</th><th>Submitted</th><th>Action</th></tr>
             </thead>
             <tbody>
-              {pageRows.map(g => (
-                <tr key={g.grant_id}>
-                  <td>
-                    <div className="ac-title">{personName(g) || '—'}</div>
-                    <span className="ac-sub">{g.college || '—'}</span>
-                  </td>
-                  <td style={{ maxWidth: 260 }}>{g.proposal_title || '—'}</td>
-                  <td className="am-muted">{GRANT_TYPES[g.grant_type] || g.grant_type}</td>
-                  <td className="am-muted" style={{ whiteSpace: 'nowrap' }}>{fmtDate(g.date_applied)}</td>
-                  <td><span className={`badge ${STATUS_BADGE[g.status] || 'badge-gray'}`}>{cap(g.status)}</span></td>
-                  <td>
-                    <div className="am-actions">
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(g.grant_id)}>View Details</button>
-                      {g.status === 'pending' ? (
-                        <>
-                          <button type="button" className="btn btn-success btn-sm" onClick={() => decide(g, 'approved')}>Approve</button>
-                          <button type="button" className="btn btn-danger btn-sm"  onClick={() => decide(g, 'rejected')}>Reject</button>
-                        </>
-                      ) : (
-                        <button type="button" className="btn btn-outline btn-sm" onClick={() => decide(g, 'pending')}>Reopen</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {pageRows.map(a => {
+                const award = awardOf(a);
+                return (
+                  <tr key={a.proposal_id}>
+                    <td style={{ maxWidth: 260 }}>
+                      <div className="ac-title">{a.title}</div>
+                      {a.spotlight_title && <span className="ac-sub">For Research Spotlight: {a.spotlight_title}</span>}
+                    </td>
+                    <td>
+                      <div>{a.researcher}</div>
+                      <span className="ac-sub">{a.college || '—'}</span>
+                    </td>
+                    <td className="am-muted">
+                      {TYPE_LABEL[a.proposal_type] || a.proposal_type}
+                      {formText(a) && <div className="ac-sub">{formText(a)}</div>}
+                    </td>
+                    <td>
+                      <span className={`badge ${statusBadge(a.status)}`}>{STATUS_LABEL[a.status] || a.status}</span>
+                      {!DONE.includes(a.status) && <div className="ac-sub">{whereNow(a)}</div>}
+                    </td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {award.amount !== null ? money(award.amount) : <span className="am-muted">{award.recommendation || '—'}</span>}
+                    </td>
+                    <td className="am-muted" style={{ whiteSpace: 'nowrap' }}>{fmtDate(a.submitted_at)}</td>
+                    <td>
+                      <button type="button" className="btn btn-outline btn-sm"
+                        onClick={() => navigate(`/admin/proposals?open=${a.proposal_id}`)}>Open</button>
+                    </td>
+                  </tr>
+                );
+              })}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={6}>
+                <tr><td colSpan={7}>
                   <div className="empty-state">
-                    <p>{grants.length === 0 ? 'No grant applications yet.' : 'No applications match your filters.'}</p>
+                    <p>{apps.length === 0 ? 'No grant or incentive applications yet.' : 'No applications match your filters.'}</p>
                   </div>
                 </td></tr>
               )}
               {loading && (
-                <tr><td colSpan={6}><div className="empty-state"><p>Loading grant applications...</p></div></td></tr>
+                <tr><td colSpan={7}><div className="empty-state"><p>Loading applications...</p></div></td></tr>
               )}
             </tbody>
           </table>
         </div>
 
         <Pager page={page} pageSize={PAGE_SIZE} total={filtered.length} onPage={setPage} />
-
         <div className="am-legend">
-          Every decision made here is written to the Audit Log with your name and the reason you typed.
+          Amount is the incentive the Special Assistant entered, or the financial assistance the Director entered (Form 008).
+          Open shows the whole form, documents, tracker and the Administrator's tools.
         </div>
       </div>
-
-      {openId && <GrantModal grantId={openId} onDecide={decide} onClose={() => setOpenId(null)} />}
-      {confirm && <ConfirmBox {...confirm} onClose={() => setConfirm(null)} onConfirm={confirm.run} />}
     </>
   );
 };
+
+/* ─────────── The page ─────────── */
+const AdminGrantsPage = () => (
+  <>
+    <div className="page-header">
+      <h1>Grants and Incentives</h1>
+      <p>Travel Subsidy, Oral Presentation and Publication Incentive applications, on their MSIRC forms.</p>
+    </div>
+    <Applications />
+  </>
+);
 
 export default AdminGrantsPage;

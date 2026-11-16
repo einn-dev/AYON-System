@@ -414,6 +414,23 @@ const fieldsProblem = (form, data) => {
   return '';
 };
 
+/* What the offices decided on a grant or incentive application, from its checks:
+   amount         the incentive the Special Assistant entered (Forms 002, 003, 004),
+                  or the financial assistance the Director entered (Form 008)
+   recommendation the Director's recommendation (Forms 001 and 008)
+   chargeable     College or Research Funds (Form 001)                              */
+const awardOf = (p) => {
+  const checks = (p && p.form_checks) || [];
+  const ans = (role) => ((checks.find((c) => c.role === role) || {}).answers) || {};
+  const sa = ans('special_assistant'); const dir = ans('msric_director');
+  const amount = sa.amount || dir.amount || '';
+  return {
+    amount: amount && isMoney(amount) ? Number(amount) : null,
+    recommendation: dir.recommendation || '',
+    chargeable: dir.chargeable || '',
+  };
+};
+
 /* The title's own limit (Research Spotlight: at most 15 words), or '' */
 const titleProblem = (form, title) => (form && form.titleMaxWords && wordsIn(title) > form.titleMaxWords
   ? `The title must be ${form.titleMaxWords} words or fewer (now ${wordsIn(title)}).` : '');
@@ -510,4 +527,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };

@@ -1047,6 +1047,11 @@ const listProposals = async (req, res) => {
           with_role:      holderOf(p),
           endorsement_stage: p.endorsement_stage || null,
           round:          (Number(p.revision_count) || 0) + 1,
+          revision_count: Number(p.revision_count) || 0,
+          /* the MSIRC form and the Research Spotlight it is for (shown in the details) */
+          form_no:        p.form_no || null,
+          form_data:      p.form_data || {},
+          spotlight_id:   p.spotlight_id || null,
         };
       })
       .sort((a, b) => b.days_waiting - a.days_waiting);
