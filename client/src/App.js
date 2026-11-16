@@ -29,7 +29,7 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/"           element={<Navigate to="/ho" replace />} />
+          <Route path="/"           element={<Navigate to="/home" replace />} />
           <Route path="/login"      element={<LoginPage />} />
           <Route path="/home" element={<LandingPage />} />
           <Route path="/terms" element={<TermsPage />} />
