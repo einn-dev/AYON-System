@@ -10,8 +10,9 @@ import './OriginalForm.css';
    The filled-in MSIRC form, laid out like the original paper form.
      <OriginalForm proposal={p} />   the form on screen, with a Print / Save as PDF button
 
-   The researcher's answers fill the blanks. Each office's step box gets the
-   date it signed, its signature, the signer's name and what it ticked.
+   Only what is on the paper form is shown. The researcher's answers fill the
+   blanks; each office's step box gets the date it signed, its signature, the
+   signer's name and what it ticked.
    Printing follows each paper form: Forms 001, 002, 003, 004 and 008 print
    two copies side by side on long bond paper (landscape); Form 005 prints on
    A4; the Research Spotlight prints its extended abstract title page and the
@@ -43,8 +44,6 @@ const span = (a, b) => {
 };
 const ordinal = (n) => { const s = ['th', 'st', 'nd', 'rd']; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 const roundOf = (p) => (Number(p?.revision_count) || 0) + 1;
-const HOLDER = { submitted: 'special_assistant', under_review: 'msric_director', endorsed: 'ovcred' };
-const holderOf = (p) => (p?.status === 'for_endorsement' ? p.endorsement_stage : HOLDER[p?.status] || null);
 
 /* ── building blocks of the paper ── */
 const Box = ({ on }) => <span className={`of-cb ${on ? 'on' : ''}`} aria-label={on ? 'checked' : 'not checked'}>{on ? '✓' : ''}</span>;
@@ -66,14 +65,12 @@ const Head = ({ no, v = 'v.02-2024' }) => (
 /* One signer's block inside a step: date, signature, name, title */
 const Signer = ({ ctx, role, title, noDate, pad }) => {
   const s = ctx.sig(role);
-  const waiting = !s && ctx.holder === role;
   return (
     <div className="of-signer">
       {!noDate && <div className="of-date"><b>Date:</b> <Line v={s ? day(s.signed_at) : ''} grow={false} w="9em" /></div>}
       {noDate && pad && <div className="of-date of-date-pad" aria-hidden="true">&nbsp;</div>}
       <div className="of-sigimg">
-        {s?.image_data ? <img src={s.image_data} alt={`Signature of ${s.signer_name}`} />
-          : waiting ? <span className="of-wait">Waiting for signature</span> : null}
+        {s?.image_data ? <img src={s.image_data} alt={`Signature of ${s.signer_name}`} /> : null}
       </div>
       <div className="of-signame">{s ? String(s.signer_name || '').toUpperCase() : ' '}</div>
       <div className="of-sigrole">{title}</div>
@@ -265,18 +262,6 @@ const SHORT = {
   },
 };
 
-/* OVCRED's final approval: not a box on the paper form, so it is added below it */
-const Ovcred = ({ ctx }) => {
-  const s = ctx.sig('ovcred');
-  if (!s && ctx.holder !== 'ovcred') return null;
-  return (
-    <div className="of-final">
-      <span className="of-final-t">Final Approval (OVCRED)</span>
-      <Signer ctx={ctx} role="ovcred" title="OVCRED" />
-    </div>
-  );
-};
-
 const ShortForm = ({ ctx }) => {
   const f = SHORT[ctx.no];
   const row = f.row ? f.row(ctx) : null;
@@ -301,7 +286,6 @@ const ShortForm = ({ ctx }) => {
           )))}
         </tbody>
       </table>
-      <Ovcred ctx={ctx} />
     </div>
   );
 };
@@ -470,8 +454,7 @@ const SpotForm = ({ ctx }) => {
             <span key={r}>{ctx.sig(r) ? `Signed ${day(ctx.sig(r).signed_at)}` : ''}</span>
           ))}
         </div>
-        <Ovcred ctx={ctx} />
-      </div>
+        </div>
 
       {d.student === 'Yes' && (
         <div className="ofs-page">
@@ -503,7 +486,6 @@ const useCtx = (proposal, sigs, me) => {
     p, no: p.form_no, d: p.form_data || {}, title: p.title,
     name: personName(who), college: who.college || p.college, dept: who.department || p.department,
     email: who.email || p.email, phone: who.contact_number || p.contact_number,
-    holder: holderOf(p),
     sig: (role) => now.find((s) => s.signer_role === role) || null,
     ticked: (role, k) => (check(role).ticks || []).includes(k),
     ans: (role) => check(role).answers || {},

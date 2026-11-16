@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────
    The filled-in MSIRC form (OriginalForm.jsx).
-   Black = the original form. Blue = what was filled in or signed.
+   Everything prints in black, like the paper form.
    ───────────────────────────────────────────────────────────── */
 .of-wrap { margin: 4px 0 18px; }
 .of-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
@@ -8,7 +8,7 @@
 
 .of-paper, .of-print {
   --of-ink: #000;
-  --of-fill: #1a2f7a;
+  --of-fill: #000;
   font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
   color: var(--of-ink);
   line-height: 1.3;
@@ -55,7 +55,6 @@
 .of-date { text-align: left; }
 .of-sigimg { height: 44px; display: flex; align-items: flex-end; justify-content: center; }
 .of-sigimg img { max-height: 42px; max-width: 70%; }
-.of-wait { font-size: 11px; color: #9a6b00; font-style: italic; }
 .of-signame {
   border-top: 1px solid #000; width: 64%; margin: 0 auto; padding-top: 1px;
   color: var(--of-fill); font-weight: 700; font-size: 11.5px; min-height: 1.2em;
@@ -76,11 +75,6 @@
 .of-sub { margin: 2px 0 0 16px; }
 .of-sub2 { margin: 2px 0 0 30px; }
 
-.of-final {
-  margin-top: 10px; border: 1px dashed #8a8a8a; padding: 4px 8px 6px; display: flex; align-items: flex-end; gap: 14px;
-}
-.of-final .of-signer { flex: 1; margin: 0; }
-.of-final-t { font-weight: 700; font-size: 11.5px; align-self: flex-start; white-space: nowrap; }
 
 /* ── Form 005 (A4 pages) ── */
 .of5-page, .ofs-page {
@@ -93,7 +87,7 @@
 .of5-sec:last-child { border-bottom: 0; }
 .of5-h { font-weight: 700; margin: 0 0 2px; }
 .of5-light { font-weight: 400; }
-.of5-blue { color: #1f4fd1; }
+.of5-blue { color: #1f4fd1; }   /* blue on the original form itself */
 .of5-hint { margin: 0; font-size: 11.5px; color: #444; }
 .of5-body { padding-left: 14px; }
 .of5-text { white-space: pre-wrap; color: var(--of-fill); margin: 2px 0; overflow-wrap: anywhere; }
@@ -159,7 +153,6 @@
   .of-print-two .of-signer { margin-bottom: 1px; }
   .of-print-two .of-list li { margin: 0; }
   .of-print-two .of-note { margin: 2px 0 0; font-size: 8pt; }
-  .of-print-two .of-final { margin-top: 0.05in; padding: 2px 6px; }
   .of-print-two .of-cb { width: 9px; height: 9px; font-size: 8px; line-height: 8px; }
 }
 
