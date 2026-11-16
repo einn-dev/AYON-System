@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/authService';
 import ProposalTracker, { COLLEGE_CHAIN, roundOf, whereNow } from './ProposalTracker';
 import { FaArrowLeft, FaCheck, FaRotateLeft } from 'react-icons/fa6';
-import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL } from '../utils/terms';
+import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL, wordFor } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import { personName } from '../utils/names';
@@ -162,8 +162,8 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>#</th><th>Researcher</th><th>Research Title</th>
-                <th>Proposal Type</th><th>Waiting Since</th><th>Action</th>
+                <th>#</th><th>Researcher</th><th>Title</th>
+                <th>Type</th><th>Waiting Since</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -216,7 +216,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
       <div className="endorse-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20 }}>
         <div className="panel">
           <div className="panel-header">
-            <h2>Proposal Details</h2>
+            <h2>{wordFor(selected).P} Details</h2>
             <span className={`badge ${ENDORSER_BADGE[selected.status] || 'badge-gray'}`}>
               {statusText(selected.status)}
             </span>
@@ -231,7 +231,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                 { label: 'Email',          value: selected.email || '—' },
                 { label: 'College',        value: selected.college || '—' },
                 { label: 'Department',     value: selected.department || '—' },
-                { label: 'Proposal Type',  value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
+                { label: 'Type',  value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
                 { label: 'Date Submitted', value: fmt(selected.submitted_at) },
               ].map(item => (
                 <div key={item.label}>
@@ -247,7 +247,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
 
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
-                Research Title
+                Title
               </p>
               <p style={{ fontWeight: 700, color: '#1a3a5c', fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>
                 {selected.title}
@@ -308,7 +308,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
             ) : (
               <div style={{ background: '#fff8e6', border: '1px solid #e9d98a', borderRadius: 8, padding: 12, fontSize: '0.84rem', color: '#6e5c0e' }}>
                 <p style={{ margin: '0 0 10px' }}>
-                  Return this proposal to the researcher? Your note will be shown as the reason.
+                  Return this {wordFor(selected).p} to the researcher? Your note will be shown as the reason.
                   After they resubmit, it starts again from the Department Chairperson.
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -361,7 +361,7 @@ export const EndorsedHistory = () => {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>Researcher</th><th>Research Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th></tr>
+              <tr><th>Researcher</th><th>Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th></tr>
             </thead>
             <tbody>
               {shown.map(e => (

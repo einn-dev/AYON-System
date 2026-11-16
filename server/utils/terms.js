@@ -42,11 +42,17 @@ const RESEARCH_TYPES  = ['research_spotlight', 'internally_funded', 'externally_
 const GRANT_TYPES     = ['travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const SUBMIT_TYPES    = [...RESEARCH_TYPES, ...GRANT_TYPES];
 
+/* "proposal" for research, "application" for a grant or incentive (in messages) */
+const wordFor = (p) => {
+  const app = GRANT_TYPES.includes(p && p.proposal_type) || (p && p.proposal_type) === 'travel_oral';
+  return app ? { p: 'application', P: 'Application' } : { p: 'proposal', P: 'Proposal' };
+};
+
 const statusLabel = (s) => STATUS_LABEL[s] || String(s || '').replace(/_/g, ' ');
 const typeLabel   = (t) => TYPE_LABEL[t] || String(t || '').replace(/_/g, ' ');
 const roleLabel   = (r) => ROLE_LABEL[r] || String(r || '').replace(/_/g, ' ');
 
 module.exports = {
   ROLE_LABEL, STATUS_LABEL, TYPE_LABEL, statusLabel, typeLabel, roleLabel,
-  RESEARCH_TYPES, GRANT_TYPES, SUBMIT_TYPES,
+  RESEARCH_TYPES, GRANT_TYPES, SUBMIT_TYPES, wordFor,
 };

@@ -3,7 +3,7 @@ const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/roleNotify');
 const { notifyUser } = require('../utils/notify');
-const { statusLabel, SUBMIT_TYPES, GRANT_TYPES } = require('../utils/terms');
+const { statusLabel, SUBMIT_TYPES, GRANT_TYPES, wordFor } = require('../utils/terms');
 const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
 const { formOf, cleanFields, fieldsProblem } = require('../utils/grantForms');
@@ -56,7 +56,7 @@ const getMyProposals = async (req, res) => {
 /* ── POST submit proposal, or save it as a draft ──
    multipart body:
      proposal_type, title, description
-     form_no, form_data the MSIRC form and its fields (Grants and Incentives; form_data is JSON)
+     form_no, form_data the MSIRC form and its fields (Form 005 and Grants and Incentives; form_data is JSON)
      spotlight_id       the approved Research Spotlight (Forms 001 and 003 only)
      save_as            'draft' | 'submit' (default 'submit')
      file               the Main Proposal Document (required to submit, optional for a draft)
@@ -138,7 +138,7 @@ const submitProposal = async (req, res) => {
       });
     }
 
-    const started = await startReview(req, { proposal_id: proposal.proposal_id, user_id: req.user.user_id, title });
+    const started = await startReview(req, { proposal_id: proposal.proposal_id, user_id: req.user.user_id, title, proposal_type: type });
     return res.status(201).json({ ...started, proposal_id: proposal.proposal_id });
   } catch (err) {
     await removeKeys(rows.map(r => r.storage_key));
@@ -186,10 +186,10 @@ const startReview = async (req, proposal) => {
     user_id:     proposal.user_id,
     proposal_id: proposal.proposal_id,
     notif_type:  'submission',
-    title:       'Proposal Submitted',
+    title:       `${wordFor(proposal).P} Submitted`,
     message:     stage
-      ? `Your proposal "${title}" has been submitted. It is now waiting for endorsement by the ${ROLE_LABEL[stage.role]}.`
-      : `Your proposal "${title}" has been submitted successfully.`,
+      ? `Your ${wordFor(proposal).p} "${title}" has been submitted. It is now waiting for endorsement by the ${ROLE_LABEL[stage.role]}.`
+      : `Your ${wordFor(proposal).p} "${title}" has been submitted successfully.`,
   });
 
   const by = fullName(owner) || fullName(req.user) || 'a researcher';
@@ -198,7 +198,7 @@ const startReview = async (req, proposal) => {
     await notifyIds(stage.ids.filter(id => Number(id) !== Number(proposal.user_id)), {
       proposal_id: proposal.proposal_id,
       notif_type:  'endorsement',
-      title:       'Proposal waiting for your endorsement',
+      title:       `${wordFor(proposal).P} waiting for your endorsement`,
       message:     `"${title}" by ${by} is waiting for your endorsement.`,
     });
   } else {
@@ -212,7 +212,7 @@ const startReview = async (req, proposal) => {
     await notifyStaff({
       proposal_id: proposal.proposal_id,
       notif_type:  'submission',
-      title:       'New proposal at MSIRC',
+      title:       `New ${wordFor(proposal).p} at MSIRC`,
       message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the Special Assistant.`,
     });
   }
@@ -314,7 +314,7 @@ const updateDraft = async (req, res) => {
     if (!submit) {
       return res.status(200).json({ message: 'Draft saved.', proposal_id: draft.proposal_id, status: 'draft' });
     }
-    const started = await startReview(req, { proposal_id: draft.proposal_id, user_id: draft.user_id, title });
+    const started = await startReview(req, { proposal_id: draft.proposal_id, user_id: draft.user_id, title, proposal_type: type });
     return res.status(200).json({ ...started, proposal_id: draft.proposal_id });
   } catch (err) {
     console.error('updateDraft error:', err);
@@ -597,8 +597,8 @@ const updateProposalStatus = async (req, res) => {
         user_id:     proposal.user_id,
         proposal_id: parseInt(id),
         notif_type:  'review',
-        title:       'Proposal Returned: Changes Needed',
-        message:     `Your proposal "${proposal.title}" was returned by the ${ROLE_LABEL[req.user.role] || 'office'}. Reason: ${reason}`,
+        title:       `${wordFor(proposal).P} Returned: Changes Needed`,
+        message:     `Your ${wordFor(proposal).p} "${proposal.title}" was returned by the ${ROLE_LABEL[req.user.role] || 'office'}. Reason: ${reason}`,
       });
 
       await logAudit(req, {
@@ -609,7 +609,7 @@ const updateProposalStatus = async (req, res) => {
         details:    { from: proposal.status, reason },
       });
 
-      return res.status(200).json({ message: 'Proposal returned to the researcher.' });
+      return res.status(200).json({ message: `${wordFor(proposal).P} returned to the researcher.` });
     }
 
     /* Validate and Forward, Endorse to OVCRED, Approve and Grant Final Approval are signed */
@@ -658,8 +658,8 @@ const updateProposalStatus = async (req, res) => {
       user_id:     proposal.user_id,
       proposal_id: parseInt(id),
       notif_type:  'review',
-      title:       'Proposal Status Updated',
-      message:     `The status of your proposal "${proposal.title}" is now: ${statusLabel(status)}.`,
+      title:       `${wordFor(proposal).P} Status Updated`,
+      message:     `The status of your ${wordFor(proposal).p} "${proposal.title}" is now: ${statusLabel(status)}.`,
     });
 
     /* tell the office that now has it on its desk (only when the stage really changed) */
@@ -670,9 +670,9 @@ const updateProposalStatus = async (req, res) => {
       const next = {
         submitted:    ['special_assistant', 'submission',  'New submission to validate',
                        `"${proposal.title}" by ${by} is back in the Special Assistant queue.`],
-        under_review: ['msric_director',    'review',      'Proposal ready for your review',
+        under_review: ['msric_director',    'review',      `${wordFor(proposal).P} ready for your review`,
                        `"${proposal.title}" by ${by} was validated and forwarded for your review.`],
-        endorsed:     ['ovcred',            'endorsement', 'Proposal awaiting your decision',
+        endorsed:     ['ovcred',            'endorsement', `${wordFor(proposal).P} awaiting your decision`,
                        `"${proposal.title}" by ${by} was endorsed and is waiting for your decision.`],
       }[status];
       await notifyRole(next[0], {
@@ -688,7 +688,7 @@ const updateProposalStatus = async (req, res) => {
       await notifyStaff({
         proposal_id: id,
         notif_type:  status === 'approved' ? 'approval' : 'rejection',
-        title:       status === 'approved' ? 'Proposal approved' : 'Proposal rejected',
+        title:       `${wordFor(proposal).P} ${status === 'approved' ? 'approved' : 'rejected'}`,
         message:     status === 'approved'
           ? `"${proposal.title}" by ${nameAndCollege(owner)} was ${req.user.role === 'ovcred' ? 'given final approval by OVCRED' : `approved by the ${decidedBy}`}.`
           : `"${proposal.title}" by ${nameAndCollege(owner)} was rejected by the ${decidedBy}.`,
@@ -841,10 +841,10 @@ const resubmitProposal = async (req, res) => {
       user_id:     proposal.user_id,
       proposal_id: proposal.proposal_id,
       notif_type:  'submission',
-      title:       'Proposal Resubmitted',
+      title:       `${wordFor(proposal).P} Resubmitted`,
       message:     stage
-        ? `Your revised proposal "${finalTitle}" starts again from the college level. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
-        : `Your revised proposal "${finalTitle}" is back with MSIRC for validation.`,
+        ? `Your revised ${wordFor(proposal).p} "${finalTitle}" starts again from the college level. It is now with the ${ROLE_LABEL[stage.role]} for endorsement.`
+        : `Your revised ${wordFor(proposal).p} "${finalTitle}" is back with MSIRC for validation.`,
     }];
     const { error: nErr } = await supabase.from('notifications').insert(notes);
     if (nErr) console.error('resubmit notification failed:', nErr.message || nErr);
@@ -852,20 +852,20 @@ const resubmitProposal = async (req, res) => {
       await notifyIds(stage.ids.filter(uid => Number(uid) !== Number(proposal.user_id)), {
         proposal_id: proposal.proposal_id,
         notif_type:  'endorsement',
-        title:       'Resubmitted proposal waiting for your endorsement',
+        title:       `Resubmitted ${wordFor(proposal).p} waiting for your endorsement`,
         message:     `"${finalTitle}" was edited and resubmitted by ${fullName(owner) || 'the researcher'} (round ${revision + 1}). It is waiting for your endorsement.`,
       });
     } else {
       await notifyRole('special_assistant', {
         proposal_id: proposal.proposal_id,
         notif_type:  'submission',
-        title:       'Returned proposal resubmitted',
+        title:       `Returned ${wordFor(proposal).p} resubmitted`,
         message:     `"${finalTitle}" was edited and resubmitted by the researcher (revision ${revision}). It is in your queue again.`,
       });
       await notifyStaff({
         proposal_id: proposal.proposal_id,
         notif_type:  'submission',
-        title:       'Resubmitted proposal at MSIRC',
+        title:       `Resubmitted ${wordFor(proposal).p} at MSIRC`,
         message:     `"${finalTitle}" by ${nameAndCollege(owner, 'the researcher')} was resubmitted and is with the Special Assistant again.`,
       });
     }
@@ -884,8 +884,8 @@ const resubmitProposal = async (req, res) => {
 
     return res.status(200).json({
       message:        stage
-        ? `Proposal resubmitted. It starts again from the college level and is now with the ${ROLE_LABEL[stage.role]}.`
-        : 'Proposal resubmitted. It is back in the Special Assistant\'s queue.',
+        ? `${wordFor(proposal).P} resubmitted. It starts again from the college level and is now with the ${ROLE_LABEL[stage.role]}.`
+        : `${wordFor(proposal).P} resubmitted. It is back in the Special Assistant's queue.`,
       status:         stage ? 'for_endorsement' : 'submitted',
       endorsement_stage: stage ? stage.role : null,
       revision_count: revision,
@@ -1017,15 +1017,15 @@ const endorseProposal = async (req, res) => {
         user_id:     proposal.user_id,
         proposal_id: Number(id),
         notif_type:  'endorsement',
-        title:       'Proposal Endorsed',
-        message:     `Your proposal "${proposal.title}" was endorsed by the ${ROLE_LABEL[role]}. It is now with ${whereTo}. Note: ${note}`,
+        title:       `${wordFor(proposal).P} Endorsed`,
+        message:     `Your ${wordFor(proposal).p} "${proposal.title}" was endorsed by the ${ROLE_LABEL[role]}. It is now with ${whereTo}. Note: ${note}`,
       });
 
       if (next) {
         await notifyIds(next.ids, {
           proposal_id: Number(id),
           notif_type:  'endorsement',
-          title:       'Proposal waiting for your endorsement',
+          title:       `${wordFor(proposal).P} waiting for your endorsement`,
           message:     `"${proposal.title}" by ${by} was endorsed by the ${ROLE_LABEL[role]} and is waiting for your endorsement.`,
         });
       } else {
@@ -1038,7 +1038,7 @@ const endorseProposal = async (req, res) => {
         await notifyStaff({
           proposal_id: Number(id),
           notif_type:  'submission',
-          title:       'New proposal at MSIRC',
+          title:       `New ${wordFor(proposal).p} at MSIRC`,
           message:     `"${proposal.title}" by ${nameAndCollege(owner, by)} completed the college endorsements. It is now with the Special Assistant.`,
         });
       }
@@ -1054,8 +1054,8 @@ const endorseProposal = async (req, res) => {
 
       return res.status(200).json({
         message: next
-          ? `Proposal endorsed and signed. It is now with the ${ROLE_LABEL[next.role]}.`
-          : 'Proposal endorsed and signed. It completed the college endorsements and is now with the Special Assistant.',
+          ? `${wordFor(proposal).P} endorsed and signed. It is now with the ${ROLE_LABEL[next.role]}.`
+          : `${wordFor(proposal).P} endorsed and signed. It completed the college endorsements and is now with the Special Assistant.`,
         status:            next ? 'for_endorsement' : 'submitted',
         endorsement_stage: next ? next.role : null,
         by:                actor,
@@ -1091,8 +1091,8 @@ const endorseProposal = async (req, res) => {
       user_id:     proposal.user_id,
       proposal_id: Number(id),
       notif_type:  'endorsement',
-      title:       'Proposal Returned: Changes Needed',
-      message:     `Your proposal "${proposal.title}" was returned by the ${ROLE_LABEL[role]}. Reason: ${note}`,
+      title:       `${wordFor(proposal).P} Returned: Changes Needed`,
+      message:     `Your ${wordFor(proposal).p} "${proposal.title}" was returned by the ${ROLE_LABEL[role]}. Reason: ${note}`,
     });
 
     await logAudit(req, {
@@ -1104,7 +1104,7 @@ const endorseProposal = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: 'Proposal returned to the researcher.',
+      message: `${wordFor(proposal).P} returned to the researcher.`,
       status:  'returned',
     });
   } catch (err) {

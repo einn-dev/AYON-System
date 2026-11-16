@@ -137,8 +137,8 @@ const Overview = ({ proposals: all, user }) => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Date Submitted</th>
             </tr>

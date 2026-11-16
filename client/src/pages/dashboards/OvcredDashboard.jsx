@@ -13,7 +13,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
-import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 
 
@@ -72,8 +72,8 @@ const Overview = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Date Submitted</th>
               <th>Status</th>
             </tr>
@@ -212,8 +212,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
               <tr>
                 <th>#</th>
                 <th>Researcher</th>
-                <th>Research Title</th>
-                <th>Proposal Type</th>
+                <th>Title</th>
+                <th>Type</th>
                 <th>College</th>
                 <th>Action</th>
               </tr>
@@ -264,7 +264,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
             {/* Left — Proposal Details */}
             <div className="panel">
               <div className="panel-header">
-                <h2>Proposal Details</h2>
+                <h2>{wordFor(selected).P} Details</h2>
                 <span className="badge badge-purple">Endorsed by Director</span>
               </div>
               <div className="panel-body">
@@ -277,7 +277,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     { label: 'Email',         value: selected.email },
                     { label: 'College',       value: selected.college || '—' },
                     { label: 'Department',    value: selected.department || '—' },
-                    { label: 'Proposal Type', value: PROPOSAL_TYPES[selected.proposal_type] },
+                    { label: 'Type', value: PROPOSAL_TYPES[selected.proposal_type] },
                     { label: 'Date Submitted',value: selected.submitted_at
                       ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
                   ].map(item => (
@@ -297,7 +297,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <div style={{ marginBottom: 20 }}>
                   <p style={{ fontSize: '0.72rem', color: '#718096',
                     textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
-                    Research Title
+                    Title
                   </p>
                   <p style={{ fontWeight: 700, color: '#1a3a5c',
                     fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
@@ -437,8 +437,8 @@ const FilteredList = ({ proposals, statusFilter }) => {
             <tr>
               <th>#</th>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>College</th>
               <th>Date Submitted</th>
             </tr>
@@ -678,9 +678,9 @@ const StoreToRepository = ({ proposals }) => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Research Title</th>
+                <th>Title</th>
                 <th>Researcher</th>
-                <th>Proposal Type</th>
+                <th>Type</th>
                 <th>Action</th>
               </tr>
             </thead>

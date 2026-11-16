@@ -59,8 +59,8 @@ const Overview = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Date Submitted</th>
             </tr>
@@ -132,8 +132,8 @@ const AllSubmissions = ({ proposals }) => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>#</th><th>Researcher</th><th>Research Title</th>
-              <th>Proposal Type</th><th>Status</th><th>Date Submitted</th>
+              <th>#</th><th>Researcher</th><th>Title</th>
+              <th>Type</th><th>Status</th><th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>

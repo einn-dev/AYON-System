@@ -13,7 +13,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
-import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
@@ -74,8 +74,8 @@ const Overview = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Date Submitted</th>
               <th>Status</th>
             </tr>
@@ -220,8 +220,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               <tr>
                 <th>#</th>
                 <th>Researcher</th>
-                <th>Research Title</th>
-                <th>Proposal Type</th>
+                <th>Title</th>
+                <th>Type</th>
                 <th>Date Submitted</th>
                 <th>Action</th>
               </tr>
@@ -273,7 +273,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             {/* Left — Proposal Details */}
             <div className="panel">
               <div className="panel-header">
-                <h2>Proposal Details</h2>
+                <h2>{wordFor(selected).P} Details</h2>
                 <span className={`badge ${statusBadge(selected.status)}`}>
                   {statusLabel(selected.status)}
                 </span>
@@ -287,7 +287,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     { label: 'Email',        value: selected.email },
                     { label: 'College',      value: selected.college || '—' },
                     { label: 'Department',   value: selected.department || '—' },
-                    { label: 'Proposal Type',value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
+                    { label: 'Type',value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
                     { label: 'Date Submitted',value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
                   ].map(item => (
                     <div key={item.label}>
@@ -305,7 +305,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 <div style={{ marginBottom: 20 }}>
                   <p style={{ fontSize: '0.72rem', color: '#718096',
                     textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
-                    Research Title
+                    Title
                   </p>
                   <p style={{ fontWeight: 700, color: '#1a3a5c',
                     fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>
@@ -344,7 +344,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <label>Remarks</label>
                       <textarea rows={5} value={remarks}
                         onChange={e => setRemarks(e.target.value)}
-                        placeholder="Add your remarks about this proposal..."
+                        placeholder={`Add your remarks about this ${wordFor(selected).p}...`}
                         style={{ resize: 'vertical' }} />
                     </div>
 

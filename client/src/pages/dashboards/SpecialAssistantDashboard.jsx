@@ -9,7 +9,7 @@ import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModa
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
-import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
@@ -83,8 +83,8 @@ const Overview = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Date Submitted</th>
               <th>Status</th>
             </tr>
@@ -177,8 +177,8 @@ const Submissions = ({ proposals, onRefresh }) => {
             <tr>
               <th>#</th>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Date Submitted</th>
               <th>Action</th>
@@ -359,8 +359,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             <thead>
               <tr>
                 <th>Researcher</th>
-                <th>Research Title</th>
-                <th>Proposal Type</th>
+                <th>Title</th>
+                <th>Type</th>
                 <th>Date Submitted</th>
                 <th>Action</th>
               </tr>
@@ -471,10 +471,10 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   <label>Remarks</label>
                   <textarea rows={3} value={remarks}
                     onChange={e => setRemarks(e.target.value)}
-                    placeholder="Add remarks for this proposal..."
+                    placeholder={`Add remarks for this ${wordFor(selected).p}...`}
                     style={{ resize: 'vertical' }} />
                   <span style={{ fontSize: '0.78rem', color: '#8a7a7d' }}>
-                    If you return this proposal, these remarks are sent to the researcher as the reason.
+                    If you return this {wordFor(selected).p}, these remarks are sent to the researcher as the reason.
                   </span>
                 </div>
 
@@ -485,14 +485,14 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             {/* Right — Submission Info + Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="panel">
-                <div className="panel-header"><h2>Proposal Details</h2></div>
+                <div className="panel-header"><h2>{wordFor(selected).P} Details</h2></div>
                 <div className="panel-body">
                   {[
                     { label: 'Researcher', value: personName(selected) },
                     { label: 'Email',      value: selected.email },
                     { label: 'College',    value: selected.college || '—' },
                     { label: 'Department', value: selected.department || '—' },
-                    { label: 'Proposal Type', value: PROPOSAL_TYPES[selected.proposal_type] },
+                    { label: 'Type', value: PROPOSAL_TYPES[selected.proposal_type] },
                     { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
                   ].map(item => (
                     <div key={item.label} style={{ marginBottom: 12 }}>
@@ -501,7 +501,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     </div>
                   ))}
                   <div style={{ marginTop: 4 }}>
-                    <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Research Title</p>
+                    <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
                     <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{selected.title}</p>
                   </div>
                   <div style={{ marginTop: 14 }}>
@@ -560,8 +560,8 @@ const Forwarded = ({ proposals }) => {
           <thead>
             <tr>
               <th>Researcher</th>
-              <th>Research Title</th>
-              <th>Proposal Type</th>
+              <th>Title</th>
+              <th>Type</th>
               <th>Current Status</th>
               <th>Date Submitted</th>
             </tr>

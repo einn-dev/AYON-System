@@ -9,7 +9,6 @@ const {
 const {
   listRepository, listRepositoryCandidates, storeToRepository,
   updateRepositoryItem, removeRepositoryItem,
-  listGrants, getGrant, decideGrant,
 } = require('../controllers/adminCatalog.controller');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
@@ -40,11 +39,6 @@ router.get('/repository/candidates',          ...adminOnly, listRepositoryCandid
 router.post('/repository',                    ...adminOnly, storeToRepository);
 router.patch('/repository/:id',               ...adminOnly, updateRepositoryItem);
 router.post('/repository/:id/remove',         ...adminOnly, removeRepositoryItem);
-
-/* ── Grants ── */
-router.get('/grants',                         ...adminOnly, listGrants);
-router.get('/grants/:id',                     ...adminOnly, getGrant);
-router.post('/grants/:id/decision',           ...adminOnly, decideGrant);
 
 /* ── Logs ── */
 router.get('/audit-logs',                     ...adminOnly, getAuditLogs);

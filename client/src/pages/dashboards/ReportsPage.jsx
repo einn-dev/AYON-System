@@ -32,7 +32,8 @@ const PERIODS = [
 
 const STATUSES = STATUS_ORDER.map(value => ({ value, label: STATUS_LABEL[value] }));
 
-const TYPES = Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }));
+/* the old combined type is not offered: add_grant_types.sql converts those records */
+const TYPES = Object.entries(TYPE_LABEL).filter(([value]) => value !== 'travel_oral').map(([value, label]) => ({ value, label }));
 
 const EMPTY = { period: 'all', from: '', to: '', college: '', status: '', type: '' };
 

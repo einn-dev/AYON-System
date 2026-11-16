@@ -132,6 +132,7 @@ const AdminOverview = ({ users }) => {
 
   const typeRows = useMemo(
     () => Object.entries(TYPE_LABELS)
+      .filter(([key]) => key !== 'travel_oral' || (data?.by_type?.[key] || 0) > 0)   // the old combined type only if still used
       .map(([key, label]) => ({ name: label, count: data?.by_type?.[key] || 0 }))
       .sort((a, b) => b.count - a.count),
     [data]

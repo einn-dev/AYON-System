@@ -8,7 +8,7 @@ import './ProposalOversight.css';
 import { errText, fmtWhen, Pager } from './adminShared';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { FaLock } from 'react-icons/fa6';
-import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { STATUS_LABEL, statusBadge, TYPE_LABEL, typeChoices } from '../../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
    Admin → All Proposals
@@ -142,7 +142,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
             <div><small>Email</small><b>{proposal.email || '—'}</b></div>
             <div><small>College</small><b>{proposal.college || '—'}</b></div>
             <div><small>Department</small><b>{proposal.department || '—'}</b></div>
-            <div><small>Proposal Type</small><b>{PROPOSAL_TYPES[proposal.proposal_type] || proposal.proposal_type}</b></div>
+            <div><small>Type</small><b>{PROPOSAL_TYPES[proposal.proposal_type] || proposal.proposal_type}</b></div>
             <div><small>Date Submitted</small><b>{dateOnly(proposal.submitted_at)}</b></div>
           </div>
 
@@ -335,7 +335,7 @@ const AllProposalsPage = () => {
             </select>
             <select className="search-input" style={{ minWidth: 170 }} value={type} onChange={onFilter(setType)}>
               <option value="all">All Types</option>
-              {Object.entries(PROPOSAL_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {typeChoices(proposals).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <label className="po-stuck">
               <input type="checkbox" checked={stuckOnly}
@@ -370,7 +370,7 @@ const AllProposalsPage = () => {
               <thead>
                 <tr>
                   <th>Researcher</th>
-                  <th>Research Title</th>
+                  <th>Title</th>
                   <th>Status</th>
                   <th>Waiting On</th>
                   <th>Days Waiting</th>
