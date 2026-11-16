@@ -20,4 +20,4 @@ const withOptionalColumns = async (run, base, extra) => {
   return { ...second, usedExtra: false };
 };
 
-module.exports = { withOptionalColumns, isMissingColumn };
+module.exports = { withOptionalColumns, isMissingColumn }; 
