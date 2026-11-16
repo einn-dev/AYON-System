@@ -131,3 +131,14 @@
 .gf-guide summary { cursor: pointer; font-weight: 700; color: #6b4f10; font-size: 0.86rem; }
 .gf-guide ul { margin: 8px 0 2px; padding-left: 18px; }
 .gf-guide li { font-size: 0.82rem; color: #4a3b10; line-height: 1.5; margin-bottom: 4px; }
+
+/* Form view / List view switch above the filled-in form */
+.gf-view-wrap { margin-bottom: 14px; }
+.gf-viewbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.gf-viewbar span { flex: 1; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #8d1b2d; min-width: 140px; }
+.gf-viewbar button {
+  border: 1px solid #8d1b2d; background: #fff; color: #8d1b2d; border-radius: 6px;
+  padding: 5px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+}
+.gf-viewbar button.on { background: #8d1b2d; color: #fff; }
+.gf-viewbar button:focus-visible { outline: 2px solid #c9a227; outline-offset: 2px; }

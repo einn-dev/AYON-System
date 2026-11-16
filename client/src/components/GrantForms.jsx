@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark } from 'react-icons/fa6';
 import { ROLE_LABEL } from '../utils/terms';
 import {
   GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
 } from '../utils/grantForms';
+import { OriginalForm, hasOriginalForm } from './OriginalForm';
 import './GrantForms.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ import './GrantForms.css';
      SlotDocs         one upload box per document the form asks for    (Researcher, step 3)
      FormChecklist    an office's own step: tick boxes, choices, boxes (when it signs)
      GrantFormView    the filled-in form and what each office ticked   (everyone, read only)
+                      Opens on the original MSIRC form (OriginalForm.jsx); "List view" shows the fields as a list.
    ───────────────────────────────────────────────────────────── */
 
 const MAX_MB  = 10;
@@ -415,8 +417,22 @@ const LongValue = ({ f, v }) => {
 const STEP_ORDER = ['chairperson', 'research_coordinator', 'college_dean', 'special_assistant', 'msric_director'];
 
 export const GrantFormView = ({ proposal }) => {
+  const [view, setView] = useState('form');
   const form = formOf(proposal);
   if (!form) return null;
+  const toggle = hasOriginalForm(proposal) && (
+    <div className="gf-viewbar" role="group" aria-label="How to show the form">
+      <span>{formLabel(form)}</span>
+      <button type="button" className={view === 'form' ? 'on' : ''} aria-pressed={view === 'form'} onClick={() => setView('form')}>Form view</button>
+      <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => setView('list')}>List view</button>
+    </div>
+  );
+  if (toggle && view === 'form') return <div className="gf-view-wrap">{toggle}<OriginalForm proposal={proposal} /></div>;
+  return toggle ? <div className="gf-view-wrap">{toggle}<ListView proposal={proposal} form={form} /></div>
+    : <ListView proposal={proposal} form={form} />;
+};
+
+const ListView = ({ proposal, form }) => {
   const data   = proposal.form_data || {};
   const checks = proposal.form_checks || [];
   const done   = STEP_ORDER.map((role) => ({ role, step: form.steps[role], check: checks.find((c) => c.role === role) }))
