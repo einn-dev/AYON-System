@@ -201,7 +201,7 @@ export const GUIDES = {
         'For Form 001 and Form 008, choose your **recommendation**: on official time only, or with financial assistance (and, for Form 001, chargeable against college or research funds; for Form 008, the amount).',
         'Write your remarks (optional).',
         'Tick the box under your signature.',
-        'Click **Endorse to VCRED** (VCRED gives final approval) or **Approve** (it stays within MSIRC).',
+        'Click **Endorse to VCRED**. VCRED gives the final approval.',
       ],
     },
     {
@@ -341,7 +341,7 @@ export const STATUS_HELP = [
 export const WHO_SIGNS = [
   ['College Chairperson, College Coordinator, College Dean', '**Endorse and Sign**'],
   ['MSIRC Special Assistant',                               '**Validate and Forward**'],
-  ['MSIRC Director',                                  '**Endorse to VCRED** or **Approve**'],
+  ['MSIRC Director',                                  '**Endorse to VCRED**'],
   ['VCRED',                                          '**Grant Final Approval**'],
 ];
 

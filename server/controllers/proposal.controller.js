@@ -156,7 +156,7 @@ const checkText = ({ title, desc, needTitle }) => {
 };
 
 /* Moves a draft into the review: to the first college endorser who has an account,
-   or straight to the Special Assistant. Tells the researcher and whoever has it now. */
+   or straight to the MSIRC Special Assistant. Tells the researcher and whoever has it now. */
 const startReview = async (req, proposal) => {
   const owner = await ownerOf(proposal.user_id);
   const stage = await nextStage(owner);
@@ -213,7 +213,7 @@ const startReview = async (req, proposal) => {
       proposal_id: proposal.proposal_id,
       notif_type:  'submission',
       title:       `New ${wordFor(proposal).p} at MSIRC`,
-      message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the Special Assistant.`,
+      message:     `"${title}" by ${nameAndCollege(owner, by)} was submitted. It is now with the MSIRC Special Assistant.`,
     });
   }
 
@@ -358,16 +358,16 @@ const deleteDraft = async (req, res) => {
 };
 
 /* ── GET all proposals — WITH COLLEGE-BASED FILTERING ──
-   - Coordinator & Dean   → only proposals from THEIR college
-   - Chairperson          → only proposals from THEIR department
-   - Staff/SA/Director/OVCRED/Admin → see everything (institution-wide)   */
+   - College Coordinator & College Dean   → only proposals from THEIR college
+   - College Chairperson          → only proposals from THEIR department
+   - Staff/SA/MSIRC Director/VCRED/Admin → see everything (institution-wide)   */
 const COLLEGE_SCOPED_ROLES    = ['research_coordinator', 'college_dean'];
 const DEPARTMENT_SCOPED_ROLES = ['chairperson'];
 
 /* ── What MSIRC Staff may see ──
-   Only proposals that finished the college endorsements and reached the Special Assistant.
-   A returned proposal stays visible only if the office (Special Assistant, Director or
-   OVCRED) returned it, because then it had already reached the Special Assistant.
+   Only proposals that finished the college endorsements and reached the MSIRC Special Assistant.
+   A returned proposal stays visible only if the office (MSIRC Special Assistant, MSIRC Director or
+   VCRED) returned it, because then it had already reached the MSIRC Special Assistant.
    Staff get the list fields only: no abstract, no file, no notes.                    */
 const STAFF_STATUSES = ['submitted', 'under_review', 'endorsed', 'approved', 'rejected'];
 const OFFICE_ROLES   = ['special_assistant', 'msric_director', 'ovcred'];
@@ -454,7 +454,7 @@ const getAllProposals = async (req, res) => {
 
     await attachTrail(proposals);
 
-    /* MSIRC Staff: only proposals that reached the Special Assistant, and only the list fields */
+    /* MSIRC Staff: only proposals that reached the MSIRC Special Assistant, and only the list fields */
     if (role === 'msric_staff') {
       return res.status(200).json({ proposals: proposals.filter(staffCanSee).map(staffFields) });
     }
@@ -625,7 +625,15 @@ const updateProposalStatus = async (req, res) => {
       return res.status(200).json({ message: `${wordFor(proposal).P} returned to the researcher.` });
     }
 
-    /* Validate and Forward, Endorse to OVCRED, Approve and Grant Final Approval are signed */
+    /* only VCRED gives the final approval: the MSIRC Director endorses, returns or rejects */
+    if (status === 'approved' && req.user.role === 'msric_director') {
+      return res.status(403).json({
+        message: 'Only VCRED gives the final approval. Use Endorse to VCRED instead.',
+        code: 'DIRECTOR_CANNOT_APPROVE',
+      });
+    }
+
+    /* Validate and Forward, Endorse to VCRED and Grant Final Approval are signed */
     const signAs  = officeAction(req.user.role, status);
     let signature = null;
     if (signAs) {
@@ -694,7 +702,7 @@ const updateProposalStatus = async (req, res) => {
       const by   = fullName(owner) || 'the researcher';
       const next = {
         submitted:    ['special_assistant', 'submission',  'New submission to validate',
-                       `"${proposal.title}" by ${by} is back in the Special Assistant queue.`],
+                       `"${proposal.title}" by ${by} is back in the MSIRC Special Assistant queue.`],
         under_review: ['msric_director',    'review',      `${wordFor(proposal).P} ready for your review`,
                        `"${proposal.title}" by ${by} was validated and forwarded for your review.`],
         endorsed:     ['ovcred',            'endorsement', `${wordFor(proposal).P} awaiting your decision`,
@@ -715,7 +723,7 @@ const updateProposalStatus = async (req, res) => {
         notif_type:  status === 'approved' ? 'approval' : 'rejection',
         title:       `${wordFor(proposal).P} ${status === 'approved' ? 'approved' : 'rejected'}`,
         message:     status === 'approved'
-          ? `"${proposal.title}" by ${nameAndCollege(owner)} was ${req.user.role === 'ovcred' ? 'given final approval by OVCRED' : `approved by the ${decidedBy}`}.`
+          ? `"${proposal.title}" by ${nameAndCollege(owner)} was ${req.user.role === 'ovcred' ? 'given final approval by VCRED' : `approved by the ${decidedBy}`}.`
           : `"${proposal.title}" by ${nameAndCollege(owner)} was rejected by the ${decidedBy}. Reason: ${reason}`,
       });
     }
@@ -891,7 +899,7 @@ const resubmitProposal = async (req, res) => {
         proposal_id: proposal.proposal_id,
         notif_type:  'submission',
         title:       `Resubmitted ${wordFor(proposal).p} at MSIRC`,
-        message:     `"${finalTitle}" by ${nameAndCollege(owner, 'the researcher')} was resubmitted and is with the Special Assistant again.`,
+        message:     `"${finalTitle}" by ${nameAndCollege(owner, 'the researcher')} was resubmitted and is with the MSIRC Special Assistant again.`,
       });
     }
 
@@ -910,7 +918,7 @@ const resubmitProposal = async (req, res) => {
     return res.status(200).json({
       message:        stage
         ? `${wordFor(proposal).P} resubmitted. It starts again from the college level and is now with the ${ROLE_LABEL[stage.role]}.`
-        : `${wordFor(proposal).P} resubmitted. It is back in the Special Assistant's queue.`,
+        : `${wordFor(proposal).P} resubmitted. It is back in the MSIRC Special Assistant's queue.`,
       status:         stage ? 'for_endorsement' : 'submitted',
       endorsement_stage: stage ? stage.role : null,
       revision_count: revision,
@@ -922,7 +930,7 @@ const resubmitProposal = async (req, res) => {
 };
 
 /* ── POST endorse or return at the college level ──
-   Chairperson → Research Coordinator → Dean, in that order. Only the role whose turn it is
+   College Chairperson → College Coordinator → College Dean, in that order. Only the role whose turn it is
    can act, and only for a researcher in their own college/department.
    A note (10–500 characters) is required both to endorse and to return.
    body: { decision: 'endorsed' | 'returned', remarks }
@@ -1037,7 +1045,7 @@ const endorseProposal = async (req, res) => {
       });
       await saveStep(proposal, role, req.user, formStep.value);
 
-      const whereTo = next ? `the ${ROLE_LABEL[next.role]}` : 'the Special Assistant for document validation';
+      const whereTo = next ? `the ${ROLE_LABEL[next.role]}` : 'the MSIRC Special Assistant for document validation';
       await notifyUser({
         user_id:     proposal.user_id,
         proposal_id: Number(id),
@@ -1064,7 +1072,7 @@ const endorseProposal = async (req, res) => {
           proposal_id: Number(id),
           notif_type:  'submission',
           title:       `New ${wordFor(proposal).p} at MSIRC`,
-          message:     `"${proposal.title}" by ${nameAndCollege(owner, by)} completed the college endorsements. It is now with the Special Assistant.`,
+          message:     `"${proposal.title}" by ${nameAndCollege(owner, by)} completed the college endorsements. It is now with the MSIRC Special Assistant.`,
         });
       }
 
@@ -1080,7 +1088,7 @@ const endorseProposal = async (req, res) => {
       return res.status(200).json({
         message: next
           ? `${wordFor(proposal).P} endorsed and signed. It is now with the ${ROLE_LABEL[next.role]}.`
-          : `${wordFor(proposal).P} endorsed and signed. It completed the college endorsements and is now with the Special Assistant.`,
+          : `${wordFor(proposal).P} endorsed and signed. It completed the college endorsements and is now with the MSIRC Special Assistant.`,
         status:            next ? 'for_endorsement' : 'submitted',
         endorsement_stage: next ? next.role : null,
         by:                actor,

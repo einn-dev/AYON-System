@@ -12,7 +12,7 @@ import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
@@ -355,7 +355,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       </p>
                     </div>
 
-                    <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="approve" noun={wordFor(selected).p} disabled={saving} />
+                    <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="endorse" noun={wordFor(selected).p} disabled={saving} />
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                       {/* Approve + Endorse to VCRED (signs) */}
@@ -363,13 +363,6 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                         disabled={saving || !signReady}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
                         {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to VCRED</>}
-                      </button>
-
-                      {/* Approve only (signs) */}
-                      <button className="btn btn-primary"
-                        disabled={saving || !signReady}
-                        onClick={() => handleDecision(selected.proposal_id, 'approved')}>
-                        {saving ? 'Processing...' : <><FaCheck className="ic" />Approve</>}
                       </button>
 
                       {/* Return to the researcher (a reason is required) */}
@@ -390,9 +383,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     <div style={{ marginTop: 12, padding: 12,
                       background: '#fffbeb', borderRadius: 8,
                       border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
-                      <strong>Note:</strong> "Endorse to VCRED" approves the {wordFor(selected).p} and forwards it to VCRED
-                      for final approval. "Approve" keeps it within MSIRC.
-                      Both place your signature on the {wordFor(selected).p}.
+                      <strong>Note:</strong> "Endorse to VCRED" forwards the {wordFor(selected).p} to VCRED
+                      for final approval and places your signature on it. Only VCRED gives the final approval.
                       "Return to Researcher" sends it back for changes; after resubmission it
                       starts again from the College Chairperson. Returning or rejecting does not sign.
                     </div>
