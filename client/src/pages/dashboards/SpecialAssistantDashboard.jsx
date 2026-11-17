@@ -11,8 +11,9 @@ import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
 import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import ProposalTracker from '../../components/ProposalTracker';
+import RecordDetails from '../../components/RecordDetails';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
-import { ProposalFiles, fileHref } from '../../components/ProposalFiles';
+import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { stepOf, stepProblem } from '../../utils/grantForms';
@@ -132,6 +133,7 @@ const Submissions = ({ proposals, onRefresh }) => {
   const [filter,  setFilter]  = useState('submitted');
   const [alert,   setAlert]   = useState(null);
   const [returning, setReturning] = useState(null);   // { id, title, name } while the reason box is open
+  const [openId, setOpenId] = useState(null);         // the record opened in the read-only window
 
   const filtered = proposals.filter(p => {
     const matchStatus = filter === 'all' || p.status === filter;
@@ -215,13 +217,7 @@ const Submissions = ({ proposals, onRefresh }) => {
                         Return to Researcher
                       </button>
                     )}
-                    {p.file_path && (
-                      <a className="btn btn-outline btn-sm"
-                        href={fileHref(p.file_path)}
-                        target="_blank" rel="noreferrer">
-                        View Document
-                      </a>
-                    )}
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button>
                   </div>
                 </td>
               </tr>
@@ -239,6 +235,7 @@ const Submissions = ({ proposals, onRefresh }) => {
         <ReturnReasonModal title={returning.title} researcher={returning.name}
           onConfirm={confirmReturn} onClose={() => setReturning(null)} />
       )}
+      <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>
   );
 };
@@ -547,6 +544,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
 
 /* ─────────── Forwarded Submissions ─────────── */
 const Forwarded = ({ proposals }) => {
+  const [openId, setOpenId] = useState(null);         // the record opened in the read-only window
   const forwarded = proposals.filter(p =>
     ['under_review','endorsed','approved','rejected'].includes(p.status)
   );
@@ -567,6 +565,7 @@ const Forwarded = ({ proposals }) => {
               <th>Type</th>
               <th>Current Status</th>
               <th>Date Submitted</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -588,16 +587,18 @@ const Forwarded = ({ proposals }) => {
                 <td style={{ color: '#718096' }}>
                   {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                 </td>
+                <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button></td>
               </tr>
             ))}
             {forwarded.length === 0 && (
-              <tr><td colSpan={5}>
+              <tr><td colSpan={6}>
                 <div className="empty-state"><p>No validated proposals yet.</p></div>
               </td></tr>
             )}
           </tbody>
         </table>
       </div>
+      <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>
   );
 };

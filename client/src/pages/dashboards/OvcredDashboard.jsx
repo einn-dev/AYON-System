@@ -11,6 +11,7 @@ import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
+import RecordDetails from '../../components/RecordDetails';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
@@ -418,6 +419,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 
 /* ─────────── Approved / Rejected (shared view) ─────────── */
 const FilteredList = ({ proposals, statusFilter }) => {
+  const [openId, setOpenId] = useState(null);         // the record opened in the read-only window
   const filtered = proposals.filter(p => p.status === statusFilter);
   const title    = statusFilter === 'approved' ? 'Approved Proposals' : 'Rejected Proposals';
 
@@ -447,6 +449,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
               <th>Type</th>
               <th>College</th>
               <th>Date Submitted</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -465,16 +468,18 @@ const FilteredList = ({ proposals, statusFilter }) => {
                 <td style={{ color: '#718096' }}>
                   {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
                 </td>
+                <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button></td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6}>
+              <tr><td colSpan={7}>
                 <div className="empty-state"><p>No proposals found.</p></div>
               </td></tr>
             )}
           </tbody>
         </table>
       </div>
+      <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>
   );
 };

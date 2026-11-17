@@ -5,6 +5,7 @@ import { FaArrowLeft, FaCheck, FaRotateLeft } from 'react-icons/fa6';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL, wordFor } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
+import RecordDetails from './RecordDetails';
 import { personName } from '../utils/names';
 import { FormChecklist, EMPTY_CHECK } from './GrantForms';
 import { formOf, stepOf, stepProblem } from '../utils/grantForms';
@@ -338,6 +339,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
 export const EndorsedHistory = () => {
   const { items, loading, failed } = useMyEndorsements();
   const [search, setSearch] = useState('');
+  const [openId, setOpenId] = useState(null);     // the record opened in the read-only window
 
   const shown = items.filter(e =>
     `${e.title || ''} ${e.researcher || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -361,7 +363,7 @@ export const EndorsedHistory = () => {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>Researcher</th><th>Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th></tr>
+              <tr><th>Researcher</th><th>Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th><th>Action</th></tr>
             </thead>
             <tbody>
               {shown.map(e => (
@@ -388,15 +390,19 @@ export const EndorsedHistory = () => {
                       {whereNow({ status: e.proposal_status, endorsement_stage: e.endorsement_stage, returned_by_role: e.returned_by_role })}
                     </div>
                   </td>
+                  <td>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(e.proposal_id)}>View Details</button>
+                  </td>
                 </tr>
               ))}
               {shown.length === 0 && (
-                <tr><td colSpan={5}><div className="empty-state"><p>You have not endorsed or returned any proposals yet.</p></div></td></tr>
+                <tr><td colSpan={6}><div className="empty-state"><p>You have not endorsed or returned any proposals yet.</p></div></td></tr>
               )}
             </tbody>
           </table>
         )}
       </div>
+      <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>
   );
 };
