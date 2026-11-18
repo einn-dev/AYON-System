@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark } from 'react-icons/fa6';
+import React, { useEffect, useRef, useState } from 'react';
+import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark, FaMagnifyingGlass, FaChevronDown } from 'react-icons/fa6';
 import { ROLE_LABEL } from '../utils/terms';
 import {
   GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
@@ -154,6 +154,104 @@ const BudgetField = ({ id, value, onChange, disabled }) => {
   );
 };
 
+/* ── R&D priority area: type to search, or open the full grouped list ──
+   Saves the same "<area>: <sub-area>" text the old dropdown did. */
+const SHORT_FORMS = { ai: 'artificial intelligence' };
+const agendaLabel = (v) => {
+  if (!v) return '';
+  const [area, ...rest] = v.split(': ');
+  return `${rest.join(': ')}  (${area.split('. ')[0]})`;
+};
+
+const AgendaPicker = ({ id, value, onChange, disabled }) => {
+  const [text, setText] = useState(agendaLabel(value));
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const listRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (!open) setText(agendaLabel(value)); }, [value, open]);
+
+  const typed = open && text !== agendaLabel(value) ? text.trim().toLowerCase() : '';
+  const word = SHORT_FORMS[typed] || typed;
+  const groups = AGENDA.map(([area, subs]) => {
+    const areaHit = word && area.toLowerCase().includes(word);
+    return [area, subs.filter((s) => !word || areaHit || s.toLowerCase().includes(word))];
+  }).filter(([, subs]) => subs.length);
+  const items = groups.flatMap(([area, subs]) => subs.map((s) => `${area}: ${s}`));
+  const at = Math.min(active, Math.max(items.length - 1, 0));
+
+  useEffect(() => {
+    const el = listRef.current?.querySelector('.gf-ag-opt.active');
+    if (el) el.scrollIntoView({ block: 'nearest' });
+  }, [at, open]);
+
+  const mark = (t) => {
+    if (!word) return t;
+    const i = t.toLowerCase().indexOf(word);
+    if (i < 0) return t;
+    return <>{t.slice(0, i)}<mark>{t.slice(i, i + word.length)}</mark>{t.slice(i + word.length)}</>;
+  };
+  const pick = (v) => { onChange(v); setText(agendaLabel(v)); setOpen(false); };
+  const showAll = () => { setText(''); setActive(0); setOpen(true); inputRef.current?.focus(); };
+
+  const onKey = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive(Math.min(at + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(Math.max(at - 1, 0)); }
+    else if (e.key === 'Enter') { if (open && items[at]) { e.preventDefault(); pick(items[at]); } }
+    else if (e.key === 'Escape') { setOpen(false); }
+  };
+
+  let n = -1;
+  return (
+    <div className="gf-ag">
+      <div className={`gf-ag-box${disabled ? ' off' : ''}`}>
+        <FaMagnifyingGlass className="gf-ag-icon" aria-hidden="true" />
+        <input id={id} ref={inputRef} type="text" role="combobox" autoComplete="off" disabled={disabled}
+          aria-expanded={open} aria-controls={`${id}-list`} aria-autocomplete="list"
+          placeholder="Type to search, or open the list" value={text}
+          onFocus={(e) => { e.target.select(); setActive(0); setOpen(true); }}
+          onChange={(e) => { setText(e.target.value); setActive(0); setOpen(true); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={onKey} />
+        {value && !disabled && (
+          <button type="button" className="gf-ag-btn" aria-label="Clear the priority area"
+            onMouseDown={(e) => e.preventDefault()} onClick={() => { onChange(''); setText(''); inputRef.current?.focus(); }}>
+            <FaXmark />
+          </button>
+        )}
+        <button type="button" className="gf-ag-btn" aria-label="Show all priority areas" disabled={disabled}
+          onMouseDown={(e) => { e.preventDefault(); if (open) setOpen(false); else showAll(); }}>
+          <FaChevronDown />
+        </button>
+      </div>
+      {open && !disabled && (
+        <div className="gf-ag-list" id={`${id}-list`} role="listbox" ref={listRef}>
+          {items.length === 0 ? (
+            <div className="gf-ag-none">No priority area matches "{text}". Try another word, or open the full list.</div>
+          ) : groups.map(([area, subs]) => (
+            <div key={area} role="group" aria-label={area}>
+              <div className="gf-ag-group">{mark(area)}</div>
+              {subs.map((s) => {
+                n += 1;
+                const i = n;
+                const v = `${area}: ${s}`;
+                return (
+                  <div key={v} role="option" aria-selected={v === value}
+                    className={`gf-ag-opt${i === at ? ' active' : ''}${v === value ? ' chosen' : ''}`}
+                    onMouseDown={(e) => { e.preventDefault(); pick(v); }} onMouseEnter={() => setActive(i)}>
+                    {mark(s)}{v === value && <FaCheck className="ic-r" aria-hidden="true" />}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const GrantFormFields = ({ form, value, onChange, disabled = false }) => {
   const set = (k) => (e) => onChange({ ...value, [k]: e.target.value });
   const put = (k) => (v) => onChange({ ...value, [k]: v });
@@ -173,14 +271,8 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
                 {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             ) : f.type === 'agenda' ? (
-              <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}>
-                <option value="">Choose the priority area...</option>
-                {AGENDA.map(([area, subs]) => (
-                  <optgroup key={area} label={area}>
-                    {subs.map((sub) => <option key={sub} value={`${area}: ${sub}`}>{sub}</option>)}
-                  </optgroup>
-                ))}
-              </select>
+              <AgendaPicker id={id} value={value[f.k] || ''} disabled={disabled}
+                onChange={(v) => onChange({ ...value, [f.k]: v })} />
             ) : f.type === 'textarea' ? (
               <>
                 <textarea id={id} rows={f.rows || 4} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
