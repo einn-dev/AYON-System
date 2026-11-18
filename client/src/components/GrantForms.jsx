@@ -402,6 +402,13 @@ const AgendaPicker = ({ id, value, onChange, disabled }) => {
 export const GrantFormFields = ({ form, value, onChange, disabled = false, issues = [] }) => {
   const set = (k) => (e) => onChange({ ...value, [k]: e.target.value });
   const put = (k) => (v) => onChange({ ...value, [k]: v });
+  /* a start date moved past its end date: the end date is cleared, so it has to be picked again */
+  const setDate = (f) => (e) => {
+    const v = e.target.value;
+    const next = { ...value, [f.k]: v };
+    form.fields.filter((g) => g.after === f.k).forEach((g) => { if (v && next[g.k] && String(next[g.k]) < v) next[g.k] = ''; });
+    onChange(next);
+  };
   return (
     <div className="gf-fields">
       {form.fields.map((f) => {
@@ -441,8 +448,9 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false, issue
             ) : f.type === 'budget' ? (
               <BudgetField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
             ) : (
-              <input id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
+              <input id={id} value={value[f.k] || ''} onChange={f.type === 'date' ? setDate(f) : set(f.k)} disabled={disabled}
                 type={f.type === 'date' ? 'date' : 'text'} maxLength={f.type === 'year' ? 4 : 200}
+                min={f.after ? value[f.after] || undefined : undefined}
                 inputMode={f.type === 'year' ? 'numeric' : undefined}
                 placeholder={f.hint || (f.type === 'year' ? 'Ex: 2026' : '')} {...bad} />
             )}
@@ -571,7 +579,12 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
   }
   const v = value || EMPTY_CHECK;
   const tick = (k) => onChange({ ...v, ticks: v.ticks.includes(k) ? v.ticks.filter((x) => x !== k) : [...v.ticks, k] });
-  const answer = (k, val) => onChange({ ...v, answers: { ...v.answers, [k]: val } });
+  const answer = (k, val) => {
+    const answers = { ...v.answers, [k]: val };
+    /* a start date moved past its end date: the end date is cleared */
+    (step.inputs || []).filter((i) => i.after === k).forEach((i) => { if (val && answers[i.k] && String(answers[i.k]) < val) answers[i.k] = ''; });
+    onChange({ ...v, answers });
+  };
 
   return (
     <div className="gf-check">
@@ -605,6 +618,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
         <div key={i.k} className="form-group gf-input">
           <label htmlFor={`gfc-${i.k}`}>{i.label}{i.required && <span className="gf-req"> *</span>}</label>
           <input id={`gfc-${i.k}`} value={v.answers[i.k] || ''} disabled={disabled} maxLength={200}
+            min={i.after ? v.answers[i.after] || undefined : undefined}
             type={i.type === 'date' ? 'date' : 'text'} inputMode={i.type === 'money' ? 'decimal' : undefined}
             placeholder={i.hint || (i.type === 'money' ? 'Ex: 20000' : '')}
             onChange={(e) => answer(i.k, e.target.value)} />

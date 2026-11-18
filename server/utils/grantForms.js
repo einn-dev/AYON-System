@@ -166,7 +166,7 @@ const GRANT_FORMS = {
       { k: 'conference',  label: 'Name of Conference', required: true },
       { k: 'destination', label: 'Destination', required: true, hint: 'City and country' },
       { k: 'date_from',   label: 'Travel Date, From', type: 'date', required: true },
-      { k: 'date_to',     label: 'Travel Date, To', type: 'date', required: true },
+      { k: 'date_to',     label: 'Travel Date, To', type: 'date', required: true, after: 'date_from' },
     ],
     docs: [
       { label: 'Request Letter', required: true },
@@ -210,7 +210,7 @@ const GRANT_FORMS = {
       { k: 'designation', label: 'Designation', type: 'select', options: DESIGNATIONS, required: true },
       { k: 'destination', label: 'Destination', required: true, hint: 'City and country' },
       { k: 'date_from',   label: 'Travel Date, From', type: 'date', required: true },
-      { k: 'date_to',     label: 'Travel Date, To', type: 'date', required: true },
+      { k: 'date_to',     label: 'Travel Date, To', type: 'date', required: true, after: 'date_from' },
     ],
     docs: [
       { label: 'Request Letter', required: true, hint: 'Explain how the conference is relevant to your academic or research interests.' },
@@ -274,7 +274,7 @@ const GRANT_FORMS = {
       special_assistant: {
         inputs: [
           { k: 'date_started', label: 'Research Date Started', type: 'date' },
-          { k: 'date_ended',   label: 'Date Ended', type: 'date' },
+          { k: 'date_ended',   label: 'Date Ended', type: 'date', after: 'date_started' },
           { k: 'funding',      label: 'Funding Institution' },
           { k: 'fund_amount',  label: 'Amount of Fund (₱)', type: 'money' },
           { k: 'amount',       label: 'Eligible for Incentive, Amount (₱)', type: 'money', required: true },
@@ -480,9 +480,13 @@ const fieldsIssues = (form, data) => {
       : fieldProblem(f, raw);
     if (msg) out.push({ k: f.k, box, msg });
   });
-  if (d.date_from && d.date_to && String(d.date_to) < String(d.date_from)) {
-    out.push({ k: 'date_to', box: 'gf-date_to', msg: 'The "To" date cannot be earlier than the "From" date.' });
-  }
+  /* an end date (after: the start date's key) cannot be before its start date */
+  form.fields.filter((f) => f.after).forEach((f) => {
+    const start = form.fields.find((g) => g.k === f.after);
+    if (d[f.k] && d[f.after] && String(d[f.k]) < String(d[f.after])) {
+      out.push({ k: f.k, box: `gf-${f.k}`, msg: `"${f.label}" cannot be earlier than "${start ? start.label : 'the start date'}".` });
+    }
+  });
   return out;
 };
 const fieldsProblem = (form, data) => (fieldsIssues(form, data)[0] || {}).msg || '';
@@ -549,6 +553,10 @@ const stepProblem = (step, value) => {
     if (v.length > 200) return `"${i.label}" must be 200 characters or fewer.`;
     if (i.type === 'money' && !isMoney(v)) return `"${i.label}" must be an amount, for example 20000.`;
     if (i.type === 'date' && Number.isNaN(Date.parse(v))) return `"${i.label}" is not a valid date.`;
+    if (i.after && answers[i.after] && v < String(answers[i.after])) {
+      const start = (step.inputs || []).find((x) => x.k === i.after);
+      return `"${i.label}" cannot be earlier than "${start ? start.label : 'the start date'}".`;
+    }
   }
   return '';
 };
