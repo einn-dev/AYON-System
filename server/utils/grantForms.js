@@ -383,23 +383,26 @@ const personContact = (p) => {
   if (p.contact && isOldPerson(p)) return p.contact;
   return [p.department, p.college === OTHER_COLLEGE ? '' : p.college, p.cellphone, p.email].filter(Boolean).join(' / ');
 };
-/* What is wrong with one proponent, as { k: box, msg }, or null */
-const personIssue = (p, i) => {
+/* Everything wrong with one proponent, as [{ k: box, msg }], in the order of the boxes */
+const personIssues = (p, i) => {
   const n = `proponent ${i + 1}`;
-  if (!String(p.name || '').trim()) return { k: 'name', msg: `Please fill in the name of ${n}.` };
-  if (isOldPerson(p)) return null;
-  if (!String(p.college || '').trim()) return { k: 'college', msg: `Please choose the college of ${n}.` };
+  const out = [];
+  if (!String(p.name || '').trim()) out.push({ k: 'name', msg: `Please fill in the name of ${n}.` });
+  if (isOldPerson(p)) return out;
+  if (!String(p.college || '').trim()) out.push({ k: 'college', msg: `Please choose the college of ${n}.` });
   if (!String(p.department || '').trim()) {
-    return { k: 'department', msg: p.college === OTHER_COLLEGE ? `Please fill in the institution or office of ${n}.` : `Please choose the department of ${n}.` };
+    out.push({ k: 'department', msg: p.college === OTHER_COLLEGE ? `Please fill in the institution or office of ${n}.` : `Please choose the department of ${n}.` });
   }
   const email = String(p.email || '').trim();
-  if (!email) return { k: 'email', msg: `Please fill in the email of ${n}.` };
-  if (!EMAIL_RE.test(email)) return { k: 'email', msg: `Please check the email of ${n}. Ex: name@msumain.edu.ph` };
+  if (!email) out.push({ k: 'email', msg: `Please fill in the email of ${n}.` });
+  else if (!EMAIL_RE.test(email)) out.push({ k: 'email', msg: `Please check the email of ${n}. Ex: name@msumain.edu.ph` });
   if (p.cellphone && !CELL_RE.test(cleanCell(p.cellphone))) {
-    return { k: 'cellphone', msg: `Please check the cellphone number of ${n}. It should be 11 digits starting with 09.` };
+    out.push({ k: 'cellphone', msg: `Please check the cellphone number of ${n}. It should be 11 digits starting with 09.` });
   }
-  return null;
+  return out;
 };
+/* the first thing wrong with one proponent, or null */
+const personIssue = (p, i) => personIssues(p, i)[0] || null;
 
 /* Why the applicant's fields cannot be submitted yet, or '' */
 const peopleProblem = (f, list) => {
@@ -429,29 +432,45 @@ const budgetProblem = (f, b) => {
   if (t.total > BUDGET_MAX) return `The total budget (₱${t.total.toLocaleString('en-PH')}) is over the ₱${BUDGET_MAX.toLocaleString('en-PH')} maximum.`;
   return '';
 };
-const fieldsProblem = (form, data) => {
-  const d = data || {};
-  for (const f of form.fields) {
-    const raw = d[f.k];
-    if (f.type === 'people') { const p = peopleProblem(f, raw || []); if (p) return p; continue; }
-    if (f.type === 'workplan') { const p = planProblem(f, raw || []); if (p) return p; continue; }
-    if (f.type === 'budget') { const p = budgetProblem(f, raw || { ps: [], mooe: [] }); if (p) return p; continue; }
-    const v = String(raw || '').trim();
-    if (f.required && !v) return `Please fill in "${f.label}".`;
-    if (!v) continue;
-    if (f.type === 'textarea') {
-      if (f.maxWords && wordsIn(v) > f.maxWords) return `"${f.label}" must be ${f.maxWords} words or fewer (now ${wordsIn(v)}).`;
-      continue;
-    }
-    if (f.type === 'agenda') { if (!AGENDA_OPTIONS.includes(v)) return `Please choose "${f.label}".`; continue; }
-    if (v.length > 200) return `"${f.label}" must be 200 characters or fewer.`;
-    if (f.type === 'select' && !f.options.includes(v)) return `Please choose "${f.label}".`;
-    if (f.type === 'date' && Number.isNaN(Date.parse(v))) return `"${f.label}" is not a valid date.`;
-    if (f.type === 'year' && !/^(19|20)\d{2}$/.test(v)) return `"${f.label}" must be a year, for example 2026.`;
+/* What one ordinary field needs, or '' */
+const fieldProblem = (f, raw) => {
+  const v = String(raw || '').trim();
+  if (f.required && !v) return `Please fill in "${f.label}".`;
+  if (!v) return '';
+  if (f.type === 'textarea') {
+    return f.maxWords && wordsIn(v) > f.maxWords ? `"${f.label}" must be ${f.maxWords} words or fewer (now ${wordsIn(v)}).` : '';
   }
-  if (d.date_from && d.date_to && String(d.date_to) < String(d.date_from)) return 'The "To" date cannot be earlier than the "From" date.';
+  if (f.type === 'agenda') return AGENDA_OPTIONS.includes(v) ? '' : `Please choose "${f.label}".`;
+  if (v.length > 200) return `"${f.label}" must be 200 characters or fewer.`;
+  if (f.type === 'select' && !f.options.includes(v)) return `Please choose "${f.label}".`;
+  if (f.type === 'date' && Number.isNaN(Date.parse(v))) return `"${f.label}" is not a valid date.`;
+  if (f.type === 'year' && !/^(19|20)\d{2}$/.test(v)) return `"${f.label}" must be a year, for example 2026.`;
   return '';
 };
+/* Everything the applicant still has to fix, in the order of the form:
+   [{ k: field, box: id of the box on the page, msg }]. Each proponent can add one. */
+const fieldsIssues = (form, data) => {
+  const d = data || {};
+  const out = [];
+  form.fields.forEach((f) => {
+    const raw = d[f.k];
+    const box = `gf-${f.k}`;
+    if (f.type === 'people' && f.k === 'proponents' && (raw || []).length) {
+      (raw || []).forEach((p, i) => personIssues(p || {}, i).forEach((x) => out.push({ k: f.k, box: `${box}-${i}-${x.k}`, msg: x.msg })));
+      return;
+    }
+    const msg = f.type === 'people' ? peopleProblem(f, raw || [])
+      : f.type === 'workplan' ? planProblem(f, raw || [])
+      : f.type === 'budget' ? budgetProblem(f, raw || { ps: [], mooe: [] })
+      : fieldProblem(f, raw);
+    if (msg) out.push({ k: f.k, box, msg });
+  });
+  if (d.date_from && d.date_to && String(d.date_to) < String(d.date_from)) {
+    out.push({ k: 'date_to', box: 'gf-date_to', msg: 'The "To" date cannot be earlier than the "From" date.' });
+  }
+  return out;
+};
+const fieldsProblem = (form, data) => (fieldsIssues(form, data)[0] || {}).msg || '';
 
 /* What the offices decided on a grant or incentive application, from its checks:
    amount         the incentive the MSIRC Special Assistant entered (Forms 002, 003, 004),
@@ -569,4 +588,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, OTHER_COLLEGE, personContact, personIssue, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, OTHER_COLLEGE, personContact, personIssue, personIssues, formLabel, formOf, stepOf, shown, fieldsIssues, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };

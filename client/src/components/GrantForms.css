@@ -93,8 +93,6 @@
 .gf-pbox select { text-overflow: ellipsis; }
 .gf-pcard .gf-pbox input:focus, .gf-pcard .gf-pbox select:focus { outline: none; border-color: #8d1b2d; background: #fff; }
 .gf-pcard .gf-pbox select:disabled, .gf-pcard .gf-pbox input:disabled { background: #f3eeee; color: #8a7a7d; }
-.gf-pcard .gf-pbox .gf-bad { border-color: #b3261e; background: #fff8f7; }
-.gf-perr { color: #b3261e; font-size: 0.74rem; }
 
 .gf-plan { overflow-x: auto; }
 .gf-plan-table { border-collapse: collapse; width: 100%; min-width: 520px; margin-bottom: 8px; font-size: 0.84rem; }
@@ -187,5 +185,4 @@
 /* boxes fill their space, so examples and longer entries are not cut off */
 .gf-fields > .form-group > input, .gf-fields > .form-group > select { width: 100%; }
 .gf-plan-table td:first-child input { width: 100%; min-width: 240px; }
-.gf-pbox .gf-perr, .gf-pbox > span em { text-transform: none; letter-spacing: 0; }
-.gf-pbox .gf-perr { font-weight: 500; }
+.gf-pbox > span em { text-transform: none; letter-spacing: 0; }

@@ -4,7 +4,8 @@ import API from '../services/authService';
 import './Resubmit.css';
 import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';
 import { GrantFormFields, SlotDocs, slotDocsProblem } from './GrantForms';
-import { formOf, formLabel, fieldsProblem, fieldsWarning, titleProblem as titleRule } from '../utils/grantForms';
+import { formOf, formLabel, fieldsIssues, fieldsWarning, titleProblem as titleRule } from '../utils/grantForms';
+import FormToast, { jumpTo } from './FormToast';
 
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
@@ -20,6 +21,8 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const gform = formOf(proposal);
   const [formData, setFormData] = useState(() => ({ ...(proposal.form_data || {}) }));
   const [error,  setError]  = useState('');
+  const [toast,  setToast]  = useState(null);
+  const [tried,  setTried]  = useState(false);
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef(null);
 
@@ -44,8 +47,12 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const changes = [];
   if (titleChanged) changes.push('Title changed');
   if (descChanged && !gform?.descFrom) changes.push(gform ? 'Notes changed' : 'Description changed');
+  /* lists (proponents, work plan, budget) are compared by their contents, not as text */
+  const same = (a, b) => (typeof a === 'object' || typeof b === 'object'
+    ? JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+    : String(a || '').trim() === String(b || '').trim());
   const fieldsChanged = gform
-    ? gform.fields.filter(f => String(formData[f.k] || '').trim() !== String((proposal.form_data || {})[f.k] || '').trim())
+    ? gform.fields.filter(f => !same(formData[f.k], (proposal.form_data || {})[f.k]))
     : [];
   fieldsChanged.forEach(f => changes.push(`${f.label} changed`));
   changes.push(...docsChanges(docs).map(t => (gform ? t.replace('Main Proposal Document', gform.docs[0].label).replace('supporting document', 'document') : t)));
@@ -56,11 +63,23 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
     : titleRule(gform, cleanTitle);
   const descProblem = cleanDesc.length > DESC_MAX ? `Description must be ${DESC_MAX} characters or fewer.` : '';
   const docsIssue = gform ? slotDocsProblem(gform, docs, formData) : docsProblem(docs, { needMain: true });
-  const fieldsIssue = gform ? fieldsProblem(gform, formData) : '';
-  const canSend = changes.length > 0 && !titleProblem && !descProblem && !docsIssue && !fieldsIssue && !saving;
+  const issues = gform ? fieldsIssues(gform, formData) : [];
+  /* the button works as soon as something changed; what is still missing is shown when it is pressed */
+  const canSend = changes.length > 0 && !saving;
 
   const send = async () => {
     if (!canSend) return;
+    const first = titleProblem ? { msg: titleProblem, box: 'rs-title-in' }
+      : issues[0] ? issues[0]
+      : descProblem ? { msg: descProblem, box: 'rs-desc-in' }
+      : docsIssue ? { msg: docsIssue } : null;
+    if (first) {
+      setTried(true);
+      const count = [titleProblem, descProblem, docsIssue].filter(Boolean).length + issues.length;
+      setToast({ msg: first.msg, more: count - 1, n: Date.now() });
+      if (first.box) jumpTo(first.box);
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -106,6 +125,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         </div>
 
         {error && <div className="alert alert-error" role="alert">{error}</div>}
+        <FormToast toast={toast} onClose={() => setToast(null)} />
 
         <div className="rs-field">
           <label className="rs-label" htmlFor="rs-title-in">{gform ? gform.titleLabel : 'Research Title'}</label>
@@ -117,8 +137,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         {gform && (
           <div className="rs-field">
             <span className="rs-label">{formLabel(gform)}</span>
-            <GrantFormFields form={gform} value={formData} onChange={setFormData} disabled={saving} />
-            {fieldsIssue && <div className="rs-hint err">{fieldsIssue}</div>}
+            <GrantFormFields form={gform} value={formData} onChange={setFormData} disabled={saving} issues={tried ? issues : []} />
           </div>
         )}
 

@@ -3,11 +3,12 @@ import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark
 import { ROLE_LABEL } from '../utils/terms';
 import {
   GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
-  OTHER_COLLEGE, personContact, personIssue,
+  OTHER_COLLEGE, personContact, personIssues,
 } from '../utils/grantForms';
 import { COLLEGE_DEPARTMENTS, COLLEGES } from '../data/Colleges';
 import { OriginalForm, hasOriginalForm } from './OriginalForm';
 import './GrantForms.css';
+import './FormToast.css';
 
 /* ─────────────────────────────────────────────────────────────
    The MSIRC forms filled in inside AYON (utils/grantForms.js): Form 005 on
@@ -39,7 +40,7 @@ export const collegeKey = (c) => {
   return COLLEGES.find((k) => k === v) || COLLEGES.find((k) => bare(k) === bare(v)) || v;
 };
 const EMPTY_PROPONENT = { name: '', college: '', department: '', email: '', cellphone: '' };
-const ProponentsField = ({ id, value, onChange, disabled }) => {
+const ProponentsField = ({ id, value, onChange, disabled, issues = [] }) => {
   const list = value && value.length ? value : [EMPTY_PROPONENT];
   const [seen, setSeen] = useState({});            // boxes the researcher has left, so format errors show
   const set = (i, patch) => onChange(list.map((p, j) => (j === i ? { ...p, ...patch } : p)));
@@ -52,10 +53,19 @@ const ProponentsField = ({ id, value, onChange, disabled }) => {
         const colleges = p.college && p.college !== OTHER_COLLEGE && !COLLEGES.includes(p.college) ? [p.college, ...COLLEGES] : COLLEGES;
         const depts = COLLEGE_DEPARTMENTS[p.college] || [];
         const deptList = p.department && !other && !depts.includes(p.department) ? [p.department, ...depts] : depts;
-        /* only format mistakes show here, after leaving the box; empty boxes are named by the message at the top */
-        const issue = personIssue(p, i);
-        const bad = (k) => issue && issue.k === k && (k === 'email' || k === 'cellphone') && String(p[k] || '').trim() && seen[`${i}.${k}`];
+        /* a wrong email or cellphone shows as soon as the box is left; empty boxes turn red after Next */
+        const own = personIssues(p, i);
+        const bad = (k) => own.some((x) => x.k === k) && (k === 'email' || k === 'cellphone') && String(p[k] || '').trim() && seen[`${i}.${k}`];
         const box = (k) => `${id}-${i}-${k}`;
+        /* red after Next was pressed (issues), or a wrong format right after leaving the box */
+        const flagged = (k) => issues.find((x) => x.box === box(k));
+        const red = (k) => !!flagged(k) || !!bad(k);
+        const mark = (k) => (red(k) ? { className: 'f-bad', 'aria-invalid': true, 'aria-describedby': `${box(k)}-err` } : {});
+        const FORMAT = { email: 'Check the email. Ex: name@msumain.edu.ph', cellphone: '11 digits starting with 09' };
+        const note = (k) => {
+          const m = flagged(k) ? flagged(k).msg : bad(k) ? FORMAT[k] : '';
+          return m ? <small className="f-err" id={`${box(k)}-err`}>{m}</small> : null;
+        };
         return (
           <fieldset key={i} className="gf-pcard" disabled={disabled}>
             <legend className="gf-person-no">{who}</legend>
@@ -69,45 +79,48 @@ const ProponentsField = ({ id, value, onChange, disabled }) => {
             <div className="gf-pgrid">
               <label className="gf-pbox full" htmlFor={box('name')}>
                 <span>Full name <i>*</i></span>
-                <input id={box('name')} maxLength={150} placeholder="Ex: Juan A. Dela Cruz"
+                <input id={box('name')} maxLength={150} placeholder="Ex: Juan A. Dela Cruz" {...mark('name')}
                   value={p.name || ''} onChange={(e) => set(i, { name: e.target.value })} />
+                {note('name')}
               </label>
               <label className="gf-pbox" htmlFor={box('college')}>
                 <span>College <i>*</i></span>
-                <select id={box('college')} value={p.college || ''}
+                <select id={box('college')} value={p.college || ''} {...mark('college')}
                   onChange={(e) => set(i, { college: e.target.value, department: '' })}>
                   <option value="">Choose a college</option>
                   {colleges.map((c) => <option key={c} value={c}>{c}</option>)}
                   <option value={OTHER_COLLEGE}>{OTHER_COLLEGE}</option>
                 </select>
+                {note('college')}
               </label>
               <label className="gf-pbox" htmlFor={box('department')}>
                 <span>{other ? 'Institution or office' : 'Department'} <i>*</i></span>
                 {other ? (
-                  <input id={box('department')} maxLength={200} placeholder="Ex: MSU-Iligan Institute of Technology"
+                  <input id={box('department')} maxLength={200} {...mark('department')} placeholder="Ex: MSU-Iligan Institute of Technology"
                     value={p.department || ''} onChange={(e) => set(i, { department: e.target.value })} />
                 ) : (
-                  <select id={box('department')} value={p.department || ''} disabled={disabled || !p.college}
+                  <select id={box('department')} value={p.department || ''} {...mark('department')} disabled={disabled || !p.college}
                     onChange={(e) => set(i, { department: e.target.value })}>
                     <option value="">{p.college ? 'Choose a department' : 'Choose the college first'}</option>
                     {deptList.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 )}
+                {note('department')}
               </label>
               <label className="gf-pbox" htmlFor={box('email')}>
                 <span>Email <i>*</i></span>
                 <input id={box('email')} type="email" maxLength={150} placeholder="Ex: name@msumain.edu.ph"
-                  className={bad('email') ? 'gf-bad' : undefined} aria-invalid={bad('email') ? true : undefined}
+                  {...mark('email')}
                   value={p.email || ''} onChange={(e) => set(i, { email: e.target.value })} onBlur={() => leave(i, 'email')} />
-                {bad('email') && <small className="gf-perr">Check the email. Ex: name@msumain.edu.ph</small>}
+                {note('email')}
               </label>
               <label className="gf-pbox" htmlFor={box('cellphone')}>
                 <span>Cellphone <em>(optional)</em></span>
                 <input id={box('cellphone')} inputMode="numeric" maxLength={13} placeholder="Ex: 09171234567"
-                  className={bad('cellphone') ? 'gf-bad' : undefined} aria-invalid={bad('cellphone') ? true : undefined}
+                  {...mark('cellphone')}
                   value={p.cellphone || ''} onChange={(e) => set(i, { cellphone: e.target.value.replace(/[^\d\s-]/g, '') })}
                   onBlur={() => leave(i, 'cellphone')} />
-                {bad('cellphone') && <small className="gf-perr">11 digits starting with 09</small>}
+                {note('cellphone')}
               </label>
             </div>
           </fieldset>
@@ -346,7 +359,9 @@ const AgendaPicker = ({ id, value, onChange, disabled }) => {
   );
 };
 
-export const GrantFormFields = ({ form, value, onChange, disabled = false }) => {
+/* issues: what is still missing or wrong (fieldsIssues in utils/grantForms.js), shown in red
+   under each box. Empty until the researcher presses Next or Submit once. */
+export const GrantFormFields = ({ form, value, onChange, disabled = false, issues = [] }) => {
   const set = (k) => (e) => onChange({ ...value, [k]: e.target.value });
   const put = (k) => (v) => onChange({ ...value, [k]: v });
   return (
@@ -356,12 +371,15 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
         const wide = LONG.includes(f.type);
         const full = wide || f.full;           /* a short field that still takes the whole row */
         const words = f.maxWords ? wordsIn(value[f.k]) : 0;
+        const mine = issues.filter((x) => x.k === f.k);
+        const own = mine.find((x) => x.box === id);              /* about the field as a whole */
+        const bad = own ? { 'aria-invalid': true, 'aria-describedby': `${id}-err` } : {};
         return (
-          <div key={f.k} className={`form-group${full ? ' gf-wide' : ''}`}>
+          <div key={f.k} className={`form-group${full ? ' gf-wide' : ''}${own ? ' gf-has-err' : ''}`}>
             <label htmlFor={id}>{f.label}{f.required && <span className="gf-req"> *</span>}</label>
             {wide && f.hint && <p className="gf-field-hint">{f.hint}</p>}
             {f.type === 'select' ? (
-              <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}>
+              <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled} {...bad}>
                 <option value="">Choose...</option>
                 {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -370,7 +388,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
                 onChange={(v) => onChange({ ...value, [f.k]: v })} />
             ) : f.type === 'textarea' ? (
               <>
-                <textarea id={id} rows={f.rows || 4} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
+                <textarea id={id} rows={f.rows || 4} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled} {...bad}
                   maxLength={f.maxChars || 10000} style={{ resize: 'vertical' }} />
                 {f.maxWords && (
                   <small className={`gf-count${words > f.maxWords ? ' over' : ''}`}>{words} / {f.maxWords} words</small>
@@ -378,7 +396,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
               </>
             ) : f.type === 'people' ? (
               f.k === 'proponents'
-                ? <ProponentsField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
+                ? <ProponentsField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} issues={mine} />
                 : <PeopleField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} authors={f.k === 'authors'} />
             ) : f.type === 'workplan' ? (
               <WorkplanField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
@@ -388,8 +406,9 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
               <input id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
                 type={f.type === 'date' ? 'date' : 'text'} maxLength={f.type === 'year' ? 4 : 200}
                 inputMode={f.type === 'year' ? 'numeric' : undefined}
-                placeholder={f.hint || (f.type === 'year' ? 'Ex: 2026' : '')} />
+                placeholder={f.hint || (f.type === 'year' ? 'Ex: 2026' : '')} {...bad} />
             )}
+            {own && <div className="f-err" id={`${id}-err`}>{own.msg}</div>}
           </div>
         );
       })}

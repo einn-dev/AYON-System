@@ -15,7 +15,8 @@ import { ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
-import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsProblem, fieldsWarning, titleProblem } from '../../utils/grantForms';
+import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
+import FormToast, { jumpTo } from '../../components/FormToast';
 import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
 
@@ -542,6 +543,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const [savedAt, setSavedAt] = useState(location.state?.savedAt || null);
   const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '', spotlight_id: '', form_no: '', form_data: {} });
   const [docs,    setDocs]    = useState(() => docsFromFiles([]));
+  /* a missing or wrong box: a message slides in, the page jumps to the box, and
+     after the first Next every box that still needs something is marked in red */
+  const [toast,   setToast]   = useState(null);
+  const [tried,   setTried]   = useState(false);
   /* the full account (college, department, cellphone): the Project Leader's boxes on Form 005 are filled from it */
   const [me, setMe] = useState(null);
   useEffect(() => {
@@ -625,6 +630,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
           ? leaderOf(u)
           : { name: personName(u), contact: [u.department, u.college].filter(Boolean).join(', ') }] }
       : {};
+    if (no !== form.form_no) setTried(false);
     setForm(cur => ({
       ...cur, proposal_type: type, form_no: no || '',
       form_data: no === cur.form_no ? cur.form_data : leader,
@@ -634,17 +640,46 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   };
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const formWarning = gform ? fieldsWarning(gform, form.form_data) : '';
+  /* errors from the server (saving failed, no connection) stay at the top of the page */
   const fail = (msg) => { setAlert({ type: 'error', msg }); return false; };
+  /* something the researcher still has to fill in or fix */
+  const missing = (msg, box, more = 0) => {
+    setAlert(null);
+    setToast({ msg, more, n: Date.now() });
+    if (box) jumpTo(box);
+    return false;
+  };
+  /* the title box: what is wrong with it, or '' */
+  const titleIssue = (needTitle) => {
+    const t = form.title.trim();
+    if (needTitle && !t) return `Please fill in "${gform ? gform.titleLabel : 'Title'}".`;
+    if (gform) { const problem = titleProblem(gform, form.title); if (problem) return problem; }
+    if (t.length > TITLE_MAX) return `Title must be ${TITLE_MAX} characters or fewer.`;
+    return '';
+  };
+  /* every box on step 2 that still needs something, in the order of the form */
+  const detailIssues = (needTitle) => {
+    const title = titleIssue(needTitle);
+    return [
+      ...(title ? [{ k: 'title', box: 'sp-title', msg: title }] : []),
+      ...(needTitle && gform ? fieldsIssues(gform, form.form_data) : []),
+      ...(form.description.trim().length > DESC_MAX ? [{ k: 'description', box: 'sp-desc', msg: `${K.descLabel} must be ${DESC_MAX} characters or fewer.` }] : []),
+    ];
+  };
+  const shownIssues = tried ? detailIssues(true) : [];
+  const titleShown = shownIssues.find(x => x.k === 'title');
+  const descShown = shownIssues.find(x => x.k === 'description');
 
   const textOk = (needTitle) => {
-    if (!form.proposal_type) return fail('Please select a type.');
-    if (needTitle && kind === 'grants' && !gform) return fail('Please choose which form applies (step 1).');
-    if (needTitle && needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for (step 1).');
-    if (needTitle && !form.title.trim()) return fail(`Please fill in "${gform ? gform.titleLabel : 'Title'}".`);
-    if (gform) { const problem = titleProblem(gform, form.title); if (problem) return fail(problem); }
-    if (needTitle && gform) { const problem = fieldsProblem(gform, form.form_data); if (problem) return fail(problem); }
-    if (form.title.trim().length > TITLE_MAX) return fail(`Title must be ${TITLE_MAX} characters or fewer.`);
-    if (form.description.trim().length > DESC_MAX) return fail(`${K.descLabel} must be ${DESC_MAX} characters or fewer.`);
+    if (!form.proposal_type) return missing('Please select a type.');
+    if (needTitle && kind === 'grants' && !gform) return missing('Please choose which form applies (step 1).');
+    if (needTitle && needsSpotlight && !form.spotlight_id) return missing('Please choose the approved Research Spotlight this application is for (step 1).');
+    if (needTitle) setTried(true);
+    const list = detailIssues(needTitle);
+    if (list.length) {
+      if (step !== 2) setStep(2);
+      return missing(list[0].msg, list[0].box, list.length - 1);
+    }
     return true;
   };
 
@@ -671,7 +706,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     if (busy) return;
     if (!textOk(false)) return;
     const problem = docsProblem(docs, { needMain: false });
-    if (problem) return fail(problem);
+    if (problem) return missing(problem);
     setBusy('draft'); setAlert(null);
     try {
       const res = await send('draft');
@@ -702,7 +737,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     if (busy) return;
     if (!textOk(true)) return;
     const problem = gform ? slotDocsProblem(gform, docs, form.form_data) : docsProblem(docs, { needMain: true });
-    if (problem) return fail(problem);
+    if (problem) return missing(problem);
     setBusy('submit'); setAlert(null);
     try {
       const res = await send('submit');
@@ -773,6 +808,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`} role={alert.type === 'error' ? 'alert' : 'status'}>{alert.msg}</div>}
+      <FormToast toast={toast} onClose={() => setToast(null)} />
 
       <div className="panel">
         <div className="panel-body">
@@ -870,9 +906,9 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   {draftButton}
                   <button type="button" className="btn btn-primary"
                     onClick={() => {
-                      if (!form.proposal_type) return fail('Please select a type.');
-                      if (kind === 'grants' && !gform) return fail('Please choose which one applies.');
-                      if (needsSpotlight && !form.spotlight_id) return fail('Please choose the approved Research Spotlight this application is for.');
+                      if (!form.proposal_type) return missing('Please select a type.');
+                      if (kind === 'grants' && !gform) return missing('Please choose which one applies.');
+                      if (needsSpotlight && !form.spotlight_id) return missing('Please choose the approved Research Spotlight this application is for.');
                       setAlert(null); setStep(2);
                     }}>
                     Next <FaArrowRight className="ic-r" />
@@ -889,23 +925,26 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                     {gform.label ? gform.name : `${formLabel(gform)}: ${gform.name}`}
                   </p>
                 )}
-                <div className="form-group">
+                <div className={`form-group${titleShown ? ' gf-has-err' : ''}`}>
                   <label htmlFor="sp-title">{gform ? gform.titleLabel : K.titleLabel}{gform && <span style={{ color: '#b3261e' }}> *</span>}</label>
                   <input id="sp-title" name="title" value={form.title} onChange={handleChange}
-                    maxLength={TITLE_MAX + 50} placeholder={gform ? gform.titleHint : K.titleHint} />
+                    maxLength={TITLE_MAX + 50} placeholder={gform ? gform.titleHint : K.titleHint}
+                    aria-invalid={titleShown ? true : undefined} aria-describedby={titleShown ? 'sp-title-err' : undefined} />
+                  {titleShown && <div className="f-err" id="sp-title-err">{titleShown.msg}</div>}
                 </div>
                 <FormGuide form={gform} />
                 {gform && (
-                  <GrantFormFields form={gform} value={form.form_data} disabled={!!busy}
+                  <GrantFormFields form={gform} value={form.form_data} disabled={!!busy} issues={shownIssues}
                     onChange={(v) => { setForm({ ...form, form_data: v }); setAlert(null); }} />
                 )}
                 {formWarning && <div className="alert alert-info" role="note">{formWarning}</div>}
                 {!gform?.descFrom && (
-                  <div className="form-group">
+                  <div className={`form-group${descShown ? ' gf-has-err' : ''}`}>
                     <label htmlFor="sp-desc">{gform ? 'Notes (optional)' : K.descLabel}</label>
                     <textarea id="sp-desc" name="description" value={form.description} onChange={handleChange}
                       rows={gform ? 3 : 5} placeholder={gform ? 'Anything else the offices should know.' : K.descHint}
                       style={{ resize: 'vertical' }} />
+                    {descShown && <div className="f-err">{descShown.msg}</div>}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -928,10 +967,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                 </p>
                 {gform ? (
                   <SlotDocs form={gform} value={docs} onChange={setDocs} disabled={!!busy} data={form.form_data}
-                    onError={(m) => (m ? fail(m) : setAlert(null))} />
+                    onError={(m) => (m ? missing(m) : setToast(null))} />
                 ) : (
                   <DocumentsEditor value={docs} onChange={setDocs} disabled={!!busy}
-                    onError={(m) => (m ? fail(m) : setAlert(null))} />
+                    onError={(m) => (m ? missing(m) : setToast(null))} />
                 )}
 
                 {/* Review Summary */}
