@@ -6,6 +6,7 @@ import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, f
 import { GrantFormFields, SlotDocs, slotDocsProblem } from './GrantForms';
 import { formOf, formLabel, fieldsIssues, fieldsWarning, titleProblem as titleRule } from '../utils/grantForms';
 import FormToast, { jumpTo } from './FormToast';
+import { SignConfirm } from './Signature';
 
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
@@ -23,6 +24,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
   const [error,  setError]  = useState('');
   const [toast,  setToast]  = useState(null);
   const [tried,  setTried]  = useState(false);
+  const [signed, setSigned] = useState(false);       // Form 005: signed again under (15) Submitted by
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef(null);
 
@@ -63,6 +65,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
     : titleRule(gform, cleanTitle);
   const descProblem = cleanDesc.length > DESC_MAX ? `Description must be ${DESC_MAX} characters or fewer.` : '';
   const docsIssue = gform ? slotDocsProblem(gform, docs, formData) : docsProblem(docs, { needMain: true });
+  const signsForm = gform?.no === '005';
   const issues = gform ? fieldsIssues(gform, formData) : [];
   /* the button works as soon as something changed; what is still missing is shown when it is pressed */
   const canSend = changes.length > 0 && !saving;
@@ -72,10 +75,11 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
     const first = titleProblem ? { msg: titleProblem, box: 'rs-title-in' }
       : issues[0] ? issues[0]
       : descProblem ? { msg: descProblem, box: 'rs-desc-in' }
-      : docsIssue ? { msg: docsIssue } : null;
+      : docsIssue ? { msg: docsIssue }
+      : signsForm && !signed ? { msg: 'Please sign (15) Submitted by: tick the box under Your signature.', box: 'rs-sign' } : null;
     if (first) {
       setTried(true);
-      const count = [titleProblem, descProblem, docsIssue].filter(Boolean).length + issues.length;
+      const count = [titleProblem, descProblem, docsIssue, signsForm && !signed].filter(Boolean).length + issues.length;
       setToast({ msg: first.msg, more: count - 1, n: Date.now() });
       if (first.box) jumpTo(first.box);
       return;
@@ -88,6 +92,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
       data.append('description', cleanDesc);
       if (gform) data.append('form_data', JSON.stringify(formData));
       appendDocs(data, docs);
+      if (signsForm) data.append('attest', signed ? 'true' : 'false');
       const res = await API.post(`/proposals/${proposal.proposal_id}/resubmit`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -166,6 +171,14 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
               : 'Documents you leave alone are kept. Replace the Main Proposal Document, or add or remove supporting documents.'}
           </div>
         </div>
+
+        {signsForm && (
+          <div className="rs-field">
+            <span className="rs-label">(15) Submitted by</span>
+            <div className="rs-hint" style={{ marginBottom: 8 }}>A resubmitted Form 005 is signed again, as the Project Leader.</div>
+            <SignConfirm id="rs-sign" verb="resubmit" noun="proposal" roleLabel="Project Leader" disabled={saving} onReady={setSigned} />
+          </div>
+        )}
 
         <div className="rs-changes">
           {changes.length ? (

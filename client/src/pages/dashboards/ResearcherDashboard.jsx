@@ -11,7 +11,7 @@ import ResubmitModal from '../../components/ResubmitModal';
 import '../../components/Resubmit.css';
 import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
-import { ProposalSignatures } from '../../components/Signature';
+import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
@@ -547,6 +547,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
      after the first Next every box that still needs something is marked in red */
   const [toast,   setToast]   = useState(null);
   const [tried,   setTried]   = useState(false);
+  const [signed,  setSigned]  = useState(false);         // Form 005: the box under (15) Submitted by is ticked
   /* the full account (college, department, cellphone): the Project Leader's boxes on Form 005 are filled from it */
   const [me, setMe] = useState(null);
   useEffect(() => {
@@ -611,6 +612,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const formChoices = FORMS_OF_TYPE[form.proposal_type] || [];
   const gform = formChoices.includes(form.form_no) ? GRANT_FORMS[form.form_no] : null;
   const needsSpotlight = !!gform?.needsSpotlight;
+  const signsForm = gform?.no === '005';
   /* choosing a type or a form: documents that belong to another form are dropped */
   const chooseForm = (type, no) => {
     const f = GRANT_FORMS[no];
@@ -696,6 +698,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
       data.append('form_data', JSON.stringify(gform ? form.form_data : {}));
     }
     appendDocs(data, docs);
+    if (saveAs === 'submit' && signsForm) data.append('attest', signed ? 'true' : 'false');
     return data;
   };
   const send = (saveAs) => (draftId
@@ -738,6 +741,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     if (!textOk(true)) return;
     const problem = gform ? slotDocsProblem(gform, docs, form.form_data) : docsProblem(docs, { needMain: true });
     if (problem) return missing(problem);
+    if (signsForm && !signed) return missing('Please sign (15) Submitted by: tick the box under Your signature.', 'sp-sign');
     setBusy('submit'); setAlert(null);
     try {
       const res = await send('submit');
@@ -988,6 +992,18 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                     </div>
                   ))}
                 </div>
+
+                {/* Form 005 (15) Submitted by: the Project Leader signs when submitting */}
+                {signsForm && (
+                  <div className="sp-sign" style={{ marginBottom: 20 }}>
+                    <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px' }}>(15) Submitted by</p>
+                    <p style={{ fontSize: '0.84rem', color: '#718096', margin: '0 0 10px' }}>
+                      Your signature is placed on the form as the Project Leader when you submit.
+                    </p>
+                    <SignConfirm id="sp-sign" verb="submit" noun="proposal" roleLabel="Project Leader"
+                      disabled={!!busy} onReady={setSigned} />
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button type="button" className="btn btn-outline" onClick={() => { setAlert(null); setStep(2); }}><FaArrowLeft className="ic" />Back</button>

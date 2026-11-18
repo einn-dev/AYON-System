@@ -66,12 +66,12 @@ It puts the institute's research services in one place. Researchers submit propo
 | Role | What they do in AYON |
 |---|---|
 | Researcher | Submits research and grant or incentive applications, and follows their progress |
-| Chairperson | First college endorsement (department level) |
-| Research Coordinator | Second college endorsement |
+| College Chairperson | First college endorsement (department level) |
+| College Coordinator | Second college endorsement |
 | College Dean | Last college endorsement |
-| Special Assistant | Validates the proposal and forwards it to the Director |
-| MSIRC Director | Endorses it to OVCRED, or approves it |
-| OVCRED | Grants the final approval |
+| MSIRC Special Assistant | Validates the proposal and forwards it to the MSIRC Director |
+| MSIRC Director | Endorses it to VCRED, or approves it |
+| VCRED | Grants the final approval |
 | MSIRC Staff | Monitors proposals at MSIRC and the Repository (view only) |
 | Administrator | Manages accounts, settings, announcements and logs |
 
@@ -98,10 +98,10 @@ Form No. 007 (Terminal Report) is not in AYON yet.
 Researcher submits
    │
    ▼
-College endorsement:  Chairperson  →  Research Coordinator  →  College Dean
+College endorsement:  College Chairperson  →  College Coordinator  →  College Dean
    │   (an office with no account yet is skipped automatically)
    ▼
-MSIRC:  Special Assistant (validate)  →  MSIRC Director  →  OVCRED (final approval)
+MSIRC:  MSIRC Special Assistant (validate)  →  MSIRC Director  →  VCRED (final approval)
    │
    ▼
 Approved  /  Rejected
@@ -112,10 +112,10 @@ Research and grant or incentive applications follow the same route. Any office c
 | Status | Meaning |
 |---|---|
 | Draft | Saved by the researcher, not submitted yet (only the researcher sees it) |
-| For College Endorsement | With the Chairperson, Research Coordinator or Dean |
-| For Validation | With the Special Assistant |
-| For Director Review | With the MSIRC Director |
-| For OVCRED Approval | With OVCRED |
+| For College Endorsement | With the College Chairperson, College Coordinator or College Dean |
+| For Validation | With the MSIRC Special Assistant |
+| For MSIRC Director Review | With the MSIRC Director |
+| For VCRED Approval | With VCRED |
 | Returned for Revision | Sent back to the researcher to fix |
 | Approved / Rejected | The final decision |
 
@@ -195,6 +195,7 @@ In Supabase, open **SQL Editor** and run these files **in this order**:
 15. `add_grant_forms.sql` (the MSIRC forms and each office's checklist)
 16. `add_decision_details.sql` (decision date and rejection reason, faster lookups, one role per account)
 17. `update_external_research.sql` (External Research: researchers and keywords, always private; moves old Externally Funded records out of My Research)
+18. `add_researcher_signature.sql` (the Project Leader signs Form 005 under (15) Submitted by)
 
 Each file is safe to run more than once. For a demo, `demo_data.sql` can be run after these; keep it out of a public repository, because it holds the shared demo password.
 

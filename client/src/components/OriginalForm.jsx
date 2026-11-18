@@ -307,6 +307,7 @@ const Form005 = ({ ctx }) => {
   const t = budgetTotals(b);
   const rows = (list) => (list || []).filter((r) => r.item || r.amount);
   const groups = mooeGroups(rows(b.mooe));
+  const own = ctx.sig('researcher');            // (15): the Project Leader's signature, this round
   return (
     <div className="of5">
       <div className="of5-page">
@@ -415,10 +416,15 @@ const Form005 = ({ ctx }) => {
         <div className="of5-frame">
           <Sec n={15} title="Submitted by:">
             <div className="of5-text of5-sub15">
-              <div><span>SIGNATURE:</span> <Line grow={false} w="14em" /></div>
-              <div><span>NAME:</span> <Line v={ctx.name} grow={false} w="14em" /></div>
+              <div>
+                <span>SIGNATURE:</span>
+                <span className="of-v of5-sigline">
+                  {own ? <img src={own.image_data} alt={`Signature of ${own.signer_name}`} /> : ' '}
+                </span>
+              </div>
+              <div><span>NAME:</span> <Line v={own ? own.signer_name : ctx.name} grow={false} w="14em" /></div>
               <div><span>DESIGNATION:</span> <Line v="Project Leader" grow={false} w="14em" /></div>
-              <div><span>DATE:</span> <Line v={day(ctx.p.submitted_at)} grow={false} w="14em" /></div>
+              <div><span>DATE:</span> <Line v={day(own ? own.signed_at : ctx.p.submitted_at)} grow={false} w="14em" /></div>
             </div>
           </Sec>
           <Sec n={16} title="Curriculum Vitae of Proponent(s)">

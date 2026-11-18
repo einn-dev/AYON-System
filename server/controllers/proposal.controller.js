@@ -78,7 +78,12 @@ const submitProposal = async (req, res) => {
   if (fm.fail) return res.status(fm.fail[0]).json(fm.fail[1]);
 
   let spotlightId = null;
+  let signed = null;
   try {
+    if (!asDraft) {
+      signed = await researcherSignature(req, fm.form);
+      if (!signed.ok) return res.status(signed.status).json(signed.body);
+    }
     const sp = await checkSpotlight({ needs: !!(fm.form && fm.form.needsSpotlight), raw: body.spotlight_id, userId: req.user.user_id, required: !asDraft });
     if (sp.fail) return res.status(sp.fail[0]).json(sp.fail[1]);
     spotlightId = sp.id;
@@ -139,12 +144,28 @@ const submitProposal = async (req, res) => {
     }
 
     const started = await startReview(req, { proposal_id: proposal.proposal_id, user_id: req.user.user_id, title, proposal_type: type });
+    if (!started.already) await placeResearcherSignature(req, proposal.proposal_id, title, signed, 1);
     return res.status(201).json({ ...started, proposal_id: proposal.proposal_id });
   } catch (err) {
     await removeKeys(rows.map(r => r.storage_key));
     console.error('submitProposal error:', err);
     return res.status(500).json({ message: 'Server error.' });
   }
+};
+
+/* Form 005 (15) "Submitted by": the researcher signs when submitting or resubmitting,
+   with a saved signature and a ticked box (attest = 'true' in the form body).
+   Returns { ok, signature } (signature is null for other forms) or { ok:false, status, body }. */
+const researcherSignature = async (req, form) => {
+  if (!form || form.no !== '005') return { ok: true, signature: null };
+  return requireSignature({ ...req, body: { attest: String((req.body || {}).attest) === 'true' } });
+};
+const placeResearcherSignature = async (req, proposalId, title, signed, round) => {
+  if (!signed || !signed.signature) return;
+  await recordSignature({
+    proposalId, user: req.user, role: 'researcher', action: 'submit', round, image: signed.signature.image_data,
+  });
+  await auditSignature(req, proposalId, title, 'researcher', 'submit', round);
 };
 
 /* Title and abstract limits. Returns an error body, or null. */
@@ -263,6 +284,8 @@ const updateDraft = async (req, res) => {
 
     const fm = readForm({ body, type, submit, current: draft });
     if (fm.fail) return res.status(fm.fail[0]).json(fm.fail[1]);
+    const signed = submit ? await researcherSignature(req, fm.form) : null;
+    if (signed && !signed.ok) return res.status(signed.status).json(signed.body);
 
     const sp = await checkSpotlight({
       needs: !!(fm.form && fm.form.needsSpotlight), userId: req.user.user_id, required: submit,
@@ -315,6 +338,7 @@ const updateDraft = async (req, res) => {
       return res.status(200).json({ message: 'Draft saved.', proposal_id: draft.proposal_id, status: 'draft' });
     }
     const started = await startReview(req, { proposal_id: draft.proposal_id, user_id: draft.user_id, title, proposal_type: type });
+    if (!started.already) await placeResearcherSignature(req, draft.proposal_id, title, signed, roundOf(draft));
     return res.status(200).json({ ...started, proposal_id: draft.proposal_id });
   } catch (err) {
     console.error('updateDraft error:', err);
@@ -806,6 +830,10 @@ const resubmitProposal = async (req, res) => {
       });
     }
 
+    /* Form 005: the researcher signs the resubmitted form again (a new round) */
+    const signed = await researcherSignature(req, form);
+    if (!signed.ok) return res.status(signed.status).json(signed.body);
+
     /* the document limits, checked before anything is uploaded */
     const current = await listFiles(proposal.proposal_id).catch(() => []);
     const kinds   = [...(up.main ? [{ kind: 'main' }] : []), ...up.supporting.map(() => ({ kind: 'supporting' }))];
@@ -863,6 +891,7 @@ const resubmitProposal = async (req, res) => {
     }
 
     const finalTitle = titleChanged ? titleIn : proposal.title;
+    await placeResearcherSignature(req, proposal.proposal_id, finalTitle, signed, revision + 1);
 
     /* the office validates it again from scratch (best effort) */
     const { error: subErr } = await supabase

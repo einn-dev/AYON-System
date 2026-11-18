@@ -7,22 +7,25 @@ const { ROLE_LABEL } = require('./terms');
    confirmation box, recorded with the time and the person's account).
 
    Who signs, and when:
-     Research Coordinator, Chairperson, College Dean → Endorse and Sign
-     Special Assistant                               → Validate and Forward
-     MSIRC Director                                  → Endorse to OVCRED / Approve
-     OVCRED                                          → Grant Final Approval
+     Researcher (Project Leader)                           → Submit or resubmit Form 005
+     College Coordinator, College Chairperson, College Dean → Endorse and Sign
+     MSIRC Special Assistant                               → Validate and Forward
+     MSIRC Director                                  → Endorse to VCRED / Approve
+     VCRED                                          → Grant Final Approval
    Returning or rejecting never signs.
    ───────────────────────────────────────────────────────────── */
 
 const SIGNER_ROLES = [
   'research_coordinator', 'chairperson', 'college_dean',
   'special_assistant', 'msric_director', 'ovcred',
+  'researcher',                                     // Form 005 (15) Submitted by
 ];
 
 const ACTION_LABEL = {
+  submit:            'Submitted',
   endorse:           'Endorsed',
   validate:          'Validated and forwarded',
-  endorse_to_ovcred: 'Endorsed to OVCRED',
+  endorse_to_ovcred: 'Endorsed to VCRED',
   approve:           'Approved',
   final_approval:    'Granted final approval',
 };
@@ -95,7 +98,7 @@ const requireSignature = async (req) => {
   }
   if (!sig) {
     return { ok: false, status: 400, body: {
-      message: 'You have no saved signature yet. Add one in your profile under "My Signature" first.',
+      message: 'You have no saved signature yet. Add one in My Profile, under Digital Signature, first.',
       code: 'SIGNATURE_REQUIRED',
     } };
   }

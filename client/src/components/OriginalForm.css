@@ -168,3 +168,5 @@
 .of5-grid tr.of5-grp td { font-weight: 700; font-style: italic; color: #000; }
 .of5-grid td.of5-in { padding-left: 18px; }
 .of5-grid tr.of5-sub td { font-weight: 600; }
+.of5-sigline { display: inline-flex; align-items: flex-end; justify-content: center; min-width: 14em; height: 46px; }
+.of5-sigline img { max-height: 44px; max-width: 13em; object-fit: contain; }

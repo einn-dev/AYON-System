@@ -23,6 +23,7 @@ import { personName } from '../utils/names';
 export const SIGNER_ROLES = [
   'research_coordinator', 'chairperson', 'college_dean',
   'special_assistant', 'msric_director', 'ovcred',
+  'researcher',                                  // signs Form 005, (15) Submitted by
 ];
 
 const MAX_BYTES = 1024 * 1024;              // what the server accepts
@@ -389,7 +390,8 @@ export const MySignature = ({ onSaved }) => {
    Calls onReady(true) only when a signature is saved AND the box is ticked.
    `verb` completes the sentence "I, <name> (<role>), ___ this <noun> ..."
    `noun` is "proposal" (research) or "application" (grants and incentives) */
-export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disabled = false }) => {
+/* roleLabel: how the signer is named in the box (the Project Leader on Form 005); id: the tick box */
+export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disabled = false, roleLabel = '', id }) => {
   const { user } = useAuth();
   const { sig, loading, error } = useMySignature();
   const [checked, setChecked] = useState(false);
@@ -407,7 +409,7 @@ export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disa
         <div className="sig-box">
           <img src={sig.image_data} alt="Your signature" />
           <div><span className="sig-name">{fullName(user) || 'You'}</span></div>
-          <div className="sig-role">{ROLE_LABEL[user?.role] || ''}</div>
+          <div className="sig-role">{roleLabel || ROLE_LABEL[user?.role] || ''}</div>
         </div>
       ) : (
         <div className="sig-warn">
@@ -423,10 +425,10 @@ export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disa
 
       {sig && (
         <label className="sig-check">
-          <input type="checkbox" checked={checked} disabled={disabled}
+          <input type="checkbox" id={id} checked={checked} disabled={disabled}
             onChange={(e) => setChecked(e.target.checked)} />
           <span>
-            I, <b>{fullName(user) || 'the signer'}</b> ({ROLE_LABEL[user?.role] || 'official'}), {verb} this {noun}{' '}
+            I, <b>{fullName(user) || 'the signer'}</b> ({roleLabel || ROLE_LABEL[user?.role] || 'official'}), {verb} this {noun}{' '}
             and agree that my electronic signature is placed on it.
           </span>
         </label>
@@ -442,6 +444,17 @@ const OFFICE_HOLDER = { submitted: 'special_assistant', under_review: 'msric_dir
 const roundOf = (p) => Number(p?.round) || (Number(p?.revision_count) || 0) + 1;
 
 const lineStates = (p, sigs) => {
+  const lines = officeLines(p, sigs);
+  if (p.form_no !== '005') return lines;
+  /* Form 005: the Project Leader signs first, under (15) Submitted by */
+  const own = sigs.find(x => Number(x.round) === roundOf(p) && x.signer_role === 'researcher');
+  const first = own ? { role: 'researcher', state: 'ok', sig: own }
+    : { role: 'researcher', state: p.status === 'draft' || p.status === 'returned' ? 'todo' : 'none' };
+  return [first, ...lines];
+};
+const LINE_LABEL = { researcher: 'Project Leader' };
+
+const officeLines = (p, sigs) => {
   const round = roundOf(p);
   const now   = sigs.filter(s => Number(s.round) === round);
   const holder = p.status === 'for_endorsement' ? p.endorsement_stage : OFFICE_HOLDER[p.status] || null;
@@ -510,7 +523,7 @@ export const ProposalSignatures = ({ proposal }) => {
               <div key={l.role} className={`sig-line${l.state === 'skip' ? ' skip' : ''}`}>
                 <div className="sig-sp">{l.sig && <img src={l.sig.image_data} alt={`Signature of ${l.sig.signer_name}`} />}</div>
                 <div><span className="sig-name">{l.sig ? l.sig.signer_name : ' '}</span></div>
-                <div className="sig-role">{ROLE_LABEL[l.role]}</div>
+                <div className="sig-role">{LINE_LABEL[l.role] || ROLE_LABEL[l.role]}</div>
                 <div className={`sig-st ${l.state}`} title={l.sig ? fmtTime(l.sig.signed_at) : undefined}>
                   {l.state === 'ok' ? `${l.sig.action_label || 'Signed'} · ${fmtDate(l.sig.signed_at)}` : STATE_TEXT[l.state]}
                 </div>
