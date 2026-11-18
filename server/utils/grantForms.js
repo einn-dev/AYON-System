@@ -150,7 +150,7 @@ const GRANT_FORMS = {
     ],
     docs: [
       { label: 'Curriculum Vitae of Proponent(s)', required: true, hint: 'Section (16): one file with the CV of each proponent.' },
-      { label: 'Research Ethics, Biosafety or IACUC Clearance', hint: 'Only if your research needs one. It can be attached later if it is not out yet.' },
+      { label: 'Research Ethics, Biosafety or IACUC Clearance', hint: 'Attach it if you already have it. If it is not out yet, you can still submit. If an office asks for it, you can attach it when you resubmit.' },
     ],
     steps: {},
   },
