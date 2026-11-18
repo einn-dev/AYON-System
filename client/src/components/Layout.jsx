@@ -15,6 +15,7 @@ import { personName } from '../utils/names';
 import { OPEN_PROFILE } from './Signature';
 import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
 import { FaBell, FaXmark as FaClose } from 'react-icons/fa6';
+import { COLLAPSE_MENU } from './StatCard';
 
 /* phones and small tablets: the menu slides in from the left instead of taking up the screen */
 const PHONE = '(max-width: 820px)';
@@ -58,6 +59,13 @@ const Layout = ({ children, navItems, role }) => {
 
   /* close the menu after moving to another page */
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  /* a dashboard number card was clicked: fold the sidebar in so the list has more room */
+  useEffect(() => {
+    const fold = () => { setCollapsed(true); setMenuOpen(false); };
+    window.addEventListener(COLLAPSE_MENU, fold);
+    return () => window.removeEventListener(COLLAPSE_MENU, fold);
+  }, []);
 
   /* Esc closes the menu, and the page behind it does not scroll while it is open */
   useEffect(() => {

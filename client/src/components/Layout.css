@@ -470,3 +470,29 @@ html.ayon-app { font-size: 112.5%; }
   .stat-value { font-size: 1.7rem; }
   .stat-label { font-size: 0.68rem; letter-spacing: 0.5px; }
 }
+
+/* ── Number cards that open their tab (StatCard.jsx) ── */
+.stat-link {
+  text-decoration: none; color: inherit; cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.stat-link:hover, .stat-link:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(45, 35, 38, 0.10);
+  border-color: var(--sc);
+  border-top-color: var(--sc);
+}
+.stat-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--sc) 35%, transparent); outline-offset: 2px; }
+.stat-link:active { transform: translateY(-1px); }
+.stat-link::after { transition: transform 0.25s ease, opacity 0.25s ease; }
+.stat-link:hover::after, .stat-link:focus-visible::after { transform: scale(1.25); opacity: 0.14; }
+.stat-go {
+  position: absolute; right: 16px; bottom: 16px; font-size: 0.85rem; color: var(--sc-ink);
+  opacity: 0; transform: translateX(-6px); transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.stat-link:hover .stat-go, .stat-link:focus-visible .stat-go { opacity: 1; transform: none; }
+@media (hover: none) { .stat-go { opacity: 0.6; transform: none; } }   /* phones: always show the arrow */
+@media (prefers-reduced-motion: reduce) {
+  .stat-link, .stat-link::after, .stat-go { transition: none; }
+  .stat-link:hover, .stat-link:focus-visible { transform: none; }
+}

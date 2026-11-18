@@ -16,6 +16,7 @@ import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
 import { personName } from '../../utils/names';
+import StatCard from '../../components/StatCard';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -45,22 +46,10 @@ const Overview = ({ proposals }) => {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card amber">
-          <span className="stat-label">For Final Approval</span>
-          <span className="stat-value">{forApproval}</span>
-        </div>
-        <div className="stat-card green">
-          <span className="stat-label">Approved</span>
-          <span className="stat-value">{approved}</span>
-        </div>
-        <div className="stat-card red">
-          <span className="stat-label">Rejected</span>
-          <span className="stat-value">{rejected}</span>
-        </div>
-        <div className="stat-card blue">
-          <span className="stat-label">Total Received</span>
-          <span className="stat-value">{total}</span>
-        </div>
+        <StatCard color="amber" label="For Final Approval" value={forApproval} to="/ovcred/for-endorsement" />
+        <StatCard color="green" label="Approved" value={approved} to="/ovcred/approved" />
+        <StatCard color="red" label="Rejected" value={rejected} to="/ovcred/rejected" />
+        <StatCard color="blue" label="Total Received" value={total} />
       </div>
 
       {/* Endorsed proposals awaiting final approval */}

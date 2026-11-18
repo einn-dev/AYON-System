@@ -17,6 +17,7 @@ import { ProposalFiles } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { stepOf, stepProblem } from '../../utils/grantForms';
+import StatCard from '../../components/StatCard';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -56,22 +57,10 @@ const Overview = ({ proposals }) => {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card blue">
-          <span className="stat-label">{STATUS_LABEL.submitted}</span>
-          <span className="stat-value">{pending}</span>
-        </div>
-        <div className="stat-card amber">
-          <span className="stat-label">{STATUS_LABEL.under_review}</span>
-          <span className="stat-value">{reviewing}</span>
-        </div>
-        <div className="stat-card green">
-          <span className="stat-label">Validated</span>
-          <span className="stat-value">{forwarded}</span>
-        </div>
-        <div className="stat-card red">
-          <span className="stat-label">{STATUS_LABEL.returned}</span>
-          <span className="stat-value">{returned}</span>
-        </div>
+        <StatCard color="blue" label={STATUS_LABEL.submitted} value={pending} to="/special-assistant/validate" />
+        <StatCard color="amber" label={STATUS_LABEL.under_review} value={reviewing} to="/special-assistant/submissions?status=under_review" />
+        <StatCard color="green" label="Validated" value={forwarded} to="/special-assistant/forwarded" />
+        <StatCard color="red" label={STATUS_LABEL.returned} value={returned} to="/special-assistant/submissions?status=returned" />
       </div>
 
       {/* Pending Submissions */}
@@ -130,7 +119,8 @@ const Overview = ({ proposals }) => {
 /* ─────────── All Submissions ─────────── */
 const Submissions = ({ proposals, onRefresh }) => {
   const [search,  setSearch]  = useState('');
-  const [filter,  setFilter]  = useState('submitted');
+  /* a dashboard card can open this list already filtered (?status=returned) */
+  const [filter,  setFilter]  = useState(() => new URLSearchParams(window.location.search).get('status') || 'submitted');
   const [alert,   setAlert]   = useState(null);
   const [returning, setReturning] = useState(null);   // { id, title, name } while the reason box is open
   const [openId, setOpenId] = useState(null);         // the record opened in the read-only window

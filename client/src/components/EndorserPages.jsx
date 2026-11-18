@@ -10,6 +10,8 @@ import { useOpenHighlight } from './OpenHighlight';
 import { personName } from '../utils/names';
 import { FormChecklist, EMPTY_CHECK } from './GrantForms';
 import { formOf, stepOf, stepProblem } from '../utils/grantForms';
+import StatCard from './StatCard';
+import { ROLE_REDIRECTS } from '../utils/roleRoutes';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -73,25 +75,14 @@ export const EndorserStats = ({ proposals, role }) => {
   const waiting  = proposals.filter(p => isMyTurn(p, role)).length;
   const endorsed = items.filter(e => e.endorse_status === 'endorsed').length;
   const returned = items.filter(e => e.endorse_status === 'returned' || e.endorse_status === 'rejected').length;
+  const base = ROLE_REDIRECTS[role] || '';
 
   return (
     <div className="stats-grid">
-      <div className="stat-card blue">
-        <span className="stat-label">Submissions in Your Scope</span>
-        <span className="stat-value">{proposals.length}</span>
-      </div>
-      <div className="stat-card amber">
-        <span className="stat-label">Waiting for You</span>
-        <span className="stat-value">{waiting}</span>
-      </div>
-      <div className="stat-card green">
-        <span className="stat-label">Endorsed by You</span>
-        <span className="stat-value">{endorsed}</span>
-      </div>
-      <div className="stat-card red">
-        <span className="stat-label">Returned by You</span>
-        <span className="stat-value">{returned}</span>
-      </div>
+      <StatCard color="blue" label="Submissions in Your Scope" value={proposals.length} />
+      <StatCard color="amber" label="Waiting for You" value={waiting} to={`${base}/for-endorsement`} />
+      <StatCard color="green" label="Endorsed by You" value={endorsed} to={`${base}/endorsed?show=endorsed`} />
+      <StatCard color="red" label="Returned by You" value={returned} to={`${base}/endorsed?show=returned`} />
     </div>
   );
 };
@@ -351,8 +342,11 @@ export const EndorsedHistory = () => {
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState(null);     // the record opened in the read-only window
 
+  /* a dashboard card can open this list showing only what you endorsed or only what you returned */
+  const [show, setShow] = useState(() => new URLSearchParams(window.location.search).get('show') || 'all');
   const shown = items.filter(e =>
     `${e.title || ''} ${e.researcher || ''}`.toLowerCase().includes(search.toLowerCase())
+    && (show === 'all' || (show === 'endorsed' ? e.endorse_status === 'endorsed' : e.endorse_status !== 'endorsed'))
   );
 
   return (
@@ -363,8 +357,15 @@ export const EndorsedHistory = () => {
       </div>
       <div className="panel">
         <div className="panel-header">
-          <input className="search-input" placeholder="Search by title or researcher..."
-            value={search} onChange={e => setSearch(e.target.value)} />
+          <div className="toolbar">
+            <input className="search-input" placeholder="Search by title or researcher..."
+              value={search} onChange={e => setSearch(e.target.value)} />
+            <select className="search-input" aria-label="Your action" value={show} onChange={e => setShow(e.target.value)}>
+              <option value="all">Endorsed and returned</option>
+              <option value="endorsed">Endorsed only</option>
+              <option value="returned">Returned only</option>
+            </select>
+          </div>
         </div>
         {loading ? (
           <div className="empty-state"><p>Loading...</p></div>

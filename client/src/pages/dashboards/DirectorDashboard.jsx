@@ -18,6 +18,7 @@ import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
+import StatCard from '../../components/StatCard';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -47,22 +48,10 @@ const Overview = ({ proposals }) => {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card amber">
-          <span className="stat-label">For Review</span>
-          <span className="stat-value">{forReview}</span>
-        </div>
-        <div className="stat-card green">
-          <span className="stat-label">Approved</span>
-          <span className="stat-value">{approved}</span>
-        </div>
-        <div className="stat-card red">
-          <span className="stat-label">Rejected</span>
-          <span className="stat-value">{rejected}</span>
-        </div>
-        <div className="stat-card blue">
-          <span className="stat-label">Endorsed to VCRED</span>
-          <span className="stat-value">{endorsed}</span>
-        </div>
+        <StatCard color="amber" label="For Review" value={forReview} to="/director/for-review" />
+        <StatCard color="green" label="Approved" value={approved} to="/director/approved" />
+        <StatCard color="red" label="Rejected" value={rejected} to="/director/rejected" />
+        <StatCard color="blue" label="Endorsed to VCRED" value={endorsed} to="/director/endorsed" />
       </div>
 
       {/* Proposals needing action */}

@@ -20,6 +20,7 @@ import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, tit
 import FormToast, { jumpTo } from '../../components/FormToast';
 import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
+import StatCard from '../../components/StatCard';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -83,10 +84,18 @@ const Overview = ({ proposals: all, user }) => {
   const proposals = all.filter(p => p.status !== 'draft');
   const counts = {
     total:       proposals.length,
-    in_progress: proposals.filter(p => ['for_endorsement', 'submitted', 'under_review', 'endorsed'].includes(p.status)).length,
+    in_progress: proposals.filter(p => IN_PROGRESS.includes(p.status)).length,
     returned:    proposals.filter(p => p.status === 'returned').length,
     approved:    proposals.filter(p => p.status === 'approved').length,
     rejected:     proposals.filter(p => p.status === 'rejected').length,
+  };
+  /* a card opens My Research, or Grants and Incentives when all its records are applications,
+     with the list filtered to that status */
+  const isOpen = (p) => IN_PROGRESS.includes(p.status);
+  const where = (test, status) => {
+    const mine = proposals.filter(test);
+    const kind = mine.length && mine.every(p => kindOf(p.proposal_type) === 'grants') ? 'grants' : 'research';
+    return `${KINDS[kind].base}${status ? `?status=${status}` : ''}`;
   };
   const typeLabelOf = (p) => PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type;
   /* returned ones first (an office is waiting for the fix), then drafts, newest first */
@@ -104,26 +113,11 @@ const Overview = ({ proposals: all, user }) => {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card purple">
-          <span className="stat-label">Total Submissions</span>
-          <span className="stat-value">{counts.total}</span>
-        </div>
-        <div className="stat-card blue">
-          <span className="stat-label">In Progress</span>
-          <span className="stat-value">{counts.in_progress}</span>
-        </div>
-        <div className="stat-card amber">
-          <span className="stat-label">Returned for Revision</span>
-          <span className="stat-value">{counts.returned}</span>
-        </div>
-        <div className="stat-card green">
-          <span className="stat-label">Approved</span>
-          <span className="stat-value">{counts.approved}</span>
-        </div>
-        <div className="stat-card red">
-          <span className="stat-label">Rejected</span>
-          <span className="stat-value">{counts.rejected}</span>
-        </div>
+        <StatCard color="purple" label="Total Submissions" value={counts.total} to={where(() => true, '')} />
+        <StatCard color="blue" label="In Progress" value={counts.in_progress} to={where(isOpen, 'in_progress')} />
+        <StatCard color="amber" label="Returned for Revision" value={counts.returned} to={where(p => p.status === 'returned', 'returned')} />
+        <StatCard color="green" label="Approved" value={counts.approved} to={where(p => p.status === 'approved', 'approved')} />
+        <StatCard color="red" label="Rejected" value={counts.rejected} to={where(p => p.status === 'rejected', 'rejected')} />
       </div>
 
       {/* what the researcher has to do next: returned ones to fix, drafts to finish */}
@@ -260,6 +254,7 @@ const DeleteDraftModal = ({ proposal, onClose, onDone }) => {
 };
 
 const EMPTY_FILTERS = { search: '', status: 'all', type: '', year: '', sort: 'new' };
+const IN_PROGRESS = ['for_endorsement', 'submitted', 'under_review', 'endorsed'];
 
 const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) => {
   const K = KINDS[kind];
@@ -270,7 +265,8 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
   useEffect(() => {
     if (fromForm) window.history.replaceState({}, document.title);
   }, [fromForm]);
-  const [f,        setF]        = useState(EMPTY_FILTERS);
+  /* a dashboard card can open this list already filtered: ?status=approved, ?status=in_progress ... */
+  const [f,        setF]        = useState(() => ({ ...EMPTY_FILTERS, status: new URLSearchParams(location.search).get('status') || 'all' }));
   const [selected, setSelected] = useState(null);
   /* the details window shows the newest data after a live update */
   useEffect(() => {
@@ -298,7 +294,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
   const years = [...new Set(proposals.map(yearOf).filter(Boolean))].sort((a, b) => b.localeCompare(a));
   const q = f.search.trim().toLowerCase();
   const filtered = proposals
-    .filter(p => (f.status === 'all' || p.status === f.status)
+    .filter(p => (f.status === 'all' || (f.status === 'in_progress' ? IN_PROGRESS.includes(p.status) : p.status === f.status))
       && (!f.type || p.proposal_type === f.type)
       && (!f.year || yearOf(p) === f.year)
       && (!q || (p.title || 'untitled draft').toLowerCase().includes(q)))
@@ -308,6 +304,9 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
       return f.sort === 'old' ? d : -d;
     });
   const filtering = JSON.stringify(f) !== JSON.stringify(EMPTY_FILTERS);
+  const otherKind = kind === 'grants' ? 'research' : 'grants';
+  const otherCount = f.status === 'all' ? 0 : everything.filter(p => kindOf(p.proposal_type) === otherKind
+    && (f.status === 'in_progress' ? IN_PROGRESS.includes(p.status) : p.status === f.status)).length;
 
   const returnedCount = proposals.filter(p => p.status === 'returned').length;
   const draftCount    = proposals.filter(p => p.status === 'draft').length;
@@ -340,6 +339,20 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
       {fromForm && !notice && <div className="alert alert-success" role="status">{fromForm}</div>}
       {notice && <div className={`alert alert-${notice.type}`} role="status">{notice.msg}</div>}
 
+      {/* filtered by status: the same status on the other page (research vs applications) */}
+      {f.status !== 'all' && otherCount > 0 && (
+        <div className="alert alert-info" role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span>
+            You also have {otherCount} {f.status === 'in_progress' ? 'in progress' : statusLabel(f.status).toLowerCase()}{' '}
+            {otherKind === 'grants' ? `application${otherCount === 1 ? '' : 's'} in Grants and Incentives` : `research in My Research`}.
+          </span>
+          <Link className="btn btn-outline btn-sm" style={{ textDecoration: 'none', marginLeft: 'auto' }}
+            to={`${KINDS[otherKind].base}?status=${f.status}`}>
+            Open {KINDS[otherKind].page}
+          </Link>
+        </div>
+      )}
+
       {returnedCount > 0 && (
         <div className="rs-banner">
           <span>
@@ -362,6 +375,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
               value={f.search} onChange={set('search')} style={{ flex: '1 1 180px' }} />
             <select className="search-input" aria-label="Status" value={f.status} onChange={set('status')}>
               <option value="all">All Statuses</option>
+              <option value="in_progress">In Progress (any stage)</option>
               <option value="draft">{STATUS_LABEL.draft}{draftCount ? ` (${draftCount})` : ''}</option>
               {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>

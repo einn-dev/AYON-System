@@ -9,6 +9,7 @@ import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { StageOverview, stagesOf, HBars, Columns, useTip, TYPE_COLOR, OLD_TYPE_COLOR, OFFERED } from '../../components/ProposalStats';
 import '../../components/ProposalStats.css';
 import { personName } from '../../utils/names';
+import StatCard from '../../components/StatCard';
 
 const RANGES = [
   { value: 'all',  label: 'All time'     },
@@ -218,26 +219,18 @@ const AdminOverview = ({ users }) => {
         </div>
 
         <div className="stats-grid ao-health">
-          <div className={`stat-card ${tone(health.failed_emails_7d, 'red')}`}>
-            <span className="stat-label">Failed Emails (7 Days)</span>
-            <span className="stat-value">{show(health.failed_emails_7d)}</span>
-            <Link className="ao-h-link" to="/admin/emails">Open Email Log →</Link>
-          </div>
-          <div className={`stat-card ${tone(health.failed_logins_7d, 'amber')}`}>
-            <span className="stat-label">Failed Logins (7 Days)</span>
-            <span className="stat-value">{show(health.failed_logins_7d)}</span>
-            <Link className="ao-h-link" to="/admin/audit">Open Audit Log →</Link>
-          </div>
-          <div className={`stat-card ${tone(health.pending_verification, 'amber')}`}>
-            <span className="stat-label">Pending Verification</span>
-            <span className="stat-value">{show(health.pending_verification)}</span>
-            <Link className="ao-h-link" to="/admin/users">Open User Accounts →</Link>
-          </div>
-          <div className={`stat-card ${'purple'}`}>
-            <span className="stat-label">Active Accounts</span>
-            <span className="stat-value">{show(health.active_accounts)}</span>
-            <Link className="ao-h-link" to="/admin/users">Open User Accounts →</Link>
-          </div>
+          <StatCard color={tone(health.failed_emails_7d, 'red')} label="Failed Emails (7 Days)" value={show(health.failed_emails_7d)} to="/admin/emails">
+            <span className="ao-h-link">Open Email Log →</span>
+          </StatCard>
+          <StatCard color={tone(health.failed_logins_7d, 'amber')} label="Failed Logins (7 Days)" value={show(health.failed_logins_7d)} to="/admin/audit">
+            <span className="ao-h-link">Open Audit Log →</span>
+          </StatCard>
+          <StatCard color={tone(health.pending_verification, 'amber')} label="Pending Verification" value={show(health.pending_verification)} to="/admin/users">
+            <span className="ao-h-link">Open User Accounts →</span>
+          </StatCard>
+          <StatCard color={'purple'} label="Active Accounts" value={show(health.active_accounts)} to="/admin/users">
+            <span className="ao-h-link">Open User Accounts →</span>
+          </StatCard>
         </div>
       </div>
 
