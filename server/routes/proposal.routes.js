@@ -56,7 +56,7 @@ router.get('/:id/signatures', verifyToken, getProposalSignatures);
 router.get('/:id',          verifyToken, getProposalById);
 router.patch('/:id/status', verifyToken, authorizeRoles(...REVIEW_ROLES), updateProposalStatus);
 
-/* ── Save document checklist (Special Assistant) ── */
+/* ── Save document checklist (MSIRC Special Assistant) ── */
 router.post('/:id/checklist', verifyToken, authorizeRoles(...SA_ROLES),
   async (req, res) => {
     const { id } = req.params;
@@ -102,7 +102,7 @@ router.post('/:id/checklist', verifyToken, authorizeRoles(...SA_ROLES),
   }
 );
 
-/* ── Save Director review ── */
+/* ── Save MSIRC Director review ── */
 router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred','admin'),
   async (req, res) => {
     const { id } = req.params;
@@ -130,18 +130,8 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
 
       if (error) throw error;
 
-      /* a return or a rejection already told the researcher (with the reason) when the status changed */
-      if (decision === 'approve') {
-        const done = { approve: 'approved', reject: 'rejected' }[decision];
-        const who  = req.user.role === 'ovcred' ? 'OVCRED' : req.user.role === 'admin' ? 'the Administrator' : 'the MSIRC Director';
-        await supabase.from('notifications').insert({
-          user_id:     proposal.user_id,
-          proposal_id: parseInt(id),
-          notif_type:  'review',
-          title:       'Proposal Decision Made',
-          message:     `Your proposal "${proposal.title}" has been ${done} by ${who}.`,
-        });
-      }
+      /* no notification here: the status change already told the researcher
+         (an endorsement to VCRED is not an approval, and the final approval sends the congratulations) */
 
       return res.status(201).json({ message: 'Review saved.' });
     } catch (err) {
@@ -151,7 +141,7 @@ router.post('/:id/review', verifyToken, authorizeRoles('msric_director','ovcred'
   }
 );
 
-/* ── Endorse or return at the college level (Chairperson → Research Coordinator → Dean) ──
+/* ── Endorse or return at the college level (College Chairperson → College Coordinator → College Dean) ──
    The rules (whose turn, same college/department, required note) are in the controller. */
 router.post('/:id/endorse', verifyToken,
   authorizeRoles('research_coordinator', 'chairperson', 'college_dean'),

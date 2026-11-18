@@ -7,6 +7,7 @@ const { statusLabel, SUBMIT_TYPES, GRANT_TYPES, wordFor } = require('../utils/te
 const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
 const { formOf, cleanFields, fieldsProblem } = require('../utils/grantForms');
+const { sendApprovalNotice } = require('../utils/approvalNotice');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
@@ -709,15 +710,20 @@ const updateProposalStatus = async (req, res) => {
       await auditSignature(req, id, proposal.title, req.user.role, signAs, round);
     }
 
-    await supabase.from('notifications').insert({
-      user_id:     proposal.user_id,
-      proposal_id: parseInt(id),
-      notif_type:  'review',
-      title:       status === 'rejected' ? `${wordFor(proposal).P} Rejected` : `${wordFor(proposal).P} Status Updated`,
-      message:     status === 'rejected'
-        ? `Your ${wordFor(proposal).p} "${proposal.title}" was rejected by the ${ROLE_LABEL[req.user.role] || 'office'}. Reason: ${reason}`
-        : `The status of your ${wordFor(proposal).p} "${proposal.title}" is now: ${statusLabel(status)}.`,
-    });
+    /* final approval: a congratulations notification and email (once, only when it really changed) */
+    if (status === 'approved' && proposal.status !== 'approved') {
+      sendApprovalNotice(proposal, req.user.role);       // not awaited: the email never slows the approval
+    } else {
+      await supabase.from('notifications').insert({
+        user_id:     proposal.user_id,
+        proposal_id: parseInt(id),
+        notif_type:  'review',
+        title:       status === 'rejected' ? `${wordFor(proposal).P} Rejected` : `${wordFor(proposal).P} Status Updated`,
+        message:     status === 'rejected'
+          ? `Your ${wordFor(proposal).p} "${proposal.title}" was rejected by the ${ROLE_LABEL[req.user.role] || 'office'}. Reason: ${reason}`
+          : `The status of your ${wordFor(proposal).p} "${proposal.title}" is now: ${statusLabel(status)}.`,
+      });
+    }
 
     /* tell the office that now has it on its desk (only when the stage really changed) */
     if (proposal.status !== status && ['submitted', 'under_review', 'endorsed'].includes(status)) {
