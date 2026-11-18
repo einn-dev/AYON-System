@@ -105,12 +105,12 @@ const ExternalResearchPage = () => {
               <div className="form-group">
                 <label htmlFor="ext-agency">External Funding Agency<Req /></label>
                 <input id="ext-agency" value={form.external_agency} maxLength={255} onChange={set('external_agency')}
-                  placeholder="For example: DOST-PCAARRD, CHED" required />
+                  placeholder="e.g. DOST-PCAARRD, CHED" required />
               </div>
               <div className="form-group">
                 <label htmlFor="ext-people">Researchers / Co-authors<Req /></label>
                 <input id="ext-people" value={form.researchers} maxLength={1000} onChange={set('researchers')}
-                  placeholder="For example: Nur Ain Lucman; Jamal Macapado" required />
+                  placeholder="e.g. Nur Ain Lucman; Jamal Macapado" required />
                 <small style={{ color: '#718096' }}>Everyone who worked on it, including you, separated by semicolons.</small>
               </div>
               <div className="form-group">
@@ -127,7 +127,7 @@ const ExternalResearchPage = () => {
               <div className="form-group">
                 <label htmlFor="ext-amount">Funding Amount (₱)<Req /></label>
                 <input id="ext-amount" type="number" min="0" step="0.01" value={form.funding_amount}
-                  onChange={set('funding_amount')} placeholder="For example: 250000" required />
+                  onChange={set('funding_amount')} placeholder="e.g. 250000" required />
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -151,8 +151,8 @@ const ExternalResearchPage = () => {
                 border: '1px solid #bee3f8', fontSize: '0.78rem',
                 color: '#2c5282', marginBottom: 14,
               }}>
-                It is stored in the Research Repository as <b>private</b>: only you, your college (Chairperson,
-                Research Coordinator, Dean) and the MSIRC offices can see it. Other researchers cannot see or search it.
+                It is stored in the Research Repository as <b>private</b>: only you, your college (College Chairperson,
+                College Coordinator, College Dean) and the MSIRC offices can see it. Other researchers cannot see or search it.
               </div>
               {problem && !saving && (
                 <p style={{ fontSize: '0.8rem', color: '#718096', margin: '0 0 8px' }}>Still needed: {problem}</p>

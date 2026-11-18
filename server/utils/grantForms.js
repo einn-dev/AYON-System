@@ -77,7 +77,7 @@ const GRANT_FORMS = {
       { k: 'authors',   label: 'Author(s)', type: 'people', required: true,
         hint: 'Name and affiliation (department and college) of each author. The first one is the main author.' },
       { k: 'presenter', label: 'Presenting Author', required: true, hint: 'The author who will present' },
-      { k: 'presenter_contact', label: 'Presenting Author\'s Email and Mobile Number', required: true, hint: 'For example: name@msumain.edu.ph / 0917 000 0000' },
+      { k: 'presenter_contact', label: 'Presenting Author\'s Email and Mobile Number', required: true, hint: 'e.g., name@msumain.edu.ph / 0917 000 0000' },
       { k: 'student',   label: 'Student thesis entry?', type: 'select', required: true,
         options: ['No', 'Yes, presented by the adviser'],
         hint: 'For a student thesis that is not under a faculty research project. The student signs the Faculty Waiver Form.' },
@@ -85,7 +85,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Extended Abstract', required: true, hint: '1,200 to 2,000 words, following the guidelines above.' },
       { label: 'Certification and Endorsement', required: true,
-        hint: 'Certifies that the paper has not been presented elsewhere and is a product of a research work, endorsed by the Research Coordinator, Chairman and Dean.' },
+        hint: 'Certifies that the paper has not been presented elsewhere and is a product of a research work, endorsed by the College Coordinator, Chairman and College Dean.' },
       { label: 'Faculty Waiver Form', hint: 'Only for a student thesis entry presented by the adviser.' },
     ],
     steps: {
@@ -119,7 +119,7 @@ const GRANT_FORMS = {
         hint: 'The expected results: products, technologies, processes, knowledge or other deliverables.' },
       { k: 'priority',     label: '(8) R&D Priority Area', type: 'agenda', required: true,
         hint: 'From the approved MSU-Main Campus Research and Development Agenda 2023-2028.' },
-      { k: 'program',      label: 'Program under the Priority Area', hint: 'For example: Smart schools (optional)' },
+      { k: 'program',      label: 'Program under the Priority Area', hint: 'e.g., Smart schools (optional)', full: true },
       { k: 'literature',   label: '(9) Review of Related Literature', type: 'textarea', required: true,
         hint: 'What is already known on the topic, the gaps or inconsistencies, and how this research addresses them.' },
       { k: 'methodology',  label: '(10) Methodology', type: 'textarea', rows: 6, required: true,
@@ -304,7 +304,7 @@ const GRANT_FORMS = {
           { k: 'index', label: 'SCOPUS Index', options: ['Journal', 'Conference Proceeding'], required: true },
         ],
         inputs: [
-          { k: 'quartile', label: 'Quartile Rank', hint: 'For example Q1' },
+          { k: 'quartile', label: 'Quartile Rank', hint: 'e.g., Q1' },
           { k: 'amount',   label: 'Eligible for Incentive, Amount (₱)', type: 'money', required: true },
         ],
         hint: 'If the application is not eligible, return it with your remarks instead.',
@@ -415,9 +415,9 @@ const fieldsProblem = (form, data) => {
 };
 
 /* What the offices decided on a grant or incentive application, from its checks:
-   amount         the incentive the Special Assistant entered (Forms 002, 003, 004),
-                  or the financial assistance the Director entered (Form 008)
-   recommendation the Director's recommendation (Forms 001 and 008)
+   amount         the incentive the MSIRC Special Assistant entered (Forms 002, 003, 004),
+                  or the financial assistance the MSIRC Director entered (Form 008)
+   recommendation the MSIRC Director's recommendation (Forms 001 and 008)
    chargeable     College or Research Funds (Form 001)                              */
 const awardOf = (p) => {
   const checks = (p && p.form_checks) || [];
@@ -527,4 +527,5 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, 
+  fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };

@@ -159,3 +159,7 @@
 .gf-ag-opt.chosen { font-weight: 700; }
 .gf-ag-opt mark, .gf-ag-group mark { background: #fde68a; color: inherit; border-radius: 2px; padding: 0; }
 .gf-ag-none { padding: 12px; color: #718096; font-size: 0.88rem; }
+
+/* boxes fill their space, so examples and longer entries are not cut off */
+.gf-fields > .form-group > input, .gf-fields > .form-group > select { width: 100%; }
+.gf-plan-table td:first-child input { width: 100%; min-width: 240px; }

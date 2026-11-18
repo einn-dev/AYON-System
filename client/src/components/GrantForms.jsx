@@ -71,7 +71,7 @@ const WorkplanField = ({ id, value, onChange, disabled }) => {
           {rows.map((r, i) => (
             <tr key={i}>
               <td>
-                <input aria-label={`Activity ${i + 1}`} placeholder="For example: Data gathering" maxLength={300}
+                <input aria-label={`Activity ${i + 1}`} placeholder="e.g. Data gathering" maxLength={300}
                   value={r.activity} disabled={disabled} onChange={(e) => set(i, { ...r, activity: e.target.value })} />
               </td>
               {months.map((m) => {
@@ -104,7 +104,7 @@ const WorkplanField = ({ id, value, onChange, disabled }) => {
 
 /* (13) and (14) Budget: line items under Personal Services and MOOE, totals added up */
 const BUDGET_PARTS = [
-  { k: 'ps',   title: 'Personal Services (PS)', hint: 'For example: Enumerators, ₱500/day x 20 days. No honoraria for the project leader or members.' },
+  { k: 'ps',   title: 'Personal Services (PS)', hint: 'e.g. Enumerators, ₱500/day x 20 days. No honoraria for the project leader or members.' },
   { k: 'mooe', title: 'Maintenance and Other Operating Expenses (MOOE)', hint: 'Travel, per diem, food allowance, supplies and materials.' },
 ];
 const BudgetField = ({ id, value, onChange, disabled }) => {
@@ -260,9 +260,10 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
       {form.fields.map((f) => {
         const id = `gf-${f.k}`;
         const wide = LONG.includes(f.type);
+        const full = wide || f.full;           /* a short field that still takes the whole row */
         const words = f.maxWords ? wordsIn(value[f.k]) : 0;
         return (
-          <div key={f.k} className={`form-group${wide ? ' gf-wide' : ''}`}>
+          <div key={f.k} className={`form-group${full ? ' gf-wide' : ''}`}>
             <label htmlFor={id}>{f.label}{f.required && <span className="gf-req"> *</span>}</label>
             {wide && f.hint && <p className="gf-field-hint">{f.hint}</p>}
             {f.type === 'select' ? (
@@ -291,7 +292,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
               <input id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
                 type={f.type === 'date' ? 'date' : 'text'} maxLength={f.type === 'year' ? 4 : 200}
                 inputMode={f.type === 'year' ? 'numeric' : undefined}
-                placeholder={f.hint || (f.type === 'year' ? 'For example 2026' : '')} />
+                placeholder={f.hint || (f.type === 'year' ? 'e.g. 2026' : '')} />
             )}
           </div>
         );
@@ -452,7 +453,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
           <label htmlFor={`gfc-${i.k}`}>{i.label}{i.required && <span className="gf-req"> *</span>}</label>
           <input id={`gfc-${i.k}`} value={v.answers[i.k] || ''} disabled={disabled} maxLength={200}
             type={i.type === 'date' ? 'date' : 'text'} inputMode={i.type === 'money' ? 'decimal' : undefined}
-            placeholder={i.hint || (i.type === 'money' ? 'For example 20000' : '')}
+            placeholder={i.hint || (i.type === 'money' ? 'e.g. 20000' : '')}
             onChange={(e) => answer(i.k, e.target.value)} />
         </div>
       ))}
