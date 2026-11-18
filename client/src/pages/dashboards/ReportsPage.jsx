@@ -2,24 +2,31 @@ import React, { useState, useEffect, useCallback } from 'react';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import './Reports.css';
-import { FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar, FaTableList } from 'react-icons/fa6';
+import {
+  FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar, FaTableList,
+  FaRotateLeft, FaFilePdf, FaFileCsv, FaUserPen,
+} from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
+import { HBars, Columns, Ring, useTip, TYPE_COLOR, OLD_TYPE_COLOR } from '../../components/ProposalStats';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
    filtered data as a PDF or a CSV (opens in Excel).
+     - the colored cards double as a quick Status filter
+     - "Who has them now" follows the endorsement path step by step
+     - by type and over time use the same colors as the dashboards
    ───────────────────────────────────────────────────────────── */
 
 const REPORT_TYPES = [
-  { key: 'proposals',  icon: <FaFileLines />,         label: 'Proposals Report',
-    desc: 'Every proposal in the filters: researcher, college, type, status and where it is waiting.', csv: true },
-  { key: 'grants',     icon: <FaHandHoldingDollar />, label: 'Grants and Incentives Report',
-    desc: 'Grant and incentive applications in the period and college, with their status.', csv: true },
-  { key: 'repository', icon: <FaBoxArchive />,        label: 'Research Repository Report',
-    desc: 'Research stored in the repository in the period and college.', csv: true },
-  { key: 'summary',    icon: <FaChartColumn />,       label: 'Summary Report',
-    desc: 'The numbers on this page (status, waiting stages, colleges) on one printable page.', csv: false },
+  { key: 'proposals',  icon: <FaFileLines />,         color: 'blue',   label: 'Proposals',
+    desc: 'Every proposal: researcher, college, type, status and who has it now.', csv: true },
+  { key: 'grants',     icon: <FaHandHoldingDollar />, color: 'teal',   label: 'Grants and Incentives',
+    desc: 'Travel, oral presentation and publication applications with their amounts.', csv: true },
+  { key: 'repository', icon: <FaBoxArchive />,        color: 'purple', label: 'Research Repository',
+    desc: 'Research stored in the repository.', csv: true },
+  { key: 'summary',    icon: <FaChartColumn />,       color: 'maroon', label: 'Summary',
+    desc: 'The numbers on this page on one printable page.', csv: false },
 ];
 
 const PERIODS = [
@@ -48,20 +55,15 @@ const toParams = (f) => {
 };
 
 const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
+const plural = (n, w = 'proposal') => `${n} ${w}${n === 1 ? '' : 's'}`;
 
-const Bars = ({ rows }) => {
-  const max = Math.max(1, ...rows.map(r => r.count));
-  return (
-    <div className="rp-bars">
-      {rows.map(r => (
-        <div className="rp-bar" key={r.label}>
-          <span>{r.label}</span>
-          <span className="rp-track"><i style={{ width: `${(r.count / max) * 100}%` }} /></span>
-          <b>{r.count}</b>
-        </div>
-      ))}
-    </div>
-  );
+/* stage colors (same as the dashboards) */
+const STAGE = {
+  college:  '#2a78d6',
+  msirc:    '#6250d6',
+  returned: '#eda100',
+  approved: '#0ca30c',
+  rejected: '#d03b3b',
 };
 
 /* a download error comes back as a Blob: read the server's message out of it */
@@ -78,6 +80,79 @@ const blobMessage = async (err, fallback) => {
   }
 };
 
+/* a number card; with "status" it also works as the Status filter */
+const FilterCard = ({ label, value, sub, color, status, active, onPick }) => {
+  const body = (
+    <>
+      <span className="stat-label">{label}</span>
+      <span className="stat-value">{value ?? '—'}</span>
+      {sub && <span className="rp-card-sub">{sub}</span>}
+    </>
+  );
+  if (status === undefined) return <div className={`stat-card ${color}`}>{body}</div>;
+  return (
+    <button type="button" className={`stat-card stat-link rp-fcard ${color}${active ? ' on' : ''}`}
+      aria-pressed={active} onClick={() => onPick(active ? '' : status)}
+      title={active ? 'Click to show all statuses' : `Show only: ${label}`}>
+      {body}
+    </button>
+  );
+};
+
+/* the endorsement path, step by step, with how many are waiting at each step */
+const Path = ({ waiting, bind }) => {
+  if (!waiting?.length) return null;
+  const shortName = (l) => l.replace(/^College /, '').replace(/^MSIRC /, '');
+  const college  = waiting.slice(0, -4);
+  const msirc    = waiting.slice(-4, -1);
+  const returned = waiting[waiting.length - 1];
+  const Group = ({ title, steps, color }) => (
+    <div className="rp-path-group">
+      <h4 style={{ color }}>{title}</h4>
+      <ol className="rp-path">
+        {steps.map(s => (
+          <li key={s.label} className={s.count ? 'has' : ''} style={{ '--pc': color }} tabIndex={0}
+            aria-label={`${s.label}: ${s.count ? `${plural(s.count)} waiting` : 'nothing waiting'}`}
+            {...bind(s.label, s.count ? `${plural(s.count)} waiting here` : 'nothing waiting here')}>
+            <span className="rp-node">{s.count}</span>
+            <span className="rp-node-l">{shortName(s.label)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+  return (
+    <div className="rp-path-wrap">
+      <Group title="At the college" steps={college} color={STAGE.college} />
+      <Group title="At MSIRC" steps={msirc} color={STAGE.msirc} />
+      <div className={`rp-back${returned.count ? ' has' : ''}`} tabIndex={0}
+        aria-label={`Returned for revision: ${plural(returned.count)} back with the researcher`}
+        {...bind('Returned for revision', returned.count ? `${plural(returned.count)} back with the researcher` : 'none')}>
+        <FaUserPen aria-hidden="true" />
+        <div><b>{returned.count}</b><span>back with the researcher</span></div>
+      </div>
+    </div>
+  );
+};
+
+/* the stage split of one college as a thin bar */
+const MiniStack = ({ c, bind }) => {
+  const parts = [
+    ['At the college', c.at_college, STAGE.college],
+    ['At MSIRC', c.in_office, STAGE.msirc],
+    ['Returned', c.returned, STAGE.returned],
+    ['Approved', c.approved, STAGE.approved],
+    ['Rejected', c.rejected, STAGE.rejected],
+  ].filter(p => p[1] > 0);
+  return (
+    <div className="rp-mini" role="img" aria-label={parts.map(p => `${p[0]} ${p[1]}`).join(', ')}>
+      {parts.map(([l, n, col]) => (
+        <span key={l} style={{ flexGrow: n, background: col }} {...bind(`${c.name}`, `${l}: ${n}`)} />
+      ))}
+    </div>
+  );
+};
+
 const ReportsPage = () => {
   const [filters,     setFilters]     = useState(EMPTY);
   const [summary,     setSummary]     = useState(null);
@@ -87,8 +162,10 @@ const ReportsPage = () => {
   const [history,     setHistory]     = useState([]);
   const [downloading, setDownloading] = useState(null);   // "proposals-pdf"
   const [alert,       setAlert]       = useState(null);
+  const [bind, tipNode] = useTip();
 
   const set = (key) => (e) => setFilters(prev => ({ ...prev, [key]: e.target.value }));
+  const pickStatus = (status) => setFilters(prev => ({ ...prev, status }));
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -138,7 +215,7 @@ const ReportsPage = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      setAlert({ type: 'success', msg: `${REPORT_TYPES.find(r => r.key === type)?.label} downloaded (${format.toUpperCase()}).` });
+      setAlert({ type: 'success', msg: `${REPORT_TYPES.find(r => r.key === type)?.label} report downloaded (${format.toUpperCase()}).` });
       fetchHistory();
     } catch (err) {
       setAlert({ type: 'error', msg: await blobMessage(err, 'Failed to generate the report. Please try again.') });
@@ -148,15 +225,18 @@ const ReportsPage = () => {
   };
 
   const t = summary?.totals;
-  const chips = [
-    filters.period === 'custom'
-      ? `${filters.from || 'start'} to ${filters.to || 'today'}`
-      : PERIODS.find(p => p.value === filters.period)?.label,
-    filters.college || 'All Colleges',
-    filters.status ? STATUSES.find(s => s.value === filters.status)?.label : 'All Statuses',
-    filters.type ? TYPES.find(x => x.value === filters.type)?.label : 'All Types',
-  ];
   const isDefault = JSON.stringify(filters) === JSON.stringify(EMPTY);
+  const typeRows = (summary?.by_type || []).map(x => ({ name: x.label, count: x.count, color: TYPE_COLOR[x.type] || OLD_TYPE_COLOR }));
+  const timeline = summary?.timeline || { unit: 'month', points: [] };
+  /* many months: label every other month (January always, with its year) so the labels fit */
+  const dense = timeline.points.length > 12;
+  const cols = timeline.points.map((p, i, all) => {
+    if (timeline.unit !== 'month') return p;
+    const isJan = p.label === 'Jan';
+    const show = !dense || isJan || (i % 2 === (all.length - 1) % 2);
+    return { ...p, label: !show ? '' : isJan && i > 0 ? `’${String(p.year).slice(2)}` : p.label };
+  });
+  const yearsInTimeline = [...new Set(timeline.points.map(p => p.year))];
 
   return (
     <>
@@ -205,132 +285,161 @@ const ReportsPage = () => {
             {TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
           </select>
         </div>
-        <button type="button" className="btn btn-outline" disabled={isDefault} onClick={() => setFilters(EMPTY)}>
-          Reset
-        </button>
-      </div>
-      <div className="rp-chips">
-        {chips.map(c => <span key={c} className="rp-chip">{c}</span>)}
-        {loading && <span className="rp-loading">Updating…</span>}
+        <div className="rp-f-end">
+          {loading && <span className="rp-loading" role="status"><i aria-hidden="true" />Updating…</span>}
+          <button type="button" className="btn btn-outline" disabled={isDefault} onClick={() => setFilters(EMPTY)}>
+            <FaRotateLeft className="ic" />Reset
+          </button>
+        </div>
       </div>
 
       {loadError && <div className="alert alert-error">{loadError}</div>}
 
-      {/* Totals */}
-      <div className="rp-tiles">
-        {[
-          ['Total Proposals',  t?.total,      'in the filters'],
-          ['At the College',   t?.at_college, 'Chairperson, Coordinator or Dean'],
-          ['In Office Review', t?.in_office,  'SA, Director or OVCRED'],
-          ['Returned for Revision', t?.returned,   'waiting on the researcher'],
-          ['Approved',         t?.approved,   ''],
-          ['Approval Rate',    t ? pct(t.approval_rate) : undefined, t ? `${t.decided} decided` : ''],
-        ].map(([label, value, sub]) => (
-          <div className="rp-tile" key={label}>
-            <div className="rp-tile-l">{label}</div>
-            <div className="rp-tile-v">{value ?? '—'}</div>
-            {sub && <div className="rp-tile-s">{sub}</div>}
+      {/* Totals: click a card to filter by that status */}
+      <div className="rp-cardrow">
+        <FilterCard label="Total" value={t?.total} sub="in the filters" color="" />
+        <FilterCard label="At the College" value={t?.at_college} sub="Chairperson, Coordinator, Dean" color="blue"
+          status="for_endorsement" active={filters.status === 'for_endorsement'} onPick={pickStatus} />
+        <FilterCard label="At MSIRC" value={t?.in_office} sub="Special Assistant, Director, VCRED" color="purple" />
+        <FilterCard label="Returned" value={t?.returned} sub="waiting on the researcher" color="amber"
+          status="returned" active={filters.status === 'returned'} onPick={pickStatus} />
+        <FilterCard label="Approved" value={t?.approved} color="green"
+          status="approved" active={filters.status === 'approved'} onPick={pickStatus} />
+        <FilterCard label="Rejected" value={t?.rejected} color="red"
+          status="rejected" active={filters.status === 'rejected'} onPick={pickStatus} />
+      </div>
+      <p className="rp-hint">Tip: click a card to show only that status. Click it again to show all.</p>
+
+      {/* Who has them now + approval rate */}
+      <div className="rp-row rp-row-path">
+        <div className="panel rp-panel">
+          <div className="panel-header"><h2>Who Has Them Now</h2><small>open proposals, by step</small></div>
+          {summary ? <Path waiting={summary.waiting} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
+        </div>
+        <div className="panel rp-panel rp-rate">
+          <div className="panel-header"><h2>Approval Rate</h2><small>approved ÷ decided</small></div>
+          <div className="rp-rate-body">
+            <Ring value={t?.approval_rate || 0} label={t?.decided ? `${t.approval_rate}% approved` : 'none'} />
+            <ul className="rp-rate-list">
+              <li><i style={{ background: STAGE.approved }} />Approved <b>{t?.approved ?? '—'}</b></li>
+              <li><i style={{ background: STAGE.rejected }} />Rejected <b>{t?.rejected ?? '—'}</b></li>
+              <li className="rp-rate-total">Decided <b>{t?.decided ?? '—'}</b></li>
+            </ul>
           </div>
-        ))}
-      </div>
-
-      <div className="rp-grid2">
-        <div className="panel rp-panel">
-          <div className="panel-header"><h2>Proposals by Status</h2><small>within the filters</small></div>
-          {summary ? <Bars rows={summary.by_status} /> : <div className="empty-state"><p>Loading…</p></div>}
-        </div>
-        <div className="panel rp-panel">
-          <div className="panel-header"><h2>Where Open Proposals Are Waiting</h2><small>right now</small></div>
-          {summary ? <Bars rows={summary.waiting} /> : <div className="empty-state"><p>Loading…</p></div>}
         </div>
       </div>
 
+      {/* By type + over time */}
+      <div className="rp-row">
+        <div className="panel rp-panel">
+          <div className="panel-header"><h2>By Type</h2><small>{t ? plural(t.total, 'submission') : ''}</small></div>
+          <div className="rp-pad">
+            {summary ? <HBars rows={typeRows} total={t?.total} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
+          </div>
+        </div>
+        <div className="panel rp-panel">
+          <div className="panel-header">
+            <h2>Submissions Over Time</h2>
+            <small>{timeline.unit === 'year' ? 'per year' : `per month${yearsInTimeline.length ? `, ${yearsInTimeline.join('–')}` : ''}`}</small>
+          </div>
+          <div className="rp-pad">
+            {cols.length
+              ? <Columns cols={cols} bind={bind} caption={`Submissions per ${timeline.unit}`} />
+              : <div className="ps-empty">Nothing submitted in this period.</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* By college */}
       <div className="panel rp-panel">
-        <div className="panel-header"><h2>Proposals by College</h2><small>approval rate = approved ÷ decided</small></div>
+        <div className="panel-header"><h2>By College</h2><small>approval rate = approved ÷ decided</small></div>
         <div className="rp-scroll">
-          <table className="data-table">
+          <table className="data-table rp-college">
             <thead>
               <tr>
-                <th>College</th><th className="rp-n">Total</th><th className="rp-n">At College</th>
-                <th className="rp-n">In Office Review</th><th className="rp-n">Approved</th>
-                <th className="rp-n">Rejected</th><th className="rp-n">Approval Rate</th>
+                <th>College</th><th className="rp-n">Total</th><th className="rp-stack-h">Where they stand</th>
+                <th className="rp-n">Approved</th><th className="rp-n">Rejected</th><th className="rp-n">Approval Rate</th>
               </tr>
             </thead>
             <tbody>
               {(summary?.by_college || []).map(c => (
                 <tr key={c.name}>
                   <td>{c.name}</td>
-                  <td className="rp-n">{c.total}</td>
-                  <td className="rp-n">{c.at_college}</td>
-                  <td className="rp-n">{c.in_office}</td>
+                  <td className="rp-n"><b>{c.total}</b></td>
+                  <td><MiniStack c={c} bind={bind} /></td>
                   <td className="rp-n">{c.approved}</td>
                   <td className="rp-n">{c.rejected}</td>
-                  <td className="rp-n">{pct(c.approval_rate)}</td>
+                  <td className="rp-n"><span className="rp-rate-pill">{pct(c.approval_rate)}</span></td>
                 </tr>
               ))}
               {summary && summary.by_college.length === 0 && (
-                <tr><td colSpan={7}><div className="empty-state"><p>No proposals match these filters.</p></div></td></tr>
+                <tr><td colSpan={6}><div className="empty-state"><p>No proposals match these filters.</p></div></td></tr>
               )}
             </tbody>
           </table>
         </div>
+        <ul className="ps-legend rp-legend">
+          {[['At the college', STAGE.college], ['At MSIRC', STAGE.msirc], ['Returned', STAGE.returned], ['Approved', STAGE.approved], ['Rejected', STAGE.rejected]]
+            .map(([l, col]) => <li key={l}><i style={{ background: col }} aria-hidden="true" /><span>{l}</span></li>)}
+        </ul>
       </div>
 
       {/* Downloads */}
-      <div className="rp-cards">
+      <div className="rp-section-h">
+        <h2>Download a Report</h2>
+        <span>Every download uses the filters above. Grants and Repository use the period and college only.</span>
+      </div>
+      <div className="rp-dl">
         {REPORT_TYPES.map(r => (
-          <div key={r.key} className="rp-card">
-            <div className="rp-card-ic">{r.icon}</div>
-            <h3>{r.label}</h3>
+          <div key={r.key} className={`rp-dl-card ${r.color}`}>
+            <div className="rp-dl-top">
+              <span className="rp-dl-ic" aria-hidden="true">{r.icon}</span>
+              <h3>{r.label}</h3>
+            </div>
             <p>{r.desc}</p>
-            <div className="rp-card-btns">
+            <div className="rp-dl-btns">
               <button className="btn btn-primary btn-sm" disabled={!!downloading}
                 onClick={() => download(r.key, 'pdf')}>
-                {downloading === `${r.key}-pdf` ? 'Generating…' : <><FaDownload className="ic" />Download PDF</>}
+                {downloading === `${r.key}-pdf` ? 'Generating…' : <><FaDownload className="ic" />PDF</>}
               </button>
               {r.csv && (
                 <button className="btn btn-outline btn-sm" disabled={!!downloading}
                   onClick={() => download(r.key, 'csv')}>
-                  {downloading === `${r.key}-csv` ? 'Generating…' : <><FaTableList className="ic" />Download CSV</>}
+                  {downloading === `${r.key}-csv` ? 'Generating…' : <><FaTableList className="ic" />CSV</>}
                 </button>
               )}
             </div>
           </div>
         ))}
       </div>
-      <p className="rp-note">
-        Every download uses the filters above, and the PDF lists them at the top.
-        The Grants and Repository reports use the period and college only.
-      </p>
 
       {/* History */}
       <div className="panel rp-panel">
-        <div className="panel-header"><h2>Recently Generated Reports</h2></div>
-        <div className="rp-scroll">
-          <table className="data-table">
-            <thead>
-              <tr><th>Report</th><th>Filters</th><th>Generated By</th><th>Date</th></tr>
-            </thead>
-            <tbody>
-              {history.map(r => (
-                <tr key={r.report_id}>
-                  <td><strong>{r.report_title}</strong></td>
-                  <td className="rp-hist-f">{r.filters?.text || '—'}</td>
-                  <td>{r.users ? personName(r.users) : '—'}</td>
-                  <td style={{ color: '#718096' }}>
-                    {r.generated_at ? new Date(r.generated_at).toLocaleString() : '—'}
-                  </td>
-                </tr>
-              ))}
-              {history.length === 0 && (
-                <tr><td colSpan={4}>
-                  <div className="empty-state"><p>No reports generated yet.</p></div>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <div className="panel-header"><h2>Recently Generated</h2><small>{history.length ? `last ${history.length}` : ''}</small></div>
+        {history.length === 0 ? (
+          <div className="empty-state"><p>No reports generated yet.</p></div>
+        ) : (
+          <ul className="rp-hist">
+            {history.map(r => {
+              const csv = /csv/i.test(r.report_title || '') || r.filters?.format === 'csv';
+              return (
+                <li key={r.report_id}>
+                  <span className={`rp-hist-ic ${csv ? 'csv' : 'pdf'}`} aria-hidden="true">{csv ? <FaFileCsv /> : <FaFilePdf />}</span>
+                  <div className="rp-hist-main">
+                    <strong>{r.report_title}</strong>
+                    <span>{r.filters?.text || '—'}</span>
+                  </div>
+                  <div className="rp-hist-meta">
+                    <span>{r.users ? personName(r.users) : '—'}</span>
+                    <span>{r.generated_at ? new Date(r.generated_at).toLocaleString() : '—'}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
+      {tipNode}
     </>
   );
 };

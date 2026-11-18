@@ -26,7 +26,7 @@ const { GRANT_FORMS, awardOf } = require('../utils/grantForms');
 const isGrantType = (t) => GRANT_TYPES.includes(t) || t === 'travel_oral';   // the old combined type too
 const PERIOD_LABEL = { all: 'All Time', year: 'This Year', 90: 'Last 90 Days', 30: 'Last 30 Days' };
 const STAGE_LABEL = {        // in endorsement order
-  chairperson: 'Chairperson', research_coordinator: 'Research Coordinator', college_dean: 'College Dean',
+  chairperson: 'College Chairperson', research_coordinator: 'College Coordinator', college_dean: 'College Dean',
 };
 const OFFICE_ROLES = ['special_assistant', 'msric_director', 'ovcred'];
 const PH_OFFSET_MS = 8 * 60 * 60 * 1000;   // dates are read in Philippine time (UTC+8)
@@ -96,10 +96,10 @@ const fullName = (u) => personName(u);
 /* where an open proposal is waiting */
 const waitingOn = (p) => {
   if (p.status === 'for_endorsement') return STAGE_LABEL[p.endorsement_stage] || 'College';
-  return { submitted: 'Special Assistant', under_review: 'MSIRC Director', endorsed: 'OVCRED', returned: 'Researcher' }[p.status] || '—';
+  return { submitted: 'MSIRC Special Assistant', under_review: 'MSIRC Director', endorsed: 'VCRED', returned: 'Researcher' }[p.status] || '—';
 };
 
-/* MSIRC Staff see only proposals that reached the Special Assistant (same rule as their dashboard) */
+/* MSIRC Staff see only proposals that reached the MSIRC Special Assistant (same rule as their dashboard) */
 const staffCanSee = (p) => {
   if (['submitted', 'under_review', 'endorsed', 'approved', 'rejected'].includes(p.status)) return true;
   if (p.status !== 'returned') return false;
@@ -132,6 +132,31 @@ const filterProposals = (list, f) => list.filter(p =>
   && (!f.college || p.college === f.college)
   && (!f.status || p.status === f.status)
   && (!f.type || p.proposal_type === f.type));
+
+/* submissions over time: by month when the span is 24 months or less, else by year */
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LONG  = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const manila = (t) => { const d = new Date(t + 8 * 3600 * 1000); return { y: d.getUTCFullYear(), m: d.getUTCMonth() }; };
+const buildTimeline = (rows, f) => {
+  const times = rows.map(p => Date.parse(p.when || '')).filter(t => !Number.isNaN(t));
+  if (!times.length) return { unit: 'month', points: [] };
+  const start = manila(f.from !== null && f.from !== undefined ? f.from : Math.min(...times));
+  const end   = manila(f.to   !== null && f.to   !== undefined ? Math.min(f.to, Date.now()) : Math.max(Date.now(), ...times));
+  const months = (end.y - start.y) * 12 + (end.m - start.m) + 1;
+  if (months <= 24) {
+    const points = [];
+    for (let i = 0; i < Math.max(1, months); i += 1) {
+      const y = start.y + Math.floor((start.m + i) / 12); const m = (start.m + i) % 12;
+      points.push({ key: `${y}-${String(m + 1).padStart(2, '0')}`, label: MONTH_SHORT[m], long: `${MONTH_LONG[m]} ${y}`, year: y, count: 0 });
+    }
+    times.forEach(t => { const { y, m } = manila(t); const pt = points.find(x => x.year === y && x.key.endsWith(`-${String(m + 1).padStart(2, '0')}`)); if (pt) pt.count += 1; });
+    return { unit: 'month', points };
+  }
+  const points = [];
+  for (let y = start.y; y <= end.y; y += 1) points.push({ key: String(y), label: String(y), long: String(y), year: y, count: 0 });
+  times.forEach(t => { const pt = points.find(x => x.year === manila(t).y); if (pt) pt.count += 1; });
+  return { unit: 'year', points };
+};
 
 /* the numbers shown on the Reports page (and in the Summary PDF) */
 const buildSummary = (all, f) => {
@@ -170,11 +195,15 @@ const buildSummary = (all, f) => {
       ...Object.keys(STAGE_LABEL).map(r => ({
         label: STAGE_LABEL[r], count: rows.filter(p => p.status === 'for_endorsement' && p.endorsement_stage === r).length,
       })),
-      { label: 'Special Assistant',     count: count('submitted') },
+      { label: 'MSIRC Special Assistant',     count: count('submitted') },
       { label: 'MSIRC Director',        count: count('under_review') },
-      { label: 'OVCRED',                count: count('endorsed') },
+      { label: 'VCRED',                count: count('endorsed') },
       { label: 'Researcher (returned)', count: count('returned') },
     ],
+    by_type: Object.keys(TYPE_LABEL)
+      .map(t => ({ type: t, label: TYPE_LABEL[t], count: rows.filter(p => p.proposal_type === t).length }))
+      .filter(x => x.count > 0),
+    timeline: buildTimeline(rows, f),
     by_college: Object.values(byCollege)
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
       .map(b => ({ ...b, approval_rate: (b.approved + b.rejected) ? Math.round((b.approved / (b.approved + b.rejected)) * 100) : null })),
@@ -374,7 +403,7 @@ router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, r
         drawSection(doc, 'Totals');
         const tw = [250, 80];
         [['Total Proposals', t.total], ['At the College (endorsement)', t.at_college],
-         ['In Office Review (Special Assistant, Director, OVCRED)', t.in_office], ['Returned for Revision', t.returned],
+         ['In Office Review (MSIRC Special Assistant, MSIRC Director, VCRED)', t.in_office], ['Returned for Revision', t.returned],
          ['Approved', t.approved], ['Rejected', t.rejected],
          ['Approval Rate (approved ÷ decided)', t.approval_rate === null ? '—' : `${t.approval_rate}%`],
         ].forEach(r => drawRow(doc, r, tw));

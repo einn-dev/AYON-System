@@ -105,7 +105,7 @@ export const Columns = ({ cols, bind, caption }) => {
 };
 
 /* the approval rate as a ring */
-const Ring = ({ value, label }) => {
+export const Ring = ({ value, label }) => {
   const r = 34; const c = 2 * Math.PI * r;
   return (
     <svg className="ps-ring" viewBox="0 0 84 84" role="img" aria-label={label}>
