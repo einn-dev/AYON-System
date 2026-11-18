@@ -19,6 +19,7 @@ import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -42,10 +43,7 @@ const Overview = ({ proposals }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>MSIRC Director Dashboard</h1>
-        <p>Review validated proposals and applications, then endorse them to VCRED, return or reject them.</p>
-      </div>
+      <WelcomeBanner text="Review validated proposals and applications, then endorse them to VCRED, return or reject them." />
 
       <div className="stats-grid">
         <StatCard color="amber" label="For Review" value={forReview} to="/director/for-review" />

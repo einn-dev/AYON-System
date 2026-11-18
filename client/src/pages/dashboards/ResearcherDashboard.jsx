@@ -21,6 +21,7 @@ import FormToast, { jumpTo } from '../../components/FormToast';
 import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -107,10 +108,7 @@ const Overview = ({ proposals: all, user }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Researcher Dashboard</h1>
-        <p>Welcome, {user?.first_name}. Here is an overview of your research activities in AYON.</p>
-      </div>
+      <WelcomeBanner text="Here is an overview of your research activities in AYON." />
 
       <div className="stats-grid">
         <StatCard color="purple" label="Total Submissions" value={counts.total} to={where(() => true, '')} />

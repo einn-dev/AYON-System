@@ -11,6 +11,7 @@ import NotificationsPage from './NotificationsPage';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -24,10 +25,7 @@ const NAV_ITEMS = [
 
 const Overview = ({ proposals }) => (
   <>
-    <div className="page-header">
-      <h1>College Dean Dashboard</h1>
-      <p>Review and endorse research proposals and applications from your college.</p>
-    </div>
+    <WelcomeBanner text="Review and endorse research proposals and applications from your college." />
     <EndorserStats proposals={proposals} role="college_dean" />
     <div className="panel">
       <div className="panel-header"><h2>Recent Submissions</h2></div>

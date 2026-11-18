@@ -17,6 +17,7 @@ import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleChec
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -40,10 +41,7 @@ const Overview = ({ proposals }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>VCRED Dashboard</h1>
-        <p>Office of the Vice Chancellor for Research, Extension, and Development.</p>
-      </div>
+      <WelcomeBanner text="Office of the Vice Chancellor for Research, Extension and Development. Give the final approval to proposals and applications endorsed by the MSIRC Director." />
 
       <div className="stats-grid">
         <StatCard color="amber" label="For Final Approval" value={forApproval} to="/ovcred/for-endorsement" />

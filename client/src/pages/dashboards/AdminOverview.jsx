@@ -10,6 +10,7 @@ import { StageOverview, stagesOf, HBars, Columns, useTip, TYPE_COLOR, OLD_TYPE_C
 import '../../components/ProposalStats.css';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 const RANGES = [
   { value: 'all',  label: 'All time'     },
@@ -98,18 +99,16 @@ const AdminOverview = ({ users }) => {
 
   return (
     <>
-      <div className="ao-top">
-        <div className="page-header">
-          <h1>Administrator Dashboard</h1>
-          <p>How research proposals and applications are moving through AYON, and what needs attention.</p>
-        </div>
-        <label className="ao-field">
-          Period
-          <select value={range} onChange={e => setRange(e.target.value)}>
-            {RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-        </label>
-      </div>
+      <WelcomeBanner
+        text="How research proposals and applications are moving through AYON, and what needs attention."
+        aside={(
+          <label className="ao-field">
+            Period
+            <select value={range} onChange={e => setRange(e.target.value)}>
+              {RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </label>
+        )} />
 
       {error && (
         <div className="alert alert-error">

@@ -11,6 +11,7 @@ import { FaBell, FaBoxArchive, FaInbox, FaTableCellsLarge } from 'react-icons/fa
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -31,10 +32,7 @@ const Overview = ({ proposals }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>MSIRC Staff Dashboard</h1>
-        <p>Proposals and applications that passed the college level and reached the MSIRC Special Assistant.</p>
-      </div>
+      <WelcomeBanner text="Proposals and applications that passed the college level and reached the MSIRC Special Assistant." />
       <div className="stats-grid">
         <StatCard color="blue" label="Total Submissions" value={counts.total} to="/msric-staff/submissions" />
         <StatCard color="amber" label={STATUS_LABEL.submitted} value={counts.submitted} to="/msric-staff/submissions?status=submitted" />

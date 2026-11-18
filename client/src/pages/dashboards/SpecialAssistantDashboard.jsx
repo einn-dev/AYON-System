@@ -18,6 +18,7 @@ import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { stepOf, stepProblem } from '../../utils/grantForms';
 import StatCard from '../../components/StatCard';
+import WelcomeBanner from '../../components/WelcomeBanner';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -51,10 +52,7 @@ const Overview = ({ proposals }) => {
 
   return (
     <>
-      <div className="page-header">
-        <h1>MSIRC Special Assistant Dashboard</h1>
-        <p>Validate proposals and applications and forward complete documents to the MSIRC Director.</p>
-      </div>
+      <WelcomeBanner text="Validate proposals and applications and forward complete documents to the MSIRC Director." />
 
       <div className="stats-grid">
         <StatCard color="blue" label={STATUS_LABEL.submitted} value={pending} to="/special-assistant/validate" />
