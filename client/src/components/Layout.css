@@ -205,24 +205,37 @@ html.ayon-app { font-size: 112.5%; }
   margin-bottom: 28px;
 }
 .stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
+  /* each card has its own color: a strip on top, a soft tint and the number in that color */
+  --sc: #8d1b2d; --sc-tint: #fbf1f3; --sc-ink: #7a1626;
+  position: relative; overflow: hidden;
+  background: linear-gradient(150deg, var(--sc-tint) 0%, #fff 62%);
+  border-radius: 14px;
+  padding: 20px 20px 18px;
   border: 1px solid #efe5e6;
+  border-top: 4px solid var(--sc);
   display: flex; flex-direction: column; gap: 6px;
+  box-shadow: 0 1px 2px rgba(45, 35, 38, 0.04);
+}
+.stat-card::after {             /* a soft circle in the corner */
+  content: ''; position: absolute; right: -26px; top: -26px; width: 92px; height: 92px;
+  border-radius: 50%; background: var(--sc); opacity: 0.08; pointer-events: none;
 }
 .stat-label {
   font-size: 0.75rem; text-transform: uppercase;
-  letter-spacing: 0.8px; color: #8a7a7d; font-weight: 600;
+  letter-spacing: 0.8px; color: #6b5e61; font-weight: 700;
+  position: relative;
 }
 .stat-value {
-  font-size: 2rem; font-weight: 700;
-  color: #5e1420; line-height: 1;
+  font-size: 2.1rem; font-weight: 800;
+  color: var(--sc-ink); line-height: 1; position: relative;
+  font-variant-numeric: tabular-nums;
 }
-.stat-card.blue  .stat-value { color: #8d1b2d; }
-.stat-card.green .stat-value { color: #276749; }
-.stat-card.amber .stat-value { color: #b09519; }
-.stat-card.red   .stat-value { color: #c53030; }
+.stat-card.blue   { --sc: #2a78d6; --sc-tint: #eef5fd; --sc-ink: #1f5fae; }
+.stat-card.green  { --sc: #0ca30c; --sc-tint: #ecf8ec; --sc-ink: #1d6b26; }
+.stat-card.amber  { --sc: #eda100; --sc-tint: #fdf6e4; --sc-ink: #8f6200; }
+.stat-card.red    { --sc: #d03b3b; --sc-tint: #fcefef; --sc-ink: #b02a2a; }
+.stat-card.purple { --sc: #6250d6; --sc-tint: #f1effc; --sc-ink: #4c3db5; }
+.stat-card.teal   { --sc: #1baf7a; --sc-tint: #eaf8f2; --sc-ink: #12805a; }
 
 /* ── Panels ── */
 .panel {
@@ -421,4 +434,39 @@ html.ayon-app { font-size: 112.5%; }
    On a narrow screen the two stack, so the form and documents keep the full width. */
 @media (max-width: 1180px) {
   .detail-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* ── Researcher dashboard: Needs Your Attention ── */
+.rd-todo { list-style: none; margin: 0; padding: 4px 0; }
+.rd-todo li {
+  display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #f3ecec;
+  border-left: 4px solid transparent; flex-wrap: wrap;
+}
+.rd-todo li:last-child { border-bottom: 0; }
+.rd-todo li.returned { border-left-color: #eda100; background: linear-gradient(90deg, #fdf6e4 0%, #fff 40%); }
+.rd-todo li.draft    { border-left-color: #6250d6; background: linear-gradient(90deg, #f1effc 0%, #fff 40%); }
+.rd-todo-tag {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 3px 9px; border-radius: 999px; flex-shrink: 0;
+}
+.rd-todo li.returned .rd-todo-tag { background: #faecc4; color: #7a5300; }
+.rd-todo li.draft .rd-todo-tag    { background: #e5e1fa; color: #4c3db5; }
+.rd-todo-text { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.rd-todo-text b { color: #2d2326; font-size: 0.9rem; }
+.rd-todo-text span { color: #6b5e61; font-size: 0.8rem; overflow-wrap: anywhere; }
+.rd-allset { display: flex; align-items: center; gap: 14px; padding: 18px 20px; flex-wrap: wrap; }
+.rd-allset-ic { font-size: 1.8rem; color: #0ca30c; flex-shrink: 0; }
+.rd-allset > div:nth-child(2) { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.rd-allset b { color: #1d6b26; }
+.rd-allset span { color: #6b5e61; font-size: 0.85rem; }
+.rd-allset-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.rd-title-link { color: #2d2326; font-weight: 700; text-decoration: none; }
+.rd-title-link:hover { color: #8d1b2d; text-decoration: underline; }
+
+/* phones: two number cards per row so the dashboard is not one long column */
+@media (max-width: 560px) {
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat-card { padding: 14px 14px 12px; }
+  .stat-value { font-size: 1.7rem; }
+  .stat-label { font-size: 0.68rem; letter-spacing: 0.5px; }
 }

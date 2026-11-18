@@ -15,7 +15,7 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/msric-staff/dashboard',      label: 'Dashboard',       icon: <FaTableCellsLarge /> },
-  { path: '/msric-staff/submissions',    label: 'All Proposals',     icon: <FaInbox /> },
+  { path: '/msric-staff/submissions',    label: 'All Submissions',     icon: <FaInbox /> },
   { path: '/msric-staff/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/msric-staff/notifications',  label: 'Notifications',    icon: <FaBell /> },
 ];
@@ -32,18 +32,18 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>MSIRC Staff Dashboard</h1>
-        <p>Proposals that passed the college level and reached the Special Assistant.</p>
+        <p>Proposals and applications that passed the college level and reached the MSIRC Special Assistant.</p>
       </div>
       <div className="stats-grid">
         <div className="stat-card blue">
-          <span className="stat-label">Total Proposals</span>
+          <span className="stat-label">Total Submissions</span>
           <span className="stat-value">{counts.total}</span>
         </div>
         <div className="stat-card amber">
           <span className="stat-label">{STATUS_LABEL.submitted}</span>
           <span className="stat-value">{counts.submitted}</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card purple">
           <span className="stat-label">{STATUS_LABEL.under_review}</span>
           <span className="stat-value">{counts.under_review}</span>
         </div>
@@ -54,7 +54,7 @@ const Overview = ({ proposals }) => {
       </div>
 
       <div className="panel">
-        <div className="panel-header"><h2>Recent Proposals</h2></div>
+        <div className="panel-header"><h2>Recent Submissions</h2></div>
         <table className="data-table">
           <thead>
             <tr>
@@ -111,8 +111,8 @@ const AllSubmissions = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>All Proposals</h1>
-        <p>Proposals that passed the college level and reached the Special Assistant.</p>
+        <h1>All Submissions</h1>
+        <p>Proposals and applications that passed the college level and reached the MSIRC Special Assistant.</p>
       </div>
       <OpenNotice state={hl} where="this list" />
       <div className="panel">
@@ -160,7 +160,7 @@ const AllSubmissions = ({ proposals }) => {
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={6}>
-                <div className="empty-state"><p>No proposals found.</p></div>
+                <div className="empty-state"><p>Nothing found.</p></div>
               </td></tr>
             )}
           </tbody>

@@ -5,7 +5,9 @@ import '../../components/Layout.css';
 import './AdminOverview.css';
 import { ROLE_LABELS, roleBadge, userStatus, STATUS_META, errText } from './adminShared';
 import { FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
-import { STATUS_LABEL, STATUS_ORDER, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
+import { StageOverview, stagesOf, HBars, Columns, useTip, TYPE_COLOR, OLD_TYPE_COLOR, OFFERED } from '../../components/ProposalStats';
+import '../../components/ProposalStats.css';
 import { personName } from '../../utils/names';
 
 const RANGES = [
@@ -30,61 +32,11 @@ const monthLabel = (key, long) => {
   });
 };
 
-const percent = (part, total) => (total ? Math.round((part / total) * 100) : 0);
 
-/* ── horizontal bars: one row per category ── */
-const HBars = ({ rows, total, onTip, onTipEnd }) => {
-  if (rows.length === 0 || rows.every(r => r.count === 0)) {
-    return <div className="ao-empty">No proposals in this period.</div>;
-  }
-  const max = Math.max(...rows.map(r => r.count), 1);
-
-  return (
-    <ul className="ao-hbars">
-      {rows.map(r => (
-        <li key={r.name} className="ao-hbar"
-          onMouseMove={e => onTip(e, r.full || r.name, `${r.count} proposal${r.count === 1 ? '' : 's'} · ${percent(r.count, total)}% of total`)}
-          onMouseLeave={onTipEnd}>
-          <span className="ao-hbar-name">{r.name}</span>
-          <span className="ao-hbar-track">
-            <span className="ao-hbar-bar" style={{ width: `${(r.count / max) * 82}%` }} />
-            <span className="ao-hbar-val">{r.count}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
-/* ── columns: one per month ── */
-const MonthColumns = ({ months, onTip, onTipEnd }) => {
-  const peak = Math.max(...months.map(m => m.count), 1);
-  const top  = Math.ceil(peak / 4) * 4 || 4;
-
-  return (
-    <>
-      <div className="ao-cols">
-        {[25, 50, 75].map(p => <div key={p} className="ao-gridline" style={{ bottom: `${p}%` }} />)}
-        {months.map(m => (
-          <div key={m.month} className="ao-col"
-            onMouseMove={e => onTip(e, monthLabel(m.month, true), `${m.count} proposal${m.count === 1 ? '' : 's'} submitted`)}
-            onMouseLeave={onTipEnd}>
-            <span className="ao-col-cap">{m.count}</span>
-            <div className="ao-col-bar" style={{ height: `${(m.count / top) * 90}%` }} />
-          </div>
-        ))}
-      </div>
-      <div className="ao-xlabels">
-        {months.map(m => <span key={m.month}>{monthLabel(m.month)}</span>)}
-      </div>
-    </>
-  );
-};
-
-const healthClass = (value, badWhenPositive) => {
+/* green when nothing is wrong, otherwise the warning color */
+const tone = (value, whenPositive) => {
   if (value === null || value === undefined) return '';
-  if (value === 0) return 'ok';
-  return badWhenPositive;
+  return value === 0 ? 'green' : whenPositive;
 };
 
 /* ─────────── the page ─────────── */
@@ -94,7 +46,7 @@ const AdminOverview = ({ users }) => {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
   const [waitMin, setWaitMin] = useState(7);
-  const [tip,     setTip]     = useState(null);
+  const [bind, tipNode] = useTip();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,16 +63,13 @@ const AdminOverview = ({ users }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const showTip = (e, title, text) => setTip({ x: e.clientX, y: e.clientY, title, text });
-  const hideTip = () => setTip(null);
-
   const kpis   = data?.kpis;
   const total  = kpis?.total || 0;
 
-  const statusRows = useMemo(
-    () => STATUS_ORDER.map(s => ({ name: STATUS_LABELS[s], count: data?.by_status?.[s] || 0 })),
-    [data]
-  );
+  const stages = useMemo(() => stagesOf(data?.by_status || {}), [data]);
+  const monthCols = (data?.months || []).map(m => ({
+    key: m.month, label: monthLabel(m.month), long: monthLabel(m.month, true), count: m.count,
+  }));
 
   const collegeRows = useMemo(() => {
     const all  = data?.by_college || [];
@@ -130,11 +79,11 @@ const AdminOverview = ({ users }) => {
     return top;
   }, [data]);
 
+  /* each type in its own color, in a fixed order; an older type only if records still use it */
   const typeRows = useMemo(
     () => Object.entries(TYPE_LABELS)
-      .filter(([key]) => key !== 'travel_oral' || (data?.by_type?.[key] || 0) > 0)   // the old combined type only if still used
-      .map(([key, label]) => ({ name: label, count: data?.by_type?.[key] || 0 }))
-      .sort((a, b) => b.count - a.count),
+      .filter(([key]) => OFFERED.includes(key) || (data?.by_type?.[key] || 0) > 0)
+      .map(([key, label]) => ({ name: label, color: TYPE_COLOR[key] || OLD_TYPE_COLOR, count: data?.by_type?.[key] || 0 })),
     [data]
   );
 
@@ -151,7 +100,7 @@ const AdminOverview = ({ users }) => {
       <div className="ao-top">
         <div className="page-header">
           <h1>Administrator Dashboard</h1>
-          <p>How research proposals are moving through AYON, and what needs attention.</p>
+          <p>How research proposals and applications are moving through AYON, and what needs attention.</p>
         </div>
         <label className="ao-field">
           Period
@@ -169,61 +118,34 @@ const AdminOverview = ({ users }) => {
       )}
 
       <div className={loading && data ? 'ao-loading' : undefined}>
-        <div className="ao-kpis">
-          <div className="ao-tile">
-            <div className="ao-tile-label">Total Proposals</div>
-            <div className="ao-tile-value">{kpis ? kpis.total : '—'}</div>
-            <div className="ao-tile-sub">submitted in this period</div>
+        <StageOverview total={total} stages={stages} bind={bind}
+          totalLabel={`submitted, ${(RANGES.find(r => r.value === range) || RANGES[0]).label.toLowerCase()}`}
+          extra={(
+            <>
+              <span className="ps-ov-num small">{kpis && kpis.avg_decision_days !== null ? kpis.avg_decision_days : '—'}</span>
+              <span className="ps-ov-label strong">Average days to a decision</span>
+              <span className="ps-ov-label">from submission to approved or rejected</span>
+            </>
+          )} />
+
+        <div className="ps-grid">
+          <div className="ps-card">
+            <h3>Submissions per Month</h3>
+            <div className="ps-card-sub">The last 6 months</div>
+            {data ? <Columns cols={monthCols} bind={bind} caption="Submissions per month, last 6 months" />
+              : <div className="ps-empty">Loading…</div>}
           </div>
-          <div className="ao-tile">
-            <div className="ao-tile-label">In Progress</div>
-            <div className="ao-tile-value">{kpis ? kpis.in_progress : '—'}</div>
-            <div className="ao-tile-sub">at the college, submitted, under review or endorsed</div>
-          </div>
-          <div className="ao-tile">
-            <div className="ao-tile-label">Approval Rate</div>
-            <div className="ao-tile-value">
-              {kpis && kpis.approval_rate !== null ? `${kpis.approval_rate}%` : '—'}
-            </div>
-            <div className="ao-tile-sub">
-              {kpis && kpis.decided > 0 ? `${kpis.approved} of ${kpis.decided} decided` : 'no decisions yet'}
-            </div>
-          </div>
-          <div className="ao-tile">
-            <div className="ao-tile-label">Average Days to Decision</div>
-            <div className="ao-tile-value">
-              {kpis && kpis.avg_decision_days !== null ? kpis.avg_decision_days : '—'}
-            </div>
-            <div className="ao-tile-sub">from submission to approved / rejected</div>
+          <div className="ps-card">
+            <h3>By Type</h3>
+            <div className="ps-card-sub">Research, grants and incentives</div>
+            <HBars rows={typeRows} total={total} bind={bind} />
           </div>
         </div>
 
-        <div className="ao-grid">
-          <div className="ao-card">
-            <h2>Proposals by Status</h2>
-            <div className="ao-card-sub">Where every proposal in this period stands right now</div>
-            <HBars rows={statusRows} total={total} onTip={showTip} onTipEnd={hideTip} />
-          </div>
-          <div className="ao-card">
-            <h2>Submissions per Month</h2>
-            <div className="ao-card-sub">New proposals submitted, last 6 months</div>
-            {data
-              ? <MonthColumns months={data.months || []} onTip={showTip} onTipEnd={hideTip} />
-              : <div className="ao-empty">Loading…</div>}
-          </div>
-        </div>
-
-        <div className="ao-grid">
-          <div className="ao-card">
-            <h2>Proposals by College</h2>
-            <div className="ao-card-sub">Top 6 colleges, the rest grouped as “Other colleges”</div>
-            <HBars rows={collegeRows} total={total} onTip={showTip} onTipEnd={hideTip} />
-          </div>
-          <div className="ao-card">
-            <h2>Proposals by Type</h2>
-            <div className="ao-card-sub">The five proposal types</div>
-            <HBars rows={typeRows} total={total} onTip={showTip} onTipEnd={hideTip} />
-          </div>
+        <div className="ps-card ps-solo">
+          <h3>By College</h3>
+          <div className="ps-card-sub">The top 6 colleges, the rest grouped together</div>
+          <HBars rows={collegeRows} total={total} bind={bind} color="#1baf7a" />
         </div>
 
         <div className="panel">
@@ -295,26 +217,26 @@ const AdminOverview = ({ users }) => {
           </div>
         </div>
 
-        <div className="ao-health">
-          <div className="ao-h">
-            <span className="ao-tile-label">Failed Emails (7 Days)</span>
-            <span className={`ao-h-value ${healthClass(health.failed_emails_7d, 'bad')}`}>{show(health.failed_emails_7d)}</span>
-            <Link to="/admin/emails">Open Email Log →</Link>
+        <div className="stats-grid ao-health">
+          <div className={`stat-card ${tone(health.failed_emails_7d, 'red')}`}>
+            <span className="stat-label">Failed Emails (7 Days)</span>
+            <span className="stat-value">{show(health.failed_emails_7d)}</span>
+            <Link className="ao-h-link" to="/admin/emails">Open Email Log →</Link>
           </div>
-          <div className="ao-h">
-            <span className="ao-tile-label">Failed Logins (7 Days)</span>
-            <span className={`ao-h-value ${healthClass(health.failed_logins_7d, 'warn')}`}>{show(health.failed_logins_7d)}</span>
-            <Link to="/admin/audit">Open Audit Log →</Link>
+          <div className={`stat-card ${tone(health.failed_logins_7d, 'amber')}`}>
+            <span className="stat-label">Failed Logins (7 Days)</span>
+            <span className="stat-value">{show(health.failed_logins_7d)}</span>
+            <Link className="ao-h-link" to="/admin/audit">Open Audit Log →</Link>
           </div>
-          <div className="ao-h">
-            <span className="ao-tile-label">Pending Verification</span>
-            <span className={`ao-h-value ${healthClass(health.pending_verification, 'warn')}`}>{show(health.pending_verification)}</span>
-            <Link to="/admin/users">Open User Accounts →</Link>
+          <div className={`stat-card ${tone(health.pending_verification, 'amber')}`}>
+            <span className="stat-label">Pending Verification</span>
+            <span className="stat-value">{show(health.pending_verification)}</span>
+            <Link className="ao-h-link" to="/admin/users">Open User Accounts →</Link>
           </div>
-          <div className="ao-h">
-            <span className="ao-tile-label">Active Accounts</span>
-            <span className="ao-h-value ok">{show(health.active_accounts)}</span>
-            <Link to="/admin/users">Open User Accounts →</Link>
+          <div className={`stat-card ${'purple'}`}>
+            <span className="stat-label">Active Accounts</span>
+            <span className="stat-value">{show(health.active_accounts)}</span>
+            <Link className="ao-h-link" to="/admin/users">Open User Accounts →</Link>
           </div>
         </div>
       </div>
@@ -357,12 +279,7 @@ const AdminOverview = ({ users }) => {
         </div>
       </div>
 
-      {tip && (
-        <div className="ao-tip"
-          style={{ left: Math.min(window.innerWidth - 270, tip.x + 14), top: tip.y + 14 }}>
-          <b>{tip.title}</b>{tip.text}
-        </div>
-      )}
+      {tipNode}
     </>
   );
 };

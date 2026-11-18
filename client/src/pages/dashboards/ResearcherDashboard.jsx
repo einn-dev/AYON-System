@@ -14,7 +14,7 @@ import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import FormToast, { jumpTo } from '../../components/FormToast';
@@ -81,7 +81,6 @@ const typeText = (t) => TYPE_LABEL[t] || t;
 const Overview = ({ proposals: all, user }) => {
   /* drafts are not submitted yet, so they are left out of the numbers */
   const proposals = all.filter(p => p.status !== 'draft');
-  const drafts    = all.length - proposals.length;
   const counts = {
     total:       proposals.length,
     in_progress: proposals.filter(p => ['for_endorsement', 'submitted', 'under_review', 'endorsed'].includes(p.status)).length,
@@ -89,6 +88,13 @@ const Overview = ({ proposals: all, user }) => {
     approved:    proposals.filter(p => p.status === 'approved').length,
     rejected:     proposals.filter(p => p.status === 'rejected').length,
   };
+  const typeLabelOf = (p) => PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type;
+  /* returned ones first (an office is waiting for the fix), then drafts, newest first */
+  const byNewest = (x, y) => String(y.updated_at || y.created_at || '').localeCompare(String(x.updated_at || x.created_at || ''));
+  const todo = [
+    ...all.filter(p => p.status === 'returned').sort(byNewest),
+    ...all.filter(p => p.status === 'draft').sort(byNewest),
+  ].slice(0, 6);
 
   return (
     <>
@@ -97,20 +103,8 @@ const Overview = ({ proposals: all, user }) => {
         <p>Welcome, {user?.first_name}. Here is an overview of your research activities in AYON.</p>
       </div>
 
-      {drafts > 0 && (
-        <div className="rs-banner" style={{ background: '#f7f4f4', borderColor: '#e3d6d8', color: '#5e5155' }}>
-          <span>You have {drafts} unfinished draft{drafts === 1 ? '' : 's'}.</span>
-          {all.some(p => p.status === 'draft' && kindOf(p.proposal_type) === 'research') && (
-            <Link to="/researcher/proposals" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Open My Research</Link>
-          )}
-          {all.some(p => p.status === 'draft' && kindOf(p.proposal_type) === 'grants') && (
-            <Link to="/researcher/grants" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Open Grants and Incentives</Link>
-          )}
-        </div>
-      )}
-
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card purple">
           <span className="stat-label">Total Submissions</span>
           <span className="stat-value">{counts.total}</span>
         </div>
@@ -132,6 +126,51 @@ const Overview = ({ proposals: all, user }) => {
         </div>
       </div>
 
+      {/* what the researcher has to do next: returned ones to fix, drafts to finish */}
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Needs Your Attention</h2>
+          {todo.length > 0 && <span className="badge badge-amber">{todo.length}</span>}
+        </div>
+        {todo.length === 0 ? (
+          <div className="rd-allset">
+            <FaCircleCheck className="rd-allset-ic" aria-hidden="true" />
+            <div>
+              <b>You are all set.</b>
+              <span>Nothing is waiting for you. Start something new:</span>
+            </div>
+            <div className="rd-allset-btns">
+              <Link to="/researcher/proposals/new" className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>Submit Research</Link>
+              <Link to="/researcher/grants/new" className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}>Submit Application</Link>
+            </div>
+          </div>
+        ) : (
+          <ul className="rd-todo">
+            {todo.map(p => {
+              const returned = p.status === 'returned';
+              const K = KINDS[kindOf(p.proposal_type)];
+              return (
+                <li key={p.proposal_id} className={returned ? 'returned' : 'draft'}>
+                  <span className="rd-todo-tag">{returned ? 'Returned' : 'Draft'}</span>
+                  <div className="rd-todo-text">
+                    <b>{p.title || 'Untitled draft'}</b>
+                    <span>
+                      {returned
+                        ? `${typeLabelOf(p)} · Reason: ${p.return_reason || 'see your notifications'}`
+                        : `${typeLabelOf(p)} · last saved ${shortDate(p.updated_at || p.created_at)}`}
+                    </span>
+                  </div>
+                  <Link className="btn btn-outline btn-sm" style={{ textDecoration: 'none' }}
+                    to={returned ? `${K.base}?open=${p.proposal_id}` : `${K.base}/${p.proposal_id}/edit`}>
+                    {returned ? 'Fix and Resubmit' : 'Continue'}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       <div className="panel">
         <div className="panel-header">
           <h2>Recent Submissions</h2>
@@ -148,20 +187,16 @@ const Overview = ({ proposals: all, user }) => {
           <tbody>
             {proposals.slice(0, 5).map(p => (
               <tr key={p.proposal_id}>
-                <td><strong>{p.title}</strong></td>
-                <td style={{ color: '#718096' }}>
-                  {PROPOSAL_TYPES.find(t => t.value === p.proposal_type)?.label || p.proposal_type}
+                <td>
+                  <Link className="rd-title-link" to={`${KINDS[kindOf(p.proposal_type)].base}?open=${p.proposal_id}`}>{p.title}</Link>
                 </td>
+                <td style={{ color: '#718096' }}>{typeLabelOf(p)}</td>
                 <td>
                   <span className={`badge ${statusBadge(p.status)}`}>
                     {statusLabel(p.status)}
                   </span>
                 </td>
-                <td style={{ color: '#718096' }}>
-                  {p.submitted_at
-                    ? new Date(p.submitted_at).toLocaleDateString()
-                    : '—'}
-                </td>
+                <td style={{ color: '#718096' }}>{p.submitted_at ? shortDate(p.submitted_at) : '—'}</td>
               </tr>
             ))}
             {proposals.length === 0 && (
@@ -173,35 +208,6 @@ const Overview = ({ proposals: all, user }) => {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Quick Guide */}
-      <div className="panel">
-        <div className="panel-header"><h2>How to Submit</h2></div>
-        <div className="panel-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-            {[
-              { step: '1', title: 'Fill the Form',    desc: 'Open My Research and click Submit Research. For a grant or incentive, open Grants and Incentives and click Submit Application.' },
-              { step: '2', title: 'Upload Documents', desc: 'Attach your proposal file and required documents.' },
-              { step: '3', title: 'Track Status',     desc: 'Follow the status on the same page where you submitted it.' },
-              { step: '4', title: 'Get Notified',     desc: 'Receive in-app notifications on every status update.' },
-            ].map(s => (
-              <div key={s.step} style={{
-                background: '#f8fafc', borderRadius: 10,
-                padding: '16px', border: '1px solid #e8edf2'
-              }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: '#1a3a5c', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700, fontSize: '0.9rem', marginBottom: 10
-                }}>{s.step}</div>
-                <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px', fontSize: '0.9rem' }}>{s.title}</p>
-                <p style={{ color: '#718096', margin: 0, fontSize: '0.82rem', lineHeight: 1.5 }}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </>
   );

@@ -94,7 +94,7 @@
 .ao-sub { font-size: 0.78rem; color: #8a7a7d; font-weight: 400; margin-top: 2px; }
 
 /* health tiles */
-.ao-health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.ao-health { margin-bottom: 16px; }   /* the grid comes from .stats-grid */
 .ao-h {
   background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 16px 18px;
   display: flex; flex-direction: column; gap: 4px;
@@ -109,9 +109,14 @@
 .ao-loading { opacity: 0.55; transition: opacity 0.2s; }
 
 @media (max-width: 980px) {
-  .ao-kpis, .ao-health { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ao-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ao-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
-  .ao-kpis, .ao-health { grid-template-columns: 1fr; }
+  .ao-kpis { grid-template-columns: 1fr; }
 }
+
+/* health cards use the colored number cards (Layout.css .stat-card) */
+.ao-health { margin-bottom: 16px; }
+.ao-h-link { font-size: 0.78rem; color: #8d1b2d; font-weight: 600; text-decoration: none; margin-top: 2px; position: relative; }
+.ao-h-link:hover { text-decoration: underline; }
