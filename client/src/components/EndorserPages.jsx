@@ -6,6 +6,7 @@ import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL, wordFor } from '../u
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import RecordDetails from './RecordDetails';
+import { useOpenHighlight } from './OpenHighlight';
 import { personName } from '../utils/names';
 import { FormChecklist, EMPTY_CHECK } from './GrantForms';
 import { formOf, stepOf, stepProblem } from '../utils/grantForms';
@@ -76,7 +77,7 @@ export const EndorserStats = ({ proposals, role }) => {
   return (
     <div className="stats-grid">
       <div className="stat-card blue">
-        <span className="stat-label">Proposals in Your Scope</span>
+        <span className="stat-label">Submissions in Your Scope</span>
         <span className="stat-value">{proposals.length}</span>
       </div>
       <div className="stat-card amber">
@@ -111,6 +112,14 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
 
   const open = (p) => { setSelected(p); setFormCheck(EMPTY_CHECK); setNote(''); setAlert(null); setConfirming(false); };
   const back = () => { setSelected(null); setAlert(null); setConfirming(false); };
+
+  /* opened from a notification (?open=<id>): its review screen when it is waiting for you,
+     otherwise the record read-only (someone already acted on it) */
+  const [viewId, setViewId] = useState(null);
+  useOpenHighlight(proposals.length > 0, {
+    open: (id) => { const p = queue.find(x => String(x.proposal_id) === String(id)); if (!p) return false; open(p); return true; },
+    fallback: (id) => setViewId(Number(id)),
+  });
 
   const send = async (decision) => {
     if (!noteOk) {
@@ -154,6 +163,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
   if (!selected) {
     return (
       <>
+        <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
         {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
         <div className="panel">
           <div className="panel-header">
@@ -348,8 +358,8 @@ export const EndorsedHistory = () => {
   return (
     <>
       <div className="page-header">
-        <h1>Endorsed Proposals</h1>
-        <p>Proposals you endorsed or returned, with your note and where each one is now.</p>
+        <h1>Endorsed</h1>
+        <p>Proposals and applications you endorsed or returned, with your note and where each one is now.</p>
       </div>
       <div className="panel">
         <div className="panel-header">
@@ -396,7 +406,7 @@ export const EndorsedHistory = () => {
                 </tr>
               ))}
               {shown.length === 0 && (
-                <tr><td colSpan={6}><div className="empty-state"><p>You have not endorsed or returned any proposals yet.</p></div></td></tr>
+                <tr><td colSpan={6}><div className="empty-state"><p>You have not endorsed or returned anything yet.</p></div></td></tr>
               )}
             </tbody>
           </table>

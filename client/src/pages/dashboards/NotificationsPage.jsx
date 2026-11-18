@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import API from '../../services/authService';
 import '../../components/Layout.css';
-import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature, FaChevronRight } from 'react-icons/fa6';
+import { useAuth } from '../../context/AuthContext';
+import { notifTarget, timeAgo, fullTime } from '../../utils/notifLinks';
 
 const TYPE_ICONS = {
   submission:  <FaPaperPlane />,
@@ -13,7 +16,11 @@ const TYPE_ICONS = {
   general:     <FaBell />,
 };
 
+/* The Notifications page of the researcher and the college roles.
+   Clicking a notification marks it read and opens the proposal or application it is about. */
 const NotificationsPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [notifs,  setNotifs]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('all');
@@ -55,7 +62,7 @@ const NotificationsPage = () => {
     <>
       <div className="page-header">
         <h1>Notifications</h1>
-        <p>Updates on your proposals, endorsements, grants, and approvals.</p>
+        <p>Updates on proposals, applications, endorsements and approvals. Click one to open it.</p>
       </div>
 
       <div className="panel">
@@ -90,15 +97,24 @@ const NotificationsPage = () => {
             <p>No notifications {filter !== 'all' ? 'matching this filter' : 'yet'}.</p>
           </div>
         ) : (
-          filtered.map(n => (
-            <div key={n.notif_id}
-              onClick={() => !n.is_read && markRead(n.notif_id)}
+          filtered.map(n => {
+            const target = notifTarget(n, user?.role);
+            const openIt = async () => {
+              if (!n.is_read) await markRead(n.notif_id);
+              if (target) navigate(target);
+            };
+            return (
+            <div key={n.notif_id} role="button" tabIndex={0}
+              onClick={openIt}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openIt(); } }}
+              aria-label={`${n.title}${target ? ', open it' : ''}`}
+              className="notif-row"
               style={{
                 padding: '14px 20px',
                 borderBottom: '1px solid #f0f4f8',
                 background: n.is_read ? '#fff' : '#f0f6ff',
                 display: 'flex', alignItems: 'flex-start',
-                gap: 14, cursor: n.is_read ? 'default' : 'pointer',
+                gap: 14, cursor: target || !n.is_read ? 'pointer' : 'default',
                 transition: 'background 0.2s',
               }}>
               <div style={{ fontSize: '1.3rem', flexShrink: 0, lineHeight: 1.2, color: '#8d1b2d', width: 28, textAlign: 'center' }}>
@@ -113,15 +129,21 @@ const NotificationsPage = () => {
                   fontSize: '0.85rem', lineHeight: 1.5 }}>
                   {n.message}
                 </p>
-                <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }}>
-                  {new Date(n.date_sent).toLocaleString()}
+                <p style={{ color: '#a0aec0', margin: 0, fontSize: '0.75rem' }} title={fullTime(n.date_sent)}>
+                  {timeAgo(n.date_sent)}{timeAgo(n.date_sent) !== fullTime(n.date_sent) ? ` · ${fullTime(n.date_sent)}` : ''}
                 </p>
               </div>
               {!n.is_read && (
                 <span className="badge badge-blue" style={{ flexShrink: 0 }}>New</span>
               )}
+              {target && (
+                <span style={{ flexShrink: 0, color: '#8d1b2d', fontSize: '0.8rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  Open <FaChevronRight aria-hidden="true" />
+                </span>
+              )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </>

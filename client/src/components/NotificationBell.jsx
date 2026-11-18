@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa6';
 import './NotificationBell.css';
 import { LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
+import { notifTarget, timeAgo, fullTime } from '../utils/notifLinks';
 
 /* ─────────────────────────────────────────────────────────────
    The bell in the top bar. Clicking it opens a small panel with the
@@ -26,35 +27,6 @@ const ICONS = {
   approval:    <FaCircleCheck />,
   rejection:   <FaCircleXmark />,
   general:     <FaBell />,
-};
-
-/* the queue each office's "Review" button opens (same as their Notifications page) */
-const OFFICE_QUEUE = {
-  special_assistant: '/special-assistant/validate',
-  msric_director:    '/director/for-review',
-  ovcred:            '/ovcred/for-endorsement',
-  msric_staff:       '/msric-staff/submissions',
-};
-const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
-const isRepoNews   = (n) => /^new research in the repository/i.test(n.title || '');
-
-const whereTo = (n, role, base, notifPath) => {
-  const queue = OFFICE_QUEUE[role];
-  if (!queue) return notifPath;
-  if (isRepoNews(n) && role === 'msric_staff') return '/msric-staff/repository';
-  if (isGrantAlert(n)) return `${base}/grants`;
-  if (n.proposal_id) return `${queue}?open=${n.proposal_id}`;
-  return notifPath;
-};
-
-const ago = (d) => {
-  if (!d) return '';
-  const s = Math.max(0, (Date.now() - new Date(d).getTime()) / 1000);
-  if (s < 60) return 'Just now';
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  if (s < 86400) { const h = Math.floor(s / 3600); return `${h} hour${h === 1 ? '' : 's'} ago`; }
-  if (s < 7 * 86400) { const n = Math.floor(s / 86400); return n === 1 ? 'Yesterday' : `${n} days ago`; }
-  return new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 /* tells the sidebar and the bell to refresh the unread count */
@@ -134,7 +106,7 @@ const NotificationBell = ({ role, base, notifPath, unread = 0 }) => {
   const openIt = async (n) => {
     if (!n.is_read) await markRead(n.notif_id);
     setOpen(false);
-    navigate(whereTo(n, role, base, notifPath));
+    navigate(notifTarget(n, role) || notifPath);
   };
 
   const seeAll = () => { setOpen(false); navigate(notifPath); };
@@ -189,7 +161,7 @@ const NotificationBell = ({ role, base, notifPath, unread = 0 }) => {
                   <span className="nb-body">
                     <span className="nb-title">{n.title}</span>
                     <span className="nb-msg">{n.message}</span>
-                    <span className="nb-time">{ago(n.date_sent)}</span>
+                    <span className="nb-time" title={fullTime(n.date_sent)}>{timeAgo(n.date_sent)}</span>
                   </span>
                   {!n.is_read && <span className="nb-dot" aria-label="Unread" />}
                 </button>

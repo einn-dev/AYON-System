@@ -8,6 +8,7 @@ import '../../components/Layout.css';
 import ExternalResearchPage from './ExternalResearchPage';
 import NotificationsPage from './NotificationsPage';
 import ResubmitModal from '../../components/ResubmitModal';
+import { useOpenHighlight } from '../../components/OpenHighlight';
 import '../../components/Resubmit.css';
 import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
@@ -273,6 +274,20 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
   const [deleting, setDeleting] = useState(null);
   const [notice,   setNotice]   = useState(null);   // { type, msg } after an action
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+
+  /* opened from a notification (?open=<id>): its details window; a grant application opens
+     on Grants and Incentives and a research proposal on My Research */
+  const navigateTo = useNavigate();
+  useOpenHighlight(everything.length > 0, {
+    open: (id) => {
+      const p = everything.find((x) => String(x.proposal_id) === String(id));
+      if (!p) return false;
+      const other = kindOf(p.proposal_type);
+      if (other !== kind) { navigateTo(`${KINDS[other].base}?open=${id}`, { replace: true }); return 'moved'; }
+      setSelected(p);
+      return true;
+    },
+  });
 
   const years = [...new Set(proposals.map(yearOf).filter(Boolean))].sort((a, b) => b.localeCompare(a));
   const q = f.search.trim().toLowerCase();

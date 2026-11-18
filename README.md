@@ -196,6 +196,7 @@ In Supabase, open **SQL Editor** and run these files **in this order**:
 16. `add_decision_details.sql` (decision date and rejection reason, faster lookups, one role per account)
 17. `update_external_research.sql` (External Research: researchers and keywords, always private; moves old Externally Funded records out of My Research)
 18. `add_researcher_signature.sql` (the Project Leader signs Form 005 under (15) Submitted by)
+19. `fix_time_zones.sql` (dates and times saved with their time zone, so notifications show the right time)
 
 Each file is safe to run more than once. For a demo, `demo_data.sql` can be run after these; keep it out of a public repository, because it holds the shared demo password.
 

@@ -7,6 +7,7 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
 import { CollegeExternalPage } from './ExternalShared';
+import NotificationsPage from './NotificationsPage';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
 import { statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
@@ -16,50 +17,20 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const NAV_ITEMS = [
   { path: '/college-dean/dashboard',       label: 'Dashboard',       icon: <FaTableCellsLarge /> },
   { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
-  { path: '/college-dean/endorsed',        label: 'Endorsed Proposals', icon: <FaCircleCheck /> },
+  { path: '/college-dean/endorsed',        label: 'Endorsed', icon: <FaCircleCheck /> },
   { path: '/college-dean/external',       label: 'External Research', icon: <FaGlobe /> },
   { path: '/college-dean/notifications',   label: 'Notifications',    icon: <FaBell /> },
 ];
-
-const Notifications = () => {
-  const [notifs, setNotifs] = useState([]);
-  const load = useCallback(() => {
-    API.get('/notifications').then(res => setNotifs(res.data.notifications || [])).catch(() => {});
-  }, []);
-  useEffect(() => { load(); }, [load]);
-  useLiveRefresh(load);
-  const markRead = async (id) => {
-    try { await API.patch(`/notifications/${id}/read`); setNotifs(prev => prev.map(n => n.notif_id === id ? { ...n, is_read: 1 } : n)); } catch {}
-  };
-  return (
-    <>
-      <div className="page-header"><h1>Notifications</h1></div>
-      <div className="panel">
-        {notifs.length === 0 ? <div className="empty-state"><p>No notifications yet.</p></div>
-          : notifs.map(n => (
-            <div key={n.notif_id} onClick={() => !n.is_read && markRead(n.notif_id)}
-              style={{ padding: '14px 20px', borderBottom: '1px solid #f0f4f8', background: n.is_read ? '#fff' : '#f0f6ff', display: 'flex', gap: 14, cursor: 'pointer' }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 5, background: n.is_read ? '#e8edf2' : '#2e6da4' }} />
-              <div>
-                <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 3px', fontSize: '0.9rem' }}>{n.title}</p>
-                <p style={{ color: '#718096', margin: 0, fontSize: '0.85rem' }}>{n.message}</p>
-              </div>
-            </div>
-          ))}
-      </div>
-    </>
-  );
-};
 
 const Overview = ({ proposals }) => (
   <>
     <div className="page-header">
       <h1>College Dean Dashboard</h1>
-      <p>Review and endorse research proposals from your college.</p>
+      <p>Review and endorse research proposals and applications from your college.</p>
     </div>
     <EndorserStats proposals={proposals} role="college_dean" />
     <div className="panel">
-      <div className="panel-header"><h2>Recent Proposals</h2></div>
+      <div className="panel-header"><h2>Recent Submissions</h2></div>
       <table className="data-table">
         <thead><tr><th>Researcher</th><th>Research Title</th><th>Proposal Type</th><th>Status</th></tr></thead>
         <tbody>
@@ -100,13 +71,13 @@ const CollegeDeanDashboard = () => {
         <Route path="dashboard" element={<Overview proposals={proposals} />} />
         <Route path="for-endorsement" element={
           <>
-            <div className="page-header"><h1>For Endorsement</h1><p>Review and endorse proposals from your college.</p></div>
+            <div className="page-header"><h1>For Endorsement</h1><p>Review and endorse proposals and applications from your college.</p></div>
             <EndorsementQueue proposals={proposals} role="college_dean" onRefresh={fetchProposals} />
           </>
         } />
         <Route path="endorsed"      element={<EndorsedHistory />} />
         <Route path="external"      element={<CollegeExternalPage />} />
-        <Route path="notifications" element={<Notifications />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>
   );

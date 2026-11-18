@@ -7,6 +7,7 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
+import RecordDetails from '../../components/RecordDetails';
 import ReturnReasonModal from '../../components/ReturnReasonModal';
 import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
@@ -25,8 +26,8 @@ const NAV_ITEMS = [
   { path: '/director/dashboard',     label: 'Dashboard',          icon: <FaTableCellsLarge /> },
   { path: '/director/for-review',    label: 'For Review',         icon: <FaClipboardList /> },
   { path: '/director/endorsed',      label: 'Endorsed to VCRED', icon: <FaPaperPlane /> },
-  { path: '/director/approved',      label: 'Approved Proposals', icon: <FaCircleCheck /> },
-  { path: '/director/rejected',      label: 'Rejected Proposals', icon: <FaCircleXmark /> },
+  { path: '/director/approved',      label: 'Approved', icon: <FaCircleCheck /> },
+  { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark /> },
   { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
   { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
@@ -42,7 +43,7 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>MSIRC Director Dashboard</h1>
-        <p>Review validated proposals and applications and make approval decisions for MSIRC.</p>
+        <p>Review validated proposals and applications, then endorse them to VCRED, return or reject them.</p>
       </div>
 
       <div className="stats-grid">
@@ -127,9 +128,18 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the MSIRC Director's step on an MSIRC form
-  const hl = useOpenHighlight(proposals.length > 0);
-
   const filtered = proposals.filter(p => p.status === statusFilter);
+  /* opened from a notification: its review screen when it waits for you, otherwise read-only */
+  const [viewId, setViewId] = useState(null);
+  const hl = useOpenHighlight(proposals.length > 0, {
+    open: (id) => {
+      const p = filtered.find(x => String(x.proposal_id) === String(id) && x.status === 'under_review');
+      if (!p) return false;
+      setSelected(p); setFormCheck(EMPTY_CHECK); setRemarks(''); setAlert(null);
+      return true;
+    },
+    fallback: (id) => setViewId(Number(id)),
+  });
 
   /* send it back to the researcher; after they resubmit it starts again from the college */
   const handleReturn = async (reason) => {
@@ -191,14 +201,15 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
 
   const pageTitle = {
     under_review: 'For Review',
-    approved:     'Approved Proposals',
-    rejected:     'Rejected Proposals',
+    approved:     'Approved',
+    rejected:     'Rejected',
     endorsed:     'Endorsed to VCRED',
   }[statusFilter] || 'Proposals';
 
   return (
     <>
       <OpenNotice state={hl} where="your review queue" />
+      <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
       <div className="page-header">
         <h1>{pageTitle}</h1>
         <p>
@@ -254,7 +265,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               ))}
               {filtered.length === 0 && (
                 <tr><td colSpan={6}>
-                  <div className="empty-state"><p>No proposals found.</p></div>
+                  <div className="empty-state"><p>Nothing found.</p></div>
                 </td></tr>
               )}
             </tbody>

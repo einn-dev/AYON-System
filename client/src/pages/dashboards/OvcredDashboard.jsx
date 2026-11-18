@@ -23,8 +23,8 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const NAV_ITEMS = [
   { path: '/ovcred/dashboard',       label: 'Dashboard',           icon: <FaTableCellsLarge /> },
   { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
-  { path: '/ovcred/approved',        label: 'Approved Proposals',  icon: <FaCircleCheck /> },
-  { path: '/ovcred/rejected',        label: 'Rejected Proposals',  icon: <FaCircleXmark /> },
+  { path: '/ovcred/approved',        label: 'Approved',  icon: <FaCircleCheck /> },
+  { path: '/ovcred/rejected',        label: 'Rejected',  icon: <FaCircleXmark /> },
   { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/ovcred/reports',         label: 'Reports',             icon: <FaChartColumn /> },
   { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
@@ -126,9 +126,18 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [storeToRepo, setStoreToRepo] = useState(true);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
-  const hl = useOpenHighlight(proposals.length > 0);
-
   const endorsed = proposals.filter(p => p.status === 'endorsed');
+  /* opened from a notification: its approval screen when it waits for you, otherwise read-only */
+  const [viewId, setViewId] = useState(null);
+  const hl = useOpenHighlight(proposals.length > 0, {
+    open: (id) => {
+      const p = endorsed.find(x => String(x.proposal_id) === String(id));
+      if (!p) return false;
+      setSelected(p); setRemarks(''); setAlert(null);
+      return true;
+    },
+    fallback: (id) => setViewId(Number(id)),
+  });
 
   /* send it back to the researcher; after they resubmit it starts again from the college */
   const handleReturn = async (reason) => {
@@ -195,6 +204,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
   return (
     <>
       <OpenNotice state={hl} where="your endorsement queue" />
+      <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
       <div className="page-header">
         <h1>For Final Approval</h1>
         <p>Review proposals and applications endorsed by the MSIRC Director and give the final VCRED decision.</p>
@@ -421,7 +431,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 const FilteredList = ({ proposals, statusFilter }) => {
   const [openId, setOpenId] = useState(null);         // the record opened in the read-only window
   const filtered = proposals.filter(p => p.status === statusFilter);
-  const title    = statusFilter === 'approved' ? 'Approved Proposals' : 'Rejected Proposals';
+  const title    = statusFilter === 'approved' ? 'Approved' : 'Rejected';
 
   return (
     <>
@@ -429,8 +439,8 @@ const FilteredList = ({ proposals, statusFilter }) => {
         <h1>{title}</h1>
         <p>
           {statusFilter === 'approved'
-            ? 'Research proposals that received final VCRED approval.'
-            : 'Proposals that were rejected by VCRED.'}
+            ? 'Research proposals and applications that received final VCRED approval.'
+            : 'Proposals and applications that were rejected.'}
         </p>
       </div>
       <div className="panel">
@@ -473,7 +483,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={7}>
-                <div className="empty-state"><p>No proposals found.</p></div>
+                <div className="empty-state"><p>Nothing found.</p></div>
               </td></tr>
             )}
           </tbody>

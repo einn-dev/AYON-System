@@ -25,8 +25,8 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const NAV_ITEMS = [
   { path: '/special-assistant/dashboard',     label: 'Dashboard',           icon: <FaTableCellsLarge /> },
   { path: '/special-assistant/validate',      label: 'For Validation',      icon: <FaClipboardCheck /> },
-  { path: '/special-assistant/forwarded',     label: 'Validated Proposals', icon: <FaPaperPlane /> },
-  { path: '/special-assistant/submissions',   label: 'All Proposals',       icon: <FaInbox /> },
+  { path: '/special-assistant/forwarded',     label: 'Validated', icon: <FaPaperPlane /> },
+  { path: '/special-assistant/submissions',   label: 'All Submissions',       icon: <FaInbox /> },
   { path: '/special-assistant/notifications', label: 'Notifications',       icon: <FaBell /> },
 ];
 
@@ -52,7 +52,7 @@ const Overview = ({ proposals }) => {
     <>
       <div className="page-header">
         <h1>MSIRC Special Assistant Dashboard</h1>
-        <p>Validate proposals and forward complete documents to the MSIRC Director.</p>
+        <p>Validate proposals and applications and forward complete documents to the MSIRC Director.</p>
       </div>
 
       <div className="stats-grid">
@@ -154,7 +154,7 @@ const Submissions = ({ proposals, onRefresh }) => {
   return (
     <>
       <div className="page-header">
-        <h1>All Proposals</h1>
+        <h1>All Submissions</h1>
         <p>Every research proposal submitted to MSIRC.</p>
       </div>
 
@@ -224,7 +224,7 @@ const Submissions = ({ proposals, onRefresh }) => {
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={7}>
-                <div className="empty-state"><p>No proposals found.</p></div>
+                <div className="empty-state"><p>Nothing found.</p></div>
               </td></tr>
             )}
           </tbody>
@@ -251,7 +251,12 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the MSIRC Special Assistant's step on an MSIRC form
 
   const pending = proposals.filter(p => p.status === 'submitted');
-  const hl = useOpenHighlight(proposals.length > 0 && !selected);
+  /* opened from a notification: its validation screen when it is waiting, otherwise read-only */
+  const [viewId, setViewId] = useState(null);
+  const hl = useOpenHighlight(proposals.length > 0 && !selected, {
+    open: (id) => { const p = pending.find(x => String(x.proposal_id) === String(id)); if (!p) return false; openValidation(p); return true; },
+    fallback: (id) => setViewId(Number(id)),
+  });
 
   const openValidation = (proposal) => {
     setSelected(proposal);
@@ -341,6 +346,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
       </div>
 
       {!selected && <OpenNotice state={hl} where="the validation queue" />}
+      <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
 
       {alert && !selected && (
         <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
@@ -552,8 +558,8 @@ const Forwarded = ({ proposals }) => {
   return (
     <>
       <div className="page-header">
-        <h1>Validated Proposals</h1>
-        <p>Proposals you validated and forwarded to the MSIRC Director.</p>
+        <h1>Validated</h1>
+        <p>Proposals and applications you validated and forwarded to the MSIRC Director.</p>
       </div>
 
       <div className="panel">
@@ -592,7 +598,7 @@ const Forwarded = ({ proposals }) => {
             ))}
             {forwarded.length === 0 && (
               <tr><td colSpan={6}>
-                <div className="empty-state"><p>No validated proposals yet.</p></div>
+                <div className="empty-state"><p>Nothing validated yet.</p></div>
               </td></tr>
             )}
           </tbody>
