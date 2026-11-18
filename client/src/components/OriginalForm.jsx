@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { personName } from '../utils/names';
-import { budgetTotals, PLAN_MONTHS, FINANCIAL } from '../utils/grantForms';
+import { budgetTotals, PLAN_MONTHS, FINANCIAL, personContact } from '../utils/grantForms';
 import './OriginalForm.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -316,7 +316,7 @@ const Form005 = ({ ctx }) => {
         <div className="of5-frame">
           <Sec n={1} title="Project Title"><Para v={ctx.title} /></Sec>
           <Sec n={2} title="Proponent(s)">
-            {(d.proponents || []).map((p, i) => <div key={i} className="of5-text"><b>Name:</b> {p.name}<br /><b>Contact Details:</b> {p.contact}</div>)}
+            {(d.proponents || []).map((p, i) => <div key={i} className="of5-text"><b>Name:</b> {p.name}<br /><b>Contact Details:</b> {personContact(p)}</div>)}
           </Sec>
           <Sec n={3} title="Executive Summary"><Para v={d.summary} /></Sec>
           <Sec n={4} title="Introduction"><Para v={d.introduction} /></Sec>

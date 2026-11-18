@@ -77,7 +77,7 @@ const GRANT_FORMS = {
       { k: 'authors',   label: 'Author(s)', type: 'people', required: true,
         hint: 'Name and affiliation (department and college) of each author. The first one is the main author.' },
       { k: 'presenter', label: 'Presenting Author', required: true, hint: 'The author who will present' },
-      { k: 'presenter_contact', label: 'Presenting Author\'s Email and Mobile Number', required: true, hint: 'e.g., name@msumain.edu.ph / 0917 000 0000' },
+      { k: 'presenter_contact', label: 'Presenting Author\'s Email and Mobile Number', required: true, hint: 'Ex: name@msumain.edu.ph / 0917 000 0000' },
       { k: 'student',   label: 'Student thesis entry?', type: 'select', required: true,
         options: ['No', 'Yes, presented by the adviser'],
         hint: 'For a student thesis that is not under a faculty research project. The student signs the Faculty Waiver Form.' },
@@ -107,7 +107,7 @@ const GRANT_FORMS = {
     descFrom: 'summary',          // the Executive Summary is also saved as the abstract
     fields: [
       { k: 'proponents',   label: '(2) Proponent(s)', type: 'people', required: true,
-        hint: 'Name and contact details (department, college, cellphone and email) of each proponent. The first one is the Project Leader.' },
+        hint: 'Name and contact details of each proponent. The first one is the Project Leader. Cellphone is optional.' },
       { k: 'summary',      label: '(3) Executive Summary', type: 'textarea', maxWords: 300, rows: 5, required: true, hint: 'Not more than 300 words.' },
       { k: 'introduction', label: '(4) Introduction', type: 'textarea', required: true,
         hint: 'A brief background of the study: the problem or need being addressed and the historical basis for the R&D. Include what justifies the research design and methodology.' },
@@ -119,7 +119,7 @@ const GRANT_FORMS = {
         hint: 'The expected results: products, technologies, processes, knowledge or other deliverables.' },
       { k: 'priority',     label: '(8) R&D Priority Area', type: 'agenda', required: true,
         hint: 'From the approved MSU-Main Campus Research and Development Agenda 2023-2028.' },
-      { k: 'program',      label: 'Program under the Priority Area', hint: 'e.g., Smart schools (optional)', full: true },
+      { k: 'program',      label: 'Program under the Priority Area', hint: 'Ex: Smart schools (optional)', full: true },
       { k: 'literature',   label: '(9) Review of Related Literature', type: 'textarea', required: true,
         hint: 'What is already known on the topic, the gaps or inconsistencies, and how this research addresses them.' },
       { k: 'methodology',  label: '(10) Methodology', type: 'textarea', rows: 6, required: true,
@@ -304,7 +304,7 @@ const GRANT_FORMS = {
           { k: 'index', label: 'SCOPUS Index', options: ['Journal', 'Conference Proceeding'], required: true },
         ],
         inputs: [
-          { k: 'quartile', label: 'Quartile Rank', hint: 'e.g., Q1' },
+          { k: 'quartile', label: 'Quartile Rank', hint: 'Ex: Q1' },
           { k: 'amount',   label: 'Eligible for Incentive, Amount (₱)', type: 'money', required: true },
         ],
         hint: 'If the application is not eligible, return it with your remarks instead.',
@@ -370,11 +370,50 @@ const shown   = (q, answers) => !q.showIf || String((answers || {})[q.showIf.k] 
 const LONG = ['textarea', 'agenda', 'people', 'workplan', 'budget'];   // shown across the full width
 const isMoney = (v) => /^\d{1,9}(\.\d{1,2})?$/.test(String(v || '').trim()) && Number(v) > 0;
 
+/* Proponents (Form 005): separate boxes for college, department, email and cellphone.
+   Records saved before this change keep one "contact" text and are still accepted. */
+const OTHER_COLLEGE = 'Other (outside MSU)';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const CELL_RE = /^09\d{9}$/;
+const cleanCell = (v) => String(v ?? '').replace(/[\s-]/g, '');
+const isOldPerson = (p) => !!(p && p.contact) && !p.college && !p.department && !p.email && !p.cellphone;
+/* "Department / College / Cellphone / Email", in the order of the paper form */
+const personContact = (p) => {
+  if (!p) return '';
+  if (p.contact && isOldPerson(p)) return p.contact;
+  return [p.department, p.college === OTHER_COLLEGE ? '' : p.college, p.cellphone, p.email].filter(Boolean).join(' / ');
+};
+/* What is wrong with one proponent, as { k: box, msg }, or null */
+const personIssue = (p, i) => {
+  const n = `proponent ${i + 1}`;
+  if (!String(p.name || '').trim()) return { k: 'name', msg: `Please fill in the name of ${n}.` };
+  if (isOldPerson(p)) return null;
+  if (!String(p.college || '').trim()) return { k: 'college', msg: `Please choose the college of ${n}.` };
+  if (!String(p.department || '').trim()) {
+    return { k: 'department', msg: p.college === OTHER_COLLEGE ? `Please fill in the institution or office of ${n}.` : `Please choose the department of ${n}.` };
+  }
+  const email = String(p.email || '').trim();
+  if (!email) return { k: 'email', msg: `Please fill in the email of ${n}.` };
+  if (!EMAIL_RE.test(email)) return { k: 'email', msg: `Please check the email of ${n}. Ex: name@msumain.edu.ph` };
+  if (p.cellphone && !CELL_RE.test(cleanCell(p.cellphone))) {
+    return { k: 'cellphone', msg: `Please check the cellphone number of ${n}. It should be 11 digits starting with 09.` };
+  }
+  return null;
+};
+
 /* Why the applicant's fields cannot be submitted yet, or '' */
 const peopleProblem = (f, list) => {
-  if (!list.length) return f.required ? 'Please add at least one proponent.' : '';
-  const i = list.findIndex((p) => !p.name || !p.contact);
-  return i >= 0 ? `Please fill in the name and the contact details of proponent ${i + 1}.` : '';
+  const who = f.k === 'authors' ? 'author' : 'proponent';
+  if (!list.length) return f.required ? `Please add at least one ${who}.` : '';
+  if (f.k === 'authors') {
+    const i = list.findIndex((p) => !p.name || !p.contact);
+    return i >= 0 ? `Please fill in the name and the affiliation of author ${i + 1}.` : '';
+  }
+  for (let i = 0; i < list.length; i += 1) {
+    const issue = personIssue(list[i] || {}, i);
+    if (issue) return issue.msg;
+  }
+  return '';
 };
 const planProblem = (f, rows) => {
   if (!rows.length) return f.required ? 'Please add at least one activity to the work plan.' : '';
@@ -490,8 +529,11 @@ const cleanFields = (form, data) => {
     const raw = d[f.k];
     if (f.type === 'people') {
       const list = (Array.isArray(raw) ? raw : []).slice(0, 10)
-        .map((p) => ({ name: str(p && p.name, 150), contact: str(p && p.contact, 300) }))
-        .filter((p) => p.name || p.contact);
+        .map((p) => (f.k === 'proponents' && !isOldPerson(p)
+          ? { name: str(p && p.name, 150), college: str(p && p.college, 150), department: str(p && p.department, 200),
+              email: str(p && p.email, 150), cellphone: cleanCell(p && p.cellphone).slice(0, 15) }
+          : { name: str(p && p.name, 150), contact: str(p && p.contact, 300) }))
+        .filter((p) => Object.values(p).some(Boolean));
       if (list.length) out[f.k] = list;
     } else if (f.type === 'workplan') {
       const rows = (Array.isArray(raw) ? raw : []).slice(0, 20)
@@ -527,4 +569,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-export { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };
+export { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, OTHER_COLLEGE, personContact, personIssue, formLabel, formOf, stepOf, shown, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };

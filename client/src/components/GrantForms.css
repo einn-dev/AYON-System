@@ -74,6 +74,28 @@
 .gf-person { display: grid; grid-template-columns: 110px 1fr 1.6fr 30px; gap: 8px; align-items: center; width: 100%; }
 .gf-person-no { font-size: 0.76rem; font-weight: 600; color: #6b5e61; }
 
+/* Form 005 proponents: one card each */
+.gf-pcard { position: relative; width: 100%; box-sizing: border-box; min-width: 0; margin: 0;
+  border: 1px solid #eadfe0; border-radius: 10px; padding: 10px 14px 14px; background: #fff; }
+.gf-pcard legend.gf-person-no { padding: 0 6px; font-size: 0.8rem; color: #8d1b2d; font-weight: 700; }
+.gf-pcard-x { position: absolute; top: 8px; right: 10px; }
+.gf-pcard-old { margin: 0 40px 8px 0; font-size: 0.78rem; color: #6b5e61; background: #faf7f7; border-radius: 6px; padding: 6px 9px; }
+.gf-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.gf-pbox { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin: 0; }
+.gf-pbox.full { grid-column: 1 / -1; padding-right: 40px; }
+.gf-pbox > span { font-size: 0.78rem; font-weight: 600; color: #4a3d40; }
+.gf-pbox > span i { color: #b3261e; font-style: normal; }
+.gf-pbox > span em { font-weight: 400; color: #8a7a7d; }
+.gf-pcard .gf-pbox input, .gf-pcard .gf-pbox select {
+  width: 100%; min-width: 0; box-sizing: border-box; padding: 9px 12px; font-family: inherit; font-size: 0.9rem;
+  border: 1px solid #e0d3d5; border-radius: 8px; background: #faf7f7; color: #3d3235;
+}
+.gf-pbox select { text-overflow: ellipsis; }
+.gf-pcard .gf-pbox input:focus, .gf-pcard .gf-pbox select:focus { outline: none; border-color: #8d1b2d; background: #fff; }
+.gf-pcard .gf-pbox select:disabled, .gf-pcard .gf-pbox input:disabled { background: #f3eeee; color: #8a7a7d; }
+.gf-pcard .gf-pbox .gf-bad { border-color: #b3261e; background: #fff8f7; }
+.gf-perr { color: #b3261e; font-size: 0.74rem; }
+
 .gf-plan { overflow-x: auto; }
 .gf-plan-table { border-collapse: collapse; width: 100%; min-width: 520px; margin-bottom: 8px; font-size: 0.84rem; }
 .gf-plan-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: #8a7a7d; font-weight: 600; text-align: center; padding: 6px 4px; background: #faf7f7; }
@@ -99,6 +121,8 @@
 .gf-budget-sum small { font-weight: 400; color: #8a7a7d; }
 
 @media (max-width: 640px) {
+  .gf-pgrid { grid-template-columns: 1fr; }
+  .gf-pcard { padding: 8px 10px 12px; }
   .gf-person { grid-template-columns: 1fr 30px; }
   .gf-person-no { grid-column: 1 / -1; }
   .gf-person input:nth-of-type(2) { grid-column: 1; }
@@ -163,3 +187,5 @@
 /* boxes fill their space, so examples and longer entries are not cut off */
 .gf-fields > .form-group > input, .gf-fields > .form-group > select { width: 100%; }
 .gf-plan-table td:first-child input { width: 100%; min-width: 240px; }
+.gf-pbox .gf-perr, .gf-pbox > span em { text-transform: none; letter-spacing: 0; }
+.gf-pbox .gf-perr { font-weight: 500; }

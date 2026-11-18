@@ -17,7 +17,7 @@ import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCirclePlus,
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsProblem, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import { personName } from '../../utils/names';
-import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide } from '../../components/GrantForms';
+import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -109,7 +109,7 @@ const Overview = ({ proposals: all, user }) => {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <span className="stat-label">Total Proposals</span>
+          <span className="stat-label">Total Submissions</span>
           <span className="stat-value">{counts.total}</span>
         </div>
         <div className="stat-card blue">
@@ -132,7 +132,7 @@ const Overview = ({ proposals: all, user }) => {
 
       <div className="panel">
         <div className="panel-header">
-          <h2>Recent Proposals</h2>
+          <h2>Recent Submissions</h2>
         </div>
         <table className="data-table">
           <thead>
@@ -542,6 +542,29 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const [savedAt, setSavedAt] = useState(location.state?.savedAt || null);
   const [form,    setForm]    = useState({ proposal_type: '', title: '', description: '', spotlight_id: '', form_no: '', form_data: {} });
   const [docs,    setDocs]    = useState(() => docsFromFiles([]));
+  /* the full account (college, department, cellphone): the Project Leader's boxes on Form 005 are filled from it */
+  const [me, setMe] = useState(null);
+  useEffect(() => {
+    let on = true;
+    API.get('/auth/profile').then(res => { if (on) setMe(res.data.user || null); }).catch(() => {});
+    return () => { on = false; };
+  }, []);
+  const leaderOf = (u) => ({
+    name: personName(u), college: collegeKey(u.college), department: u.department || '',
+    email: u.email || '', cellphone: u.contact_number || '',
+  });
+  /* the account arrived after Form 005 was chosen: fill the Project Leader's empty boxes */
+  useEffect(() => {
+    if (!me) return;
+    setForm(cur => {
+      const first = cur.form_no === '005' && (cur.form_data?.proponents || [])[0];
+      if (!first || first.contact || first.college || first.department || first.email) return cur;
+      const full = leaderOf({ ...user, ...me });
+      const filled = Object.fromEntries(Object.entries(full).map(([k, v]) => [k, first[k] || v]));
+      return { ...cur, form_data: { ...cur.form_data, proponents: [filled, ...cur.form_data.proponents.slice(1)] } };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me]);
 
   /* continue a draft: load it */
   const loadDraft = useCallback(async (id) => {
@@ -596,8 +619,11 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     }
     /* Form 005 and the Spotlight entry: the researcher is the first proponent or author */
     const people = f && f.fields.find(x => x.type === 'people');
-    const leader = people && user
-      ? { [people.k]: [{ name: personName(user), contact: [user.department, user.college, ...(people.k === 'proponents' ? [user.email] : [])].filter(Boolean).join(', ') }] }
+    const u = user ? { ...user, ...(me || {}) } : null;
+    const leader = people && u
+      ? { [people.k]: [people.k === 'proponents'
+          ? leaderOf(u)
+          : { name: personName(u), contact: [u.department, u.college].filter(Boolean).join(', ') }] }
       : {};
     setForm(cur => ({
       ...cur, proposal_type: type, form_no: no || '',

@@ -3,7 +3,9 @@ import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark
 import { ROLE_LABEL } from '../utils/terms';
 import {
   GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
+  OTHER_COLLEGE, personContact, personIssue,
 } from '../utils/grantForms';
+import { COLLEGE_DEPARTMENTS, COLLEGES } from '../data/Colleges';
 import { OriginalForm, hasOriginalForm } from './OriginalForm';
 import './GrantForms.css';
 
@@ -27,7 +29,99 @@ const showValue = (q, v) => (q.type === 'money' ? peso(v) : q.type === 'date' ? 
 /* ── Applicant's fields ── */
 const pesoNum = (n) => `₱${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/* (2) Proponents: name and contact details, one row each */
+/* (2) Proponents of Form 005: one card each, with separate boxes for
+   name, college, department, email (required) and cellphone (optional) */
+/* the account's college as it is named in the list ("College of X" or "College of X (CX)") */
+export const collegeKey = (c) => {
+  const v = String(c || '').trim();
+  if (!v) return '';
+  const bare = (s) => s.replace(/\s*\([^)]*\)\s*$/, '').toLowerCase();
+  return COLLEGES.find((k) => k === v) || COLLEGES.find((k) => bare(k) === bare(v)) || v;
+};
+const EMPTY_PROPONENT = { name: '', college: '', department: '', email: '', cellphone: '' };
+const ProponentsField = ({ id, value, onChange, disabled }) => {
+  const list = value && value.length ? value : [EMPTY_PROPONENT];
+  const [seen, setSeen] = useState({});            // boxes the researcher has left, so format errors show
+  const set = (i, patch) => onChange(list.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  const leave = (i, k) => setSeen((s) => ({ ...s, [`${i}.${k}`]: true }));
+  return (
+    <div className="gf-people" id={id}>
+      {list.map((p, i) => {
+        const who = i === 0 ? 'Project Leader' : `Proponent ${i + 1}`;
+        const other = p.college === OTHER_COLLEGE;
+        const colleges = p.college && p.college !== OTHER_COLLEGE && !COLLEGES.includes(p.college) ? [p.college, ...COLLEGES] : COLLEGES;
+        const depts = COLLEGE_DEPARTMENTS[p.college] || [];
+        const deptList = p.department && !other && !depts.includes(p.department) ? [p.department, ...depts] : depts;
+        /* only format mistakes show here, after leaving the box; empty boxes are named by the message at the top */
+        const issue = personIssue(p, i);
+        const bad = (k) => issue && issue.k === k && (k === 'email' || k === 'cellphone') && String(p[k] || '').trim() && seen[`${i}.${k}`];
+        const box = (k) => `${id}-${i}-${k}`;
+        return (
+          <fieldset key={i} className="gf-pcard" disabled={disabled}>
+            <legend className="gf-person-no">{who}</legend>
+            {list.length > 1 && (
+              <button type="button" className="gf-x gf-pcard-x" aria-label={`Remove ${who.toLowerCase()}`}
+                onClick={() => onChange(list.filter((_, j) => j !== i))}><FaXmark /></button>
+            )}
+            {p.contact && !p.college && !p.department && !p.email && !p.cellphone && (
+              <p className="gf-pcard-old">Saved before as: <b>{p.contact}</b>. Fill in the boxes below to update it.</p>
+            )}
+            <div className="gf-pgrid">
+              <label className="gf-pbox full" htmlFor={box('name')}>
+                <span>Full name <i>*</i></span>
+                <input id={box('name')} maxLength={150} placeholder="Ex: Juan A. Dela Cruz"
+                  value={p.name || ''} onChange={(e) => set(i, { name: e.target.value })} />
+              </label>
+              <label className="gf-pbox" htmlFor={box('college')}>
+                <span>College <i>*</i></span>
+                <select id={box('college')} value={p.college || ''}
+                  onChange={(e) => set(i, { college: e.target.value, department: '' })}>
+                  <option value="">Choose a college</option>
+                  {colleges.map((c) => <option key={c} value={c}>{c}</option>)}
+                  <option value={OTHER_COLLEGE}>{OTHER_COLLEGE}</option>
+                </select>
+              </label>
+              <label className="gf-pbox" htmlFor={box('department')}>
+                <span>{other ? 'Institution or office' : 'Department'} <i>*</i></span>
+                {other ? (
+                  <input id={box('department')} maxLength={200} placeholder="Ex: MSU-Iligan Institute of Technology"
+                    value={p.department || ''} onChange={(e) => set(i, { department: e.target.value })} />
+                ) : (
+                  <select id={box('department')} value={p.department || ''} disabled={disabled || !p.college}
+                    onChange={(e) => set(i, { department: e.target.value })}>
+                    <option value="">{p.college ? 'Choose a department' : 'Choose the college first'}</option>
+                    {deptList.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                )}
+              </label>
+              <label className="gf-pbox" htmlFor={box('email')}>
+                <span>Email <i>*</i></span>
+                <input id={box('email')} type="email" maxLength={150} placeholder="Ex: name@msumain.edu.ph"
+                  className={bad('email') ? 'gf-bad' : undefined} aria-invalid={bad('email') ? true : undefined}
+                  value={p.email || ''} onChange={(e) => set(i, { email: e.target.value })} onBlur={() => leave(i, 'email')} />
+                {bad('email') && <small className="gf-perr">Check the email. Ex: name@msumain.edu.ph</small>}
+              </label>
+              <label className="gf-pbox" htmlFor={box('cellphone')}>
+                <span>Cellphone <em>(optional)</em></span>
+                <input id={box('cellphone')} inputMode="numeric" maxLength={13} placeholder="Ex: 09171234567"
+                  className={bad('cellphone') ? 'gf-bad' : undefined} aria-invalid={bad('cellphone') ? true : undefined}
+                  value={p.cellphone || ''} onChange={(e) => set(i, { cellphone: e.target.value.replace(/[^\d\s-]/g, '') })}
+                  onBlur={() => leave(i, 'cellphone')} />
+                {bad('cellphone') && <small className="gf-perr">11 digits starting with 09</small>}
+              </label>
+            </div>
+          </fieldset>
+        );
+      })}
+      {list.length < 10 && (
+        <button type="button" className="btn btn-outline btn-sm" disabled={disabled}
+          onClick={() => onChange([...list, EMPTY_PROPONENT])}><FaPlus className="ic" />Add Proponent</button>
+      )}
+    </div>
+  );
+};
+
+/* Spotlight authors: name and affiliation, one row each */
 const PeopleField = ({ id, value, onChange, disabled, authors = false }) => {
   const who = authors ? 'author' : 'proponent';
   const list = value && value.length ? value : [{ name: '', contact: '' }];
@@ -71,7 +165,7 @@ const WorkplanField = ({ id, value, onChange, disabled }) => {
           {rows.map((r, i) => (
             <tr key={i}>
               <td>
-                <input aria-label={`Activity ${i + 1}`} placeholder="e.g. Data gathering" maxLength={300}
+                <input aria-label={`Activity ${i + 1}`} placeholder="Ex: Data gathering" maxLength={300}
                   value={r.activity} disabled={disabled} onChange={(e) => set(i, { ...r, activity: e.target.value })} />
               </td>
               {months.map((m) => {
@@ -104,7 +198,7 @@ const WorkplanField = ({ id, value, onChange, disabled }) => {
 
 /* (13) and (14) Budget: line items under Personal Services and MOOE, totals added up */
 const BUDGET_PARTS = [
-  { k: 'ps',   title: 'Personal Services (PS)', hint: 'e.g. Enumerators, ₱500/day x 20 days. No honoraria for the project leader or members.' },
+  { k: 'ps',   title: 'Personal Services (PS)', hint: 'Ex: Enumerators, ₱500/day x 20 days. No honoraria for the project leader or members.' },
   { k: 'mooe', title: 'Maintenance and Other Operating Expenses (MOOE)', hint: 'Travel, per diem, food allowance, supplies and materials.' },
 ];
 const BudgetField = ({ id, value, onChange, disabled }) => {
@@ -283,7 +377,9 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
                 )}
               </>
             ) : f.type === 'people' ? (
-              <PeopleField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} authors={f.k === 'authors'} />
+              f.k === 'proponents'
+                ? <ProponentsField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
+                : <PeopleField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} authors={f.k === 'authors'} />
             ) : f.type === 'workplan' ? (
               <WorkplanField id={id} value={value[f.k]} onChange={put(f.k)} disabled={disabled} />
             ) : f.type === 'budget' ? (
@@ -292,7 +388,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false }) => 
               <input id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled}
                 type={f.type === 'date' ? 'date' : 'text'} maxLength={f.type === 'year' ? 4 : 200}
                 inputMode={f.type === 'year' ? 'numeric' : undefined}
-                placeholder={f.hint || (f.type === 'year' ? 'e.g. 2026' : '')} />
+                placeholder={f.hint || (f.type === 'year' ? 'Ex: 2026' : '')} />
             )}
           </div>
         );
@@ -453,7 +549,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
           <label htmlFor={`gfc-${i.k}`}>{i.label}{i.required && <span className="gf-req"> *</span>}</label>
           <input id={`gfc-${i.k}`} value={v.answers[i.k] || ''} disabled={disabled} maxLength={200}
             type={i.type === 'date' ? 'date' : 'text'} inputMode={i.type === 'money' ? 'decimal' : undefined}
-            placeholder={i.hint || (i.type === 'money' ? 'e.g. 20000' : '')}
+            placeholder={i.hint || (i.type === 'money' ? 'Ex: 20000' : '')}
             onChange={(e) => answer(i.k, e.target.value)} />
         </div>
       ))}
@@ -464,7 +560,7 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
 /* ── The filled-in form, and what each office ticked (read only) ── */
 const LongValue = ({ f, v }) => {
   if (f.type === 'people') {
-    return <ol className="gf-view-people">{v.map((p, i) => <li key={i}><b>{p.name}</b>{i === 0 && (f.k === 'authors' ? ' (Main Author)' : ' (Project Leader)')}<br /><span>{p.contact}</span></li>)}</ol>;
+    return <ol className="gf-view-people">{v.map((p, i) => <li key={i}><b>{p.name}</b>{i === 0 && (f.k === 'authors' ? ' (Main Author)' : ' (Project Leader)')}<br /><span>{f.k === 'proponents' ? personContact(p) : p.contact}</span></li>)}</ol>;
   }
   if (f.type === 'workplan') {
     const months = Array.from({ length: PLAN_MONTHS }, (_, i) => i + 1);
