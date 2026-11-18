@@ -225,28 +225,6 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
           </div>
           <div className="panel-body">
             <ProposalTracker proposal={selected} />
-            <ProposalSignatures proposal={selected} />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
-              {[
-                { label: 'Researcher',     value: personName(selected) },
-                { label: 'Email',          value: selected.email || '—' },
-                { label: 'College',        value: selected.college || '—' },
-                { label: 'Department',     value: selected.department || '—' },
-                { label: 'Type',  value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
-                { label: 'Date Submitted', value: fmt(selected.submitted_at) },
-              ].map(item => (
-                <div key={item.label}>
-                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' }}>
-                    {item.label}
-                  </p>
-                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', overflowWrap: 'anywhere' }}>
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>
                 Title
@@ -272,6 +250,28 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
             )}
 
             <ProposalFiles proposal={selected} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px', marginBottom: 20 }}>
+              {[
+                { label: 'Researcher',     value: personName(selected) },
+                { label: 'Email',          value: selected.email || '—' },
+                { label: 'College',        value: selected.college || '—' },
+                { label: 'Department',     value: selected.department || '—' },
+                { label: 'Type',  value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
+                { label: 'Date Submitted', value: fmt(selected.submitted_at) },
+              ].map(item => (
+                <div key={item.label}>
+                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' }}>
+                    {item.label}
+                  </p>
+                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.875rem', overflowWrap: 'anywhere' }}>
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <ProposalSignatures proposal={selected} />
           </div>
         </div>
 

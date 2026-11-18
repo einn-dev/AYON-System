@@ -33,22 +33,22 @@ const actionPage = (role, base, p) => {
     case 'college_dean':
       return s === 'for_endorsement' && p.endorsement_stage === role
         ? { path: `${base}/for-endorsement`, label: 'For Endorsement' }
-        : { path: `${base}/endorsed`, label: 'Endorsed Proposals' };
+        : { path: `${base}/endorsed`, label: 'Endorsed' };
     case 'special_assistant':
       return s === 'submitted'
         ? { path: `${base}/validate`, label: 'For Validation' }
-        : { path: `${base}/submissions`, label: 'All Proposals' };
+        : { path: `${base}/submissions`, label: 'All Submissions' };
     case 'msric_director': {
       const m = { under_review: ['for-review', 'For Review'], endorsed: ['endorsed', 'Endorsed to VCRED'],
-                  approved: ['approved', 'Approved Proposals'], rejected: ['rejected', 'Rejected Proposals'] }[s];
+                  approved: ['approved', 'Approved'], rejected: ['rejected', 'Rejected'] }[s];
       return m ? { path: `${base}/${m[0]}`, label: m[1] } : null;
     }
     case 'ovcred': {
-      const m = { endorsed: ['for-endorsement', 'For Final Approval'], approved: ['approved', 'Approved Proposals'],
-                  rejected: ['rejected', 'Rejected Proposals'] }[s];
+      const m = { endorsed: ['for-endorsement', 'For Final Approval'], approved: ['approved', 'Approved'],
+                  rejected: ['rejected', 'Rejected'] }[s];
       return m ? { path: `${base}/${m[0]}`, label: m[1] } : null;
     }
-    case 'admin': return { path: `${base}/proposals`, label: 'All Proposals' };
+    case 'admin': return { path: `${base}/proposals`, label: 'All Submissions' };
     default: return null;
   }
 };
@@ -110,13 +110,9 @@ const Summary = ({ item, role, base, onClose }) => {
             {staff && <div className="tb-note">MSIRC Staff can see the list details only, not the proposal contents.</div>}
             {!staff && problem && <div className="alert alert-error">{problem}</div>}
             {!staff && !problem && !full && <p className="tb-sub">Loading the tracker…</p>}
-            {full && full.status !== 'draft' && (
-              <>
-                <ProposalTracker proposal={full} />
-                <ProposalSignatures proposal={full} />
-              </>
-            )}
+            {full && full.status !== 'draft' && <ProposalTracker proposal={full} />}
             {full && <ProposalFiles proposal={full} compact />}
+            {full && full.status !== 'draft' && <ProposalSignatures proposal={full} />}
           </>
         )}
 

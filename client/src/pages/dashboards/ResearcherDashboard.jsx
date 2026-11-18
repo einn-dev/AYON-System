@@ -475,26 +475,6 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
           <div className="modal" style={{ maxWidth: 680 }} onClick={e => e.stopPropagation()}>
             <h3><TitleOf p={selected} /></h3>
             <ProposalTracker proposal={selected} showReturn={false} />
-            <ProposalSignatures proposal={selected} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', marginBottom: 16 }}>
-              {[
-                { label: K.typeHead, value: typeText(selected.proposal_type) },
-                { label: 'Status',      value: statusLabel(selected.status) },
-                { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
-                { label: 'Proposal ID', value: `#${selected.proposal_id}` },
-                ...(['approved', 'rejected'].includes(selected.status) && selected.decided_at
-                  ? [{ label: 'Decided On', value: new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }]
-                  : []),
-                ...(Number(selected.revision_count) > 0
-                  ? [{ label: 'Revisions Sent', value: String(selected.revision_count) }]
-                  : []),
-              ].map(item => (
-                <div key={item.label}>
-                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{item.label}</p>
-                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0 }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
             {selected.status === 'rejected' && (
               <div className="rs-returned">
                 <strong>
@@ -527,6 +507,26 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
               </div>
             )}
             <ProposalFiles proposal={selected} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', marginBottom: 16 }}>
+              {[
+                { label: K.typeHead, value: typeText(selected.proposal_type) },
+                { label: 'Status',      value: statusLabel(selected.status) },
+                { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
+                { label: 'Proposal ID', value: `#${selected.proposal_id}` },
+                ...(['approved', 'rejected'].includes(selected.status) && selected.decided_at
+                  ? [{ label: 'Decided On', value: new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }]
+                  : []),
+                ...(Number(selected.revision_count) > 0
+                  ? [{ label: 'Revisions Sent', value: String(selected.revision_count) }]
+                  : []),
+              ].map(item => (
+                <div key={item.label}>
+                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{item.label}</p>
+                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0 }}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <ProposalSignatures proposal={selected} />
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setSelected(null)}>Close</button>
               {selected.status === 'returned' && (

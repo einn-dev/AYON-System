@@ -58,7 +58,8 @@ const RecordDetails = ({ proposalId, onClose }) => {
               <span className={`badge ${statusBadge(p.status)}`}>{statusLabel(p.status)}</span>
             </p>
             <ProposalTracker proposal={p} />
-            <ProposalSignatures proposal={p} />
+            <ProposalFiles proposal={p} />
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', margin: '4px 0 18px' }}>
               {[
                 { label: 'Researcher', value: personName(p) || '—' },
@@ -74,7 +75,8 @@ const RecordDetails = ({ proposalId, onClose }) => {
                 </div>
               ))}
             </div>
-            <ProposalFiles proposal={p} />
+
+            <ProposalSignatures proposal={p} />
           </>
         )}
         <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>

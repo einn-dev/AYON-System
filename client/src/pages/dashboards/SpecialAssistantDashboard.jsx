@@ -407,7 +407,12 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               </div>
               <div className="panel-body">
                 <ProposalTracker proposal={selected} />
-                <ProposalSignatures proposal={selected} />
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
+                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '1.05rem', lineHeight: 1.5 }}>{selected.title}</p>
+                </div>
+
+                <ProposalFiles proposal={selected} />
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 28px', marginBottom: 20 }}>
                   {[
@@ -424,11 +429,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     </div>
                   ))}
                 </div>
-                <div style={{ marginBottom: 20 }}>
-                  <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Title</p>
-                  <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '1.05rem', lineHeight: 1.5 }}>{selected.title}</p>
-                </div>
-                <ProposalFiles proposal={selected} />
+
+                <ProposalSignatures proposal={selected} />
               </div>
             </div>
 
