@@ -186,3 +186,55 @@
 .gf-fields > .form-group > input, .gf-fields > .form-group > select { width: 100%; }
 .gf-plan-table td:first-child input { width: 100%; min-width: 240px; }
 .gf-pbox > span em { text-transform: none; letter-spacing: 0; }
+
+/* ── Submitted form: a small card on the page, the form in a panel on the right ── */
+.gf-fcard {
+  display: flex; align-items: center; gap: 12px 14px; flex-wrap: wrap;
+  border: 1px solid #eadfe0; border-radius: 10px; background: #fffaf9; padding: 12px 14px; margin-bottom: 14px;
+}
+.gf-fcard-ic { font-size: 1.7rem; color: #8d1b2d; flex-shrink: 0; }
+.gf-fcard-text { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.gf-fcard-no { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #8d1b2d; }
+.gf-fcard-text b { color: #2d2326; font-size: 0.9rem; line-height: 1.35; }
+.gf-fcard-text small { color: #8a7a7d; font-size: 0.8rem; }
+.gf-fcard-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.gf-panel-back {
+  position: fixed; inset: 0; z-index: 1800; background: rgba(30, 10, 15, 0.45);
+  display: flex; justify-content: flex-end; animation: gf-panel-fade 0.2s ease-out;
+}
+.gf-panel {
+  width: min(880px, 72vw); height: 100%; background: #f7f3f3; display: flex; flex-direction: column;
+  box-shadow: -12px 0 36px rgba(0, 0, 0, 0.22); animation: gf-panel-in 0.28s ease-out;
+}
+.gf-panel-head {
+  display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
+  background: #fff; border-bottom: 1px solid #eadfe0; padding: 12px 16px;
+}
+.gf-panel-title { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.gf-panel-title b { color: #8d1b2d; font-size: 0.95rem; }
+.gf-panel-title small { color: #8a7a7d; font-size: 0.8rem; overflow-wrap: anywhere; }
+.gf-panel-head .gf-viewbar { margin: 0; }
+.gf-panel-x { width: 34px; height: 34px; }
+.gf-panel-body { flex: 1; overflow: auto; padding: 16px; overscroll-behavior: contain; }
+.gf-panel-body .gf-view { background: #fff; border: 1px solid #eadfe0; border-radius: 10px; padding: 16px; }
+@keyframes gf-panel-in { from { transform: translateX(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes gf-panel-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 760px) {
+  .gf-panel { width: 100vw; }
+  .gf-panel-head { padding: 10px 12px; }
+  .gf-panel-body { padding: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .gf-panel, .gf-panel-back { animation: none; } }
+
+/* Form 005 budget: MOOE groups (Travel and Meals, Supplies and Materials, Other MOOE) */
+.gf-bgrp { border-left: 3px solid #eadfe0; padding: 4px 0 8px 12px; margin: 8px 0 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.gf-bgrp .gf-line { width: 100%; }
+.gf-bgrp-title { margin: 0; font-weight: 700; font-size: 0.84rem; color: #4a3d40; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.gf-bgrp-title small { font-weight: 400; color: #8a7a7d; font-size: 0.76rem; }
+.gf-bgrp-sub { margin: 0; font-size: 0.8rem; color: #6b5e61; align-self: flex-end; padding-right: 38px; }
+.gf-bgrp-sub b { color: #2d2326; font-variant-numeric: tabular-nums; }
+.gf-budget-sum tr.gf-bsum-grp th { padding-left: 22px; font-weight: 400; color: #6b5e61; }
+.gf-budget-sum tr.gf-bsum-grp td { font-weight: 400; color: #6b5e61; }
+.gf-bgrp-row td { font-weight: 600; font-style: italic; color: #4a3d40; }
+.gf-bsub.light td { font-weight: 500; color: #6b5e61; }

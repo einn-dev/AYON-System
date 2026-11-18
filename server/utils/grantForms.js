@@ -49,6 +49,21 @@ const budgetTotals = (b) => {
   const ps = sum(b && b.ps); const mooe = sum(b && b.mooe);
   return { ps, mooe, total: ps + mooe };
 };
+/* Form 005 (14): the MOOE lines are grouped like the sample line-item budget on the paper.
+   Lines saved before the groups existed count as "Other MOOE". */
+const MOOE_GROUPS = [
+  { k: 'travel',   label: 'Travel and Meals',       hint: 'Travel, per diem, food allowance, meals' },
+  { k: 'supplies', label: 'Supplies and Materials', hint: 'Glassware, chemicals, office and field supplies' },
+  { k: 'other',    label: 'Other MOOE',             hint: 'Anything else, e.g. web hosting or communication' },
+];
+const groupOf = (r) => (MOOE_GROUPS.some((g) => g.k === (r && r.group)) ? r.group : 'other');
+/* [{ k, label, hint, rows, total }] for the groups that have lines */
+const mooeGroups = (rows) => MOOE_GROUPS
+  .map((g) => {
+    const mine = (rows || []).filter((r) => groupOf(r) === g.k);
+    return { ...g, rows: mine, total: mine.reduce((a, r) => a + num(r.amount), 0) };
+  })
+  .filter((g) => g.rows.length);
 const wordsIn = (v) => String(v || '').trim().split(/\s+/).filter(Boolean).length;
 const FINANCIAL = 'With financial assistance';
 
@@ -563,10 +578,13 @@ const cleanFields = (form, data) => {
         .filter((r) => r.activity);
       if (rows.length) out[f.k] = rows;
     } else if (f.type === 'budget') {
-      const lines = (rows) => (Array.isArray(rows) ? rows : []).slice(0, 30)
-        .map((r) => ({ item: str(r && r.item, 150), unit: str(r && r.unit, 150), amount: cleanMoney(r && r.amount) }))
+      const lines = (rows, grouped) => (Array.isArray(rows) ? rows : []).slice(0, 30)
+        .map((r) => ({
+          item: str(r && r.item, 150), unit: str(r && r.unit, 150), amount: cleanMoney(r && r.amount),
+          ...(grouped ? { group: groupOf(r) } : {}),
+        }))
         .filter((r) => r.item || r.amount);
-      const b = { ps: lines(raw && raw.ps), mooe: lines(raw && raw.mooe) };
+      const b = { ps: lines(raw && raw.ps, false), mooe: lines(raw && raw.mooe, true) };
       if (b.ps.length || b.mooe.length) out[f.k] = b;
     } else if (f.type === 'textarea') {
       const v = str(raw, f.maxChars || 10000); if (v) out[f.k] = v;
@@ -588,4 +606,4 @@ const cleanStep = (step, value) => {
   return { ticks: [...new Set(ticks)], answers };
 };
 
-module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, budgetTotals, wordsIn, OTHER_COLLEGE, personContact, personIssue, personIssues, formLabel, formOf, stepOf, shown, fieldsIssues, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };
+module.exports = { GRANT_FORMS, FORMS_OF_TYPE, FINANCIAL, AGENDA, AGENDA_OPTIONS, BUDGET_MAX, PS_SHARE, PLAN_MONTHS, LONG, MOOE_GROUPS, groupOf, mooeGroups, budgetTotals, wordsIn, OTHER_COLLEGE, personContact, personIssue, personIssues, formLabel, formOf, stepOf, shown, fieldsIssues, fieldsProblem, fieldsWarning, titleProblem, requiredDocs, awardOf, stepProblem, cleanFields, cleanStep };

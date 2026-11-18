@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark, FaMagnifyingGlass, FaChevronDown } from 'react-icons/fa6';
 import { ROLE_LABEL } from '../utils/terms';
 import {
-  GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn,
+  GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn, MOOE_GROUPS, groupOf, mooeGroups,
   OTHER_COLLEGE, personContact, personIssues,
 } from '../utils/grantForms';
 import { COLLEGE_DEPARTMENTS, COLLEGES } from '../data/Colleges';
@@ -210,48 +211,85 @@ const WorkplanField = ({ id, value, onChange, disabled }) => {
 };
 
 /* (13) and (14) Budget: line items under Personal Services and MOOE, totals added up */
-const BUDGET_PARTS = [
-  { k: 'ps',   title: 'Personal Services (PS)', hint: 'Ex: Enumerators, ₱500/day x 20 days. No honoraria for the project leader or members.' },
-  { k: 'mooe', title: 'Maintenance and Other Operating Expenses (MOOE)', hint: 'Travel, per diem, food allowance, supplies and materials.' },
-];
 const BudgetField = ({ id, value, onChange, disabled }) => {
   const b = { ps: [], mooe: [], ...(value || {}) };
   const t = budgetTotals(b);
-  const setPart = (k, rows) => onChange({ ...b, [k]: rows });
+  const blank = (group) => ({ item: '', unit: '', amount: '', ...(group ? { group } : {}) });
+  /* one line: item, unit amount, amount, remove */
+  /* a plain function, not a component, so typing never loses the cursor */
+  const line = ({ key, r, label, n, onSet, onRemove, canRemove }) => (
+    <div key={key} className="gf-line">
+      <input aria-label={`${label} item ${n}`} placeholder="Item" maxLength={150}
+        value={r.item} disabled={disabled} onChange={(e) => onSet({ ...r, item: e.target.value })} />
+      <input aria-label={`${label} item ${n}, unit amount`} placeholder="Unit amount, e.g. ₱500/day x 20 days" maxLength={150}
+        value={r.unit} disabled={disabled} onChange={(e) => onSet({ ...r, unit: e.target.value })} />
+      <input aria-label={`${label} item ${n}, amount in pesos`} placeholder="Amount (₱)" inputMode="decimal" maxLength={13}
+        className="gf-line-amt" value={r.amount} disabled={disabled} onChange={(e) => onSet({ ...r, amount: e.target.value })} />
+      <button type="button" className="gf-x" disabled={disabled || !canRemove} aria-label={`Remove ${label} item ${n}`}
+        onClick={onRemove}><FaXmark /></button>
+    </div>
+  );
+  const add = (label, onClick) => (
+    <button type="button" className="btn btn-outline btn-sm" disabled={disabled} onClick={onClick}>
+      <FaPlus className="ic" />{label}
+    </button>
+  );
+
+  /* Personal Services: one list */
+  const ps = b.ps.length ? b.ps : [blank()];
+  const setPs = (rows) => onChange({ ...b, ps: rows });
+  /* MOOE: one list, shown in the paper's groups (each line keeps its group) */
+  const mooe = b.mooe;
+  const setMooe = (rows) => onChange({ ...b, mooe: rows });
+  const groups = mooeGroups(mooe);
+  const totalOf = (k) => (groups.find((g) => g.k === k) || {}).total || 0;
+
   return (
     <div className="gf-budget" id={id}>
-      {BUDGET_PARTS.map((part) => {
-        const rows = b[part.k].length ? b[part.k] : [{ item: '', unit: '', amount: '' }];
-        const set = (i, row) => setPart(part.k, rows.map((r, j) => (j === i ? row : r)));
-        return (
-          <div key={part.k} className="gf-budget-part">
-            <p className="gf-budget-title">{part.title}</p>
-            <p className="gf-budget-hint">{part.hint}</p>
-            {rows.map((r, i) => (
-              <div key={i} className="gf-line">
-                <input aria-label={`${part.title} item ${i + 1}`} placeholder="Item" maxLength={150}
-                  value={r.item} disabled={disabled} onChange={(e) => set(i, { ...r, item: e.target.value })} />
-                <input aria-label={`${part.title} item ${i + 1}, unit amount`} placeholder="Unit amount, e.g. ₱500/day x 20 days" maxLength={150}
-                  value={r.unit} disabled={disabled} onChange={(e) => set(i, { ...r, unit: e.target.value })} />
-                <input aria-label={`${part.title} item ${i + 1}, amount in pesos`} placeholder="Amount (₱)" inputMode="decimal" maxLength={13}
-                  className="gf-line-amt" value={r.amount} disabled={disabled} onChange={(e) => set(i, { ...r, amount: e.target.value })} />
-                <button type="button" className="gf-x" disabled={disabled || (rows.length === 1 && !r.item && !r.amount)}
-                  aria-label={`Remove ${part.title} item ${i + 1}`}
-                  onClick={() => setPart(part.k, rows.filter((_, j) => j !== i))}><FaXmark /></button>
-              </div>
-            ))}
-            {rows.length < 30 && (
-              <button type="button" className="btn btn-outline btn-sm" disabled={disabled}
-                onClick={() => setPart(part.k, [...rows, { item: '', unit: '', amount: '' }])}><FaPlus className="ic" />Add Line</button>
-            )}
-          </div>
-        );
-      })}
+      <div className="gf-budget-part">
+        <p className="gf-budget-title">Personal Services (PS)</p>
+        <p className="gf-budget-hint">Should not exceed 45% of the MOOE. No honoraria for the project leader or members (RELE only). Ex: Enumerators, ₱500/day x 20 days.</p>
+        {ps.map((r, i) => (
+          line({
+            key: i, r, label: 'Personal Services (PS)', n: i + 1,
+            onSet: (row) => setPs(ps.map((x, j) => (j === i ? row : x))),
+            onRemove: () => setPs(ps.filter((_, j) => j !== i)),
+            canRemove: !(ps.length === 1 && !r.item && !r.amount),
+          })
+        ))}
+        {ps.length < 30 && add('Add Line', () => setPs([...ps, blank()]))}
+      </div>
+
+      <div className="gf-budget-part">
+        <p className="gf-budget-title">Maintenance and Other Operating Expenses (MOOE)</p>
+        <p className="gf-budget-hint">Put each line under its group, like the sample line-item budget on the form.</p>
+        {MOOE_GROUPS.map((g) => {
+          const mine = mooe.map((r, i) => ({ r, i })).filter(({ r }) => groupOf(r) === g.k);
+          return (
+            <div key={g.k} className="gf-bgrp">
+              <p className="gf-bgrp-title">{g.label}<small>{g.hint}</small></p>
+              {mine.map(({ r, i }, n) => (
+                line({
+                  key: i, r, label: g.label, n: n + 1,
+                  onSet: (row) => setMooe(mooe.map((x, j) => (j === i ? row : x))),
+                  onRemove: () => setMooe(mooe.filter((_, j) => j !== i)), canRemove: true,
+                })
+              ))}
+              {mine.length > 0 && <p className="gf-bgrp-sub">Subtotal: <b>{pesoNum(totalOf(g.k))}</b></p>}
+              {mooe.length < 30 && add(mine.length ? 'Add Line' : `Add ${g.label} Line`, () => setMooe([...mooe, blank(g.k)]))}
+            </div>
+          );
+        })}
+      </div>
+
       <table className="gf-budget-sum" aria-label="(13) Estimated Budget">
         <caption>(13) Estimated Budget (added up from the lines above)</caption>
         <tbody>
           <tr><th scope="row">Personal Services (PS)</th><td>{pesoNum(t.ps)}</td></tr>
           <tr><th scope="row">MOOE</th><td>{pesoNum(t.mooe)}</td></tr>
+          {groups.map((g) => (
+            <tr key={g.k} className="gf-bsum-grp"><th scope="row">{g.label}</th><td>{pesoNum(g.total)}</td></tr>
+          ))}
           <tr className={t.total > BUDGET_MAX ? 'over' : ''}>
             <th scope="row">TOTAL <small>(maximum {pesoNum(BUDGET_MAX)})</small></th><td>{pesoNum(t.total)}</td>
           </tr>
@@ -598,20 +636,27 @@ const LongValue = ({ f, v }) => {
   }
   if (f.type === 'budget') {
     const t = budgetTotals(v);
-    const part = (rows, title, sub) => (
-      <>
-        <tr className="gf-bgroup"><th colSpan={3} scope="colgroup">{title}</th></tr>
-        {rows.map((r, i) => <tr key={i}><td>{r.item}</td><td>{r.unit}</td><td className="num">{peso(r.amount || 0)}</td></tr>)}
-        <tr className="gf-bsub"><td colSpan={2}>Sub-total for {sub}</td><td className="num">{peso(sub === 'PS' ? t.ps : t.mooe)}</td></tr>
-      </>
-    );
+    const lines = (rows) => rows.map((r, i) => <tr key={i}><td>{r.item}</td><td>{r.unit}</td><td className="num">{peso(r.amount || 0)}</td></tr>);
     return (
       <div className="gf-scroll">
         <table className="gf-budget-view">
           <thead><tr><th scope="col">Item</th><th scope="col">Unit Amount</th><th scope="col" className="num">Amount</th></tr></thead>
           <tbody>
-            {part(v.ps || [], 'Personal Services', 'PS')}
-            {part(v.mooe || [], 'Maintenance and Other Operating Expenses', 'MOOE')}
+            <tr className="gf-bgroup"><th colSpan={3} scope="colgroup">Personnel Services</th></tr>
+            {lines(v.ps || [])}
+            <tr className="gf-bsub"><td colSpan={2}>Sub-total for PS</td><td className="num">{peso(t.ps)}</td></tr>
+            <tr className="gf-bgroup"><th colSpan={3} scope="colgroup">MOOE</th></tr>
+            {mooeGroups(v.mooe).map((g) => (
+              <React.Fragment key={g.k}>
+                <tr className="gf-bgrp-row"><td colSpan={3}>{g.label}</td></tr>
+                {lines(g.rows)}
+                <tr className="gf-bsub light"><td colSpan={2}>Subtotal</td><td className="num">{peso(g.total)}</td></tr>
+              </React.Fragment>
+            ))}
+            <tr className="gf-bsub"><td colSpan={2}>Subtotal for MOOE</td><td className="num">{peso(t.mooe)}</td></tr>
+            <tr className="gf-bgroup"><th colSpan={3} scope="colgroup">Summary</th></tr>
+            <tr><td colSpan={2}>Sub-total for PS</td><td className="num">{peso(t.ps)}</td></tr>
+            <tr><td colSpan={2}>Subtotal for MOOE</td><td className="num">{peso(t.mooe)}</td></tr>
             <tr className="gf-btotal"><td colSpan={2}>Grand Total</td><td className="num">{peso(t.total)}</td></tr>
           </tbody>
         </table>
@@ -624,20 +669,96 @@ const LongValue = ({ f, v }) => {
 
 const STEP_ORDER = ['chairperson', 'research_coordinator', 'college_dean', 'special_assistant', 'msric_director'];
 
+/* The filled-in form after it is submitted: a small card on the page, and the
+   form itself in a panel that slides in from the right (Form view or List view),
+   so the documents and the decision buttons stay near the top. */
 export const GrantFormView = ({ proposal }) => {
-  const [view, setView] = useState('form');
+  const [open, setOpen] = useState('');           // '' | 'form' | 'list'
+  const openerRef = useRef(null);
   const form = formOf(proposal);
   if (!form) return null;
-  const toggle = hasOriginalForm(proposal) && (
-    <div className="gf-viewbar" role="group" aria-label="How to show the form">
-      <span>{formLabel(form)}</span>
-      <button type="button" className={view === 'form' ? 'on' : ''} aria-pressed={view === 'form'} onClick={() => setView('form')}>Form view</button>
-      <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => setView('list')}>List view</button>
+  const paper = hasOriginalForm(proposal);
+  const data = proposal.form_data || {};
+  const facts = [];
+  form.fields.forEach((f) => {
+    const v = data[f.k];
+    if (f.type === 'people' && Array.isArray(v) && v.length) {
+      const one = f.k === 'authors' ? 'author' : 'proponent';
+      facts.push(`${v.length} ${one}${v.length === 1 ? '' : 's'}`);
+    }
+    if (f.type === 'budget' && v) facts.push(`Budget ${pesoNum(budgetTotals(v).total)}`);
+  });
+  const show = (view) => (e) => { openerRef.current = e.currentTarget; setOpen(view); };
+  return (
+    <div className="gf-fcard">
+      <FaFileLines className="gf-fcard-ic" aria-hidden="true" />
+      <div className="gf-fcard-text">
+        <span className="gf-fcard-no">{formLabel(form)}</span>
+        <b>{form.name}</b>
+        {facts.length > 0 && <small>{facts.join(' · ')}</small>}
+      </div>
+      <div className="gf-fcard-btns">
+        {paper && <button type="button" className="btn btn-primary btn-sm" onClick={show('form')}>Form view</button>}
+        <button type="button" className={`btn btn-sm ${paper ? 'btn-outline' : 'btn-primary'}`} onClick={show('list')}>
+          {paper ? 'List view' : 'View form'}
+        </button>
+      </div>
+      {open && (
+        <FormPanel proposal={proposal} form={form} view={open} paper={paper} onView={setOpen}
+          onClose={() => { setOpen(''); if (openerRef.current) openerRef.current.focus(); }} />
+      )}
     </div>
   );
-  if (toggle && view === 'form') return <div className="gf-view-wrap">{toggle}<OriginalForm proposal={proposal} /></div>;
-  return toggle ? <div className="gf-view-wrap">{toggle}<ListView proposal={proposal} form={form} /></div>
-    : <ListView proposal={proposal} form={form} />;
+};
+
+/* The panel on the right. Closes with ✕, the Esc key, or a click on the dark area. */
+const FormPanel = ({ proposal, form, view, paper, onView, onClose }) => {
+  const panelRef = useRef(null);
+  const closeRef = useRef(null);
+  const bodyRef = useRef(null);
+  useEffect(() => {
+    const before = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    /* Esc closes only the panel, not the window under it; Tab stays inside the panel */
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); onClose(); return; }
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      const all = [...panelRef.current.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter((el) => !el.disabled && el.offsetParent !== null);
+      if (!all.length) return;
+      const first = all[0]; const last = all[all.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => { window.removeEventListener('keydown', onKey, true); document.body.style.overflow = before; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [view]);
+  return createPortal(
+    <div className="gf-panel-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <aside className="gf-panel" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="gf-panel-title">
+        <div className="gf-panel-head">
+          <div className="gf-panel-title">
+            <b id="gf-panel-title">{formLabel(form)}</b>
+            {proposal.title && <small>{proposal.title}</small>}
+          </div>
+          {paper && (
+            <div className="gf-viewbar" role="group" aria-label="How to show the form">
+              <button type="button" className={view === 'form' ? 'on' : ''} aria-pressed={view === 'form'} onClick={() => onView('form')}>Form view</button>
+              <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => onView('list')}>List view</button>
+            </div>
+          )}
+          <button type="button" className="gf-x gf-panel-x" ref={closeRef} onClick={onClose} aria-label="Close the form"><FaXmark /></button>
+        </div>
+        <div className="gf-panel-body" ref={bodyRef}>
+          {paper && view === 'form' ? <OriginalForm proposal={proposal} /> : <ListView proposal={proposal} form={form} />}
+        </div>
+      </aside>
+    </div>,
+    document.body
+  );
 };
 
 const ListView = ({ proposal, form }) => {
@@ -646,21 +767,55 @@ const ListView = ({ proposal, form }) => {
   const done   = STEP_ORDER.map((role) => ({ role, step: form.steps[role], check: checks.find((c) => c.role === role) }))
     .filter((s) => s.check && s.step);
 
+  /* in the order of the form: short answers side by side, long ones across the width */
+  const runs = [];
+  form.fields.filter((f) => data[f.k]).forEach((f) => {
+    const long = LONG.includes(f.type);
+    const last = runs[runs.length - 1];
+    if (!long && last && !last.long) last.fields.push(f);
+    else runs.push({ long, fields: [f] });
+  });
+  const leader = form.no === '005' ? ((data.proponents || [])[0] || {}).name : '';
+  /* (15) and (16) of Form 005, placed before (17) like the paper */
+  const paperEnd = (
+    <>
+      <dl className="gf-view-grid gf-view-long">
+        <div><dt>(15) Submitted by</dt><dd>{leader || '—'}{leader ? ', Project Leader' : ''}</dd></div>
+        <div><dt>Date submitted</dt><dd>{proposal.submitted_at ? new Date(proposal.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</dd></div>
+      </dl>
+      <div className="gf-view-long">
+        <p className="gf-view-label">(16) Curriculum Vitae of Proponent(s)</p>
+        <p className="gf-view-text">Attached as a document (see Documents).</p>
+      </div>
+    </>
+  );
+
   return (
     <div className="gf-view">
       <p className="gf-view-no">{formLabel(form)}</p>
       <p className="gf-view-name">{form.name}</p>
-      <dl className="gf-view-grid">
-        {form.fields.filter((f) => data[f.k] && !LONG.includes(f.type)).map((f) => (
-          <div key={f.k}><dt>{f.label}</dt><dd>{showValue(f, data[f.k])}</dd></div>
-        ))}
-      </dl>
-      {form.fields.filter((f) => data[f.k] && LONG.includes(f.type)).map((f) => (
-        <div key={f.k} className="gf-view-long">
-          <p className="gf-view-label">{f.label}</p>
-          <LongValue f={f} v={data[f.k]} />
+      {proposal.title && (
+        <div className="gf-view-long first">
+          <p className="gf-view-label">{form.titleLabel || 'Title'}</p>
+          <p className="gf-view-text">{proposal.title}</p>
         </div>
-      ))}
+      )}
+      {runs.map((run) => (run.long ? (
+        <React.Fragment key={run.fields[0].k}>
+          {form.no === '005' && run.fields[0].k === 'duties' && paperEnd}
+          <div className="gf-view-long">
+            <p className="gf-view-label">{run.fields[0].label}</p>
+            <LongValue f={run.fields[0]} v={data[run.fields[0].k]} />
+          </div>
+        </React.Fragment>
+      ) : (
+        <dl key={run.fields[0].k} className="gf-view-grid gf-view-long">
+          {run.fields.map((f) => (
+            <div key={f.k}><dt>{f.label}</dt><dd>{showValue(f, data[f.k])}</dd></div>
+          ))}
+        </dl>
+      )))}
+      {form.no === '005' && !data.duties && paperEnd}
 
       {done.length > 0 && (
         <div className="gf-view-steps">

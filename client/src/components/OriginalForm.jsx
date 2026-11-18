@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { personName } from '../utils/names';
-import { budgetTotals, PLAN_MONTHS, FINANCIAL, personContact } from '../utils/grantForms';
+import { budgetTotals, mooeGroups, PLAN_MONTHS, FINANCIAL, personContact } from '../utils/grantForms';
 import './OriginalForm.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -306,6 +306,7 @@ const Form005 = ({ ctx }) => {
   const b = d.budget || {};
   const t = budgetTotals(b);
   const rows = (list) => (list || []).filter((r) => r.item || r.amount);
+  const groups = mooeGroups(rows(b.mooe));
   return (
     <div className="of5">
       <div className="of5-page">
@@ -327,7 +328,10 @@ const Form005 = ({ ctx }) => {
           <Sec n={9} title="Review or Related Literature"><Para v={d.literature} /></Sec>
           <Sec n={10} title="Methodology">
             <Para v={d.methodology} />
-            <div className="of5-text"><b>Clearance:</b> {d.clearance || 'None'}</div>
+            <p className="of5-note"><b>Note:</b> Obtain review and clearance from the relevant research review committees, such as
+              the MSU Marawi Research Ethics Committee (MSUM_REC), Institutional Biosafety Committee (MSUM_IBC), or Institutional
+              Animal Care and Use Committee (MSUM_IACUC).</p>
+            <div className="of5-text"><b>Clearance needed:</b> {d.clearance || 'None'}</div>
           </Sec>
         </div>
       </div>
@@ -352,8 +356,24 @@ const Form005 = ({ ctx }) => {
             <table className="of5-grid of5-budget">
               <thead><tr><th>ITEMS</th><th>AMOUNT IN PHILIPPINE PESO</th></tr></thead>
               <tbody>
-                <tr><td>Personal Services (PS)</td><td className="n">{peso(t.ps)}</td></tr>
-                <tr><td>Maintenance and other Operating expenses (MOOE)</td><td className="n">{peso(t.mooe)}</td></tr>
+                <tr>
+                  <td>
+                    <b>Personal Services (PS)</b>
+                    <span className="of5-cell-note">(Should not exceed 45% of the MOOE; No Honoraria for project leader/member; RELE only)</span>
+                    {rows(b.ps).map((r, i) => <span key={i} className="of5-cell-line">{r.item}{r.unit ? ` (${r.unit})` : ''}</span>)}
+                  </td>
+                  <td className="n">{peso(t.ps)}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <b>Maintenance and other Operating expenses (MOOE)</b>
+                    <span className="of5-cell-note">Travel/per diem/food allowance; Supplies &amp; Materials (Glass wares/chemicals/supplies)</span>
+                    {groups.map((g) => (
+                      <span key={g.k} className="of5-cell-line of5-cell-amt"><span>{g.label}</span><span>{peso(g.total)}</span></span>
+                    ))}
+                  </td>
+                  <td className="n">{peso(t.mooe)}</td>
+                </tr>
                 <tr className="of5-tot"><td>TOTAL</td><td className="n">{peso(t.total)}</td></tr>
               </tbody>
             </table>
@@ -372,8 +392,17 @@ const Form005 = ({ ctx }) => {
                 {rows(b.ps).map((r, i) => <tr key={`p${i}`}><td>{r.item}</td><td>{r.unit}</td><td className="n">{peso(r.amount)}</td></tr>)}
                 <tr className="of5-tot"><td>Sub-total for PS</td><td /><td className="n">{peso(t.ps)}</td></tr>
                 <tr className="of5-tot"><td colSpan={3}>MOOE</td></tr>
-                {rows(b.mooe).map((r, i) => <tr key={`m${i}`}><td>{r.item}</td><td>{r.unit}</td><td className="n">{peso(r.amount)}</td></tr>)}
+                {groups.map((g) => (
+                  <React.Fragment key={g.k}>
+                    <tr className="of5-grp"><td colSpan={3}>{g.label}</td></tr>
+                    {g.rows.map((r, i) => <tr key={`m${g.k}${i}`}><td className="of5-in">{r.item}</td><td>{r.unit}</td><td className="n">{peso(r.amount)}</td></tr>)}
+                    <tr className="of5-sub"><td>Subtotal</td><td /><td className="n">{peso(g.total)}</td></tr>
+                  </React.Fragment>
+                ))}
                 <tr className="of5-tot"><td>Subtotal for MOOE</td><td /><td className="n">{peso(t.mooe)}</td></tr>
+                <tr className="of5-tot"><td colSpan={3}>Summary</td></tr>
+                <tr><td>Sub-total for PS</td><td /><td className="n">{peso(t.ps)}</td></tr>
+                <tr><td>Subtotal for MOOE</td><td /><td className="n">{peso(t.mooe)}</td></tr>
                 <tr className="of5-tot"><td>Grand Total</td><td /><td className="n">{peso(t.total)}</td></tr>
               </tbody>
             </table>

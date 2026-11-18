@@ -159,3 +159,12 @@
 @media (max-width: 640px) {
   .of-scroll { padding: 8px; margin: 0 -4px; }
 }
+
+/* Form 005: (10) note, (13) items inside the cells, (14) MOOE groups */
+.of5-note { font-size: 11.5px; color: #444; margin: 6px 0 4px; font-style: italic; }
+.of5-cell-note { display: block; font-size: 11px; color: #444; font-style: italic; margin: 1px 0 3px; }
+.of5-cell-line { display: block; padding-left: 14px; }
+.of5-cell-amt { display: flex; justify-content: space-between; gap: 12px; max-width: 26em; }
+.of5-grid tr.of5-grp td { font-weight: 700; font-style: italic; color: #000; }
+.of5-grid td.of5-in { padding-left: 18px; }
+.of5-grid tr.of5-sub td { font-weight: 600; }
