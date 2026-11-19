@@ -7,10 +7,11 @@ import './OfficeNotifications.css';
 import API from '../services/authService';
 import Avatar from './Avatar';
 import ProfileModal from './ProfileModal';
+import ProfilePage from './ProfilePage';
 import AnnouncementBanner from './Announcements';
 import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
-import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark } from 'react-icons/fa6';
+import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark, FaCircleUser } from 'react-icons/fa6';
 import { personName } from '../utils/names';
 import { OPEN_PROFILE } from './Signature';
 import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
@@ -32,6 +33,10 @@ const Layout = ({ children, navItems, role }) => {
   const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches);
   const [menuOpen, setMenuOpen] = useState(false);
   const helpBase = `/${String(navItems?.[0]?.path || '').split('/')[1] || ''}`;
+  /* My Profile is a page for every role: /<role>/profile (shown by this layout, like Help) */
+  const profilePath = `${helpBase}/profile`;
+  const onProfile   = location.pathname.replace(/\/+$/, '') === profilePath;
+  const menuItems   = [...navItems, { path: profilePath, label: 'My Profile', icon: <FaCircleUser />, account: true }];
 
   /* unread count for the Notifications item: on each page change, every minute,
      and right away when the Notifications page marks something as read */
@@ -50,7 +55,7 @@ const Layout = ({ children, navItems, role }) => {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  /* other parts of AYON can open My Profile on a tab, e.g. "Open My Profile" in a signing box */
+  /* a signing box ("Open My Profile") still opens it as a pop-up, so the proposal being signed stays open */
   useEffect(() => {
     const open = (e) => { setMenuOpen(false); setProfileOpen(e.detail?.tab || 'profile'); };
     window.addEventListener(OPEN_PROFILE, open);
@@ -160,9 +165,10 @@ const Layout = ({ children, navItems, role }) => {
         <div className="sidebar-role">{role}</div>
 
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
+          {menuItems.map((item) => (
+            <React.Fragment key={item.path}>
+            {item.account && <div className="nav-section" aria-hidden="true">Account</div>}
             <NavLink
-              key={item.path}
               to={item.path}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
@@ -175,12 +181,13 @@ const Layout = ({ children, navItems, role }) => {
                 <span className="nav-badge" aria-label={`${unread} unread`}>{unread > 99 ? '99+' : unread}</span>
               )}
             </NavLink>
+            </React.Fragment>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <button type="button" className="user-info user-info-link" title="View my profile"
-            onClick={() => setProfileOpen('profile')}>
+          <button type="button" className="user-info user-info-link" title="Open My Profile"
+            onClick={() => { setMenuOpen(false); navigate(profilePath); }}>
             <Avatar user={user} size={40} />
             <div className="user-details">
               <p className="user-name">{personName(user)}</p>
@@ -196,10 +203,12 @@ const Layout = ({ children, navItems, role }) => {
 
       {/* ── Main Content ── */}
       <main className="main-content">
-        <TopBar navItems={navItems} unread={unread} onMenu={phone ? () => setMenuOpen(true) : null} />
+        <TopBar navItems={menuItems} unread={unread} onMenu={phone ? () => setMenuOpen(true) : null} />
         <AnnouncementBanner />
         {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
-        {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage /> : children}
+        {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage />
+          : onProfile ? <ProfilePage roleLabel={role} />
+          : children}
       </main>
 
       {toast && (

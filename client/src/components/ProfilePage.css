@@ -1,0 +1,103 @@
+/* ═══ My Profile page (every role) ═══ */
+
+.pp { width: 100%; }
+.pp-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+
+/* ── Manage menu ── */
+.pp-manage { position: relative; }
+.pp-manage > .btn { display: inline-flex; align-items: center; gap: 2px; background: #fff; }
+.pp .btn .ic { margin-right: 6px; }
+.pp-panel .panel-header .btn { white-space: nowrap; flex-shrink: 0; }
+.pp-caret { margin-left: 8px; font-size: 0.7rem; }
+.pp-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; min-width: 210px;
+  background: #fff; border: 1px solid #efe5e6; border-radius: 12px; padding: 6px;
+  box-shadow: 0 12px 30px rgba(60, 10, 20, 0.14); animation: pp-drop 0.14s ease;
+}
+.pp-menu button {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0; background: none;
+  font: inherit; font-size: 0.86rem; color: #3d3235; border-radius: 8px; cursor: pointer; text-align: left;
+}
+.pp-menu button svg { color: #8d1b2d; width: 14px; }
+.pp-menu button:hover, .pp-menu button:focus-visible { background: #fbf1f3; outline: none; }
+@keyframes pp-drop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* ── profile card ── */
+.pp-hero {
+  background: #fff; border: 1px solid #efe5e6; border-radius: 16px; overflow: hidden; margin-bottom: 18px;
+  box-shadow: 0 2px 10px rgba(94, 20, 32, 0.04);
+}
+.pp-banner {
+  height: 116px; position: relative;
+  background:
+    radial-gradient(circle at 85% -20%, rgba(201, 162, 39, 0.45) 0, transparent 45%),
+    radial-gradient(circle at 10% 120%, rgba(255, 255, 255, 0.12) 0, transparent 40%),
+    linear-gradient(120deg, #5e1420 0%, #8d1b2d 55%, #a3283c 100%);
+}
+.pp-role-badge {
+  position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.35); color: #fff;
+  font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; backdrop-filter: blur(4px);
+}
+.pp-id { display: flex; align-items: flex-start; gap: 18px; padding: 0 24px; margin-top: -52px; }
+.pp-photo {
+  position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 50%;
+  flex-shrink: 0;
+}
+.pp-photo .avatar { border: 4px solid #fff; box-shadow: 0 6px 18px rgba(60, 10, 20, 0.18); font-size: 2rem; }
+.pp-photo-cam {
+  position: absolute; right: 4px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%;
+  background: #3d3235; color: #fff; display: grid; place-items: center; font-size: 0.8rem;
+  border: 2px solid #fff; transition: background 0.15s;
+}
+.pp-photo:hover .pp-photo-cam, .pp-photo:focus-visible .pp-photo-cam { background: #8d1b2d; }
+.pp-photo:focus-visible { outline: 3px solid rgba(141, 27, 45, 0.3); outline-offset: 2px; }
+.pp-id-text { padding-top: 62px; padding-bottom: 20px; min-width: 0; flex: 1; }
+.pp-id-text h2 { margin: 0; font-size: 1.35rem; color: #2d2327; }
+.pp-id-text p { margin: 4px 0 8px; color: #6b5e61; font-size: 0.9rem; }
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #5e1420;
+  background: #fbf1f3; border: 1px solid #f0dde1; padding: 3px 10px; border-radius: 999px;
+}
+
+/* ── tabs ── */
+.pp-tabs { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid #efe5e6; overflow-x: auto; }
+.pp-tab {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 0; background: none;
+  font: inherit; font-size: 0.88rem; font-weight: 600; color: #8a7a7d; cursor: pointer; white-space: nowrap;
+  border-bottom: 3px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.pp-tab:hover { color: #5e1420; }
+.pp-tab.on { color: #8d1b2d; border-bottom-color: #8d1b2d; }
+.pp-tab:focus-visible { outline: 3px solid rgba(141, 27, 45, 0.25); border-radius: 6px; }
+
+/* ── panels ── */
+.pp-panel .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pp-panel .panel-header small { display: block; color: #8a7a7d; font-size: 0.76rem; font-weight: 400; margin-top: 2px; }
+.pp-pad { padding: 18px 20px 20px; }
+
+.pp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; }
+.pp-field { padding: 12px 0; border-bottom: 1px solid #f6eff0; min-width: 0; }
+.pp-field-l {
+  display: flex; align-items: center; gap: 7px; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.8px; color: #8a7a7d; font-weight: 600; margin-bottom: 5px;
+}
+.pp-field-l svg { color: #c2a3a9; }
+.pp-field-v { display: block; color: #2d2327; font-size: 0.95rem; overflow-wrap: anywhere; }
+.pp-field-v em { color: #b8aaad; font-style: normal; }
+
+.pp-photo-edit { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.pp-photo-edit .pm-photo-hint { margin: 6px 0 0; }
+.pp-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+@media (max-width: 700px) {
+  .pp-grid { grid-template-columns: 1fr; }
+  .pp-id { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .pp-id-text { padding-top: 0; padding-bottom: 18px; }
+  .pp-long { display: none; }
+  .pp-tab { padding: 10px 10px; font-size: 0.84rem; gap: 6px; }
+  .pp-banner { height: 96px; }
+  .pp-role-badge { font-size: 0.72rem; }
+  .pp-foot .btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .pp-menu { animation: none; } }
