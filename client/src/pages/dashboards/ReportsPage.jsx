@@ -276,6 +276,7 @@ const ReportsPage = () => {
           <select id="rp-status" value={filters.status} onChange={set('status')}>
             <option value="">All Statuses</option>
             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            <option value="at_msirc">At MSIRC (all steps)</option>
           </select>
         </div>
         <div className="rp-f">
@@ -300,7 +301,8 @@ const ReportsPage = () => {
         <FilterCard label="Total" value={t?.total} sub="in the filters" color="" />
         <FilterCard label="At the College" value={t?.at_college} sub="Chairperson, Coordinator, Dean" color="blue"
           status="for_endorsement" active={filters.status === 'for_endorsement'} onPick={pickStatus} />
-        <FilterCard label="At MSIRC" value={t?.in_office} sub="Special Assistant, Director, VCRED" color="purple" />
+        <FilterCard label="At MSIRC" value={t?.in_office} sub="Special Assistant, Director, VCRED" color="purple"
+          status="at_msirc" active={filters.status === 'at_msirc'} onPick={pickStatus} />
         <FilterCard label="Returned" value={t?.returned} sub="waiting on the researcher" color="amber"
           status="returned" active={filters.status === 'returned'} onPick={pickStatus} />
         <FilterCard label="Approved" value={t?.approved} color="green"

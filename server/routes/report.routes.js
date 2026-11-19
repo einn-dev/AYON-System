@@ -17,6 +17,8 @@ const REPORT_ROLES = ['admin', 'msric_staff', 'msric_director', 'ovcred'];
      type    : proposal type, empty = all        (proposals and summary)
    ───────────────────────────────────────────────────────────── */
 const STATUSES = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
+/* status groups the Status filter also accepts (the At MSIRC card on the Reports page) */
+const STATUS_GROUPS = { at_msirc: { label: 'At MSIRC (all steps)', statuses: ['submitted', 'under_review', 'endorsed'] } };
 const TYPES    = ['research_spotlight', 'internally_funded', 'externally_funded', 'travel_subsidy', 'oral_presentation', 'publication_incentive'];
 const PERIODS  = ['all', 'year', '90', '30', 'custom'];
 
@@ -38,7 +40,7 @@ const readFilters = (q = {}) => {
   const f = {
     period,
     college: String(q.college || '').trim().slice(0, 100),
-    status:  STATUSES.includes(q.status) ? q.status : '',
+    status:  STATUSES.includes(q.status) || STATUS_GROUPS[q.status] ? q.status : '',
     type:    TYPES.includes(q.type) ? q.type : '',
     from: null, to: null,
   };
@@ -71,7 +73,7 @@ const filterWords = (f, { withStatus = true } = {}) => {
     : PERIOD_LABEL[f.period];
   const parts = [period, f.college || 'All Colleges'];
   if (withStatus) {
-    parts.push(f.status ? STATUS_LABEL[f.status] : 'All Statuses');
+    parts.push(f.status ? (STATUS_GROUPS[f.status]?.label || STATUS_LABEL[f.status]) : 'All Statuses');
     parts.push(f.type ? TYPE_LABEL[f.type] : 'All Types');
   }
   return parts.join(' · ');
@@ -130,7 +132,7 @@ const loadProposals = async (req) => {
 const filterProposals = (list, f) => list.filter(p =>
   inPeriod(f, p.when)
   && (!f.college || p.college === f.college)
-  && (!f.status || p.status === f.status)
+  && (!f.status || (STATUS_GROUPS[f.status] ? STATUS_GROUPS[f.status].statuses.includes(p.status) : p.status === f.status))
   && (!f.type || p.proposal_type === f.type));
 
 /* submissions over time: by month when the span is 24 months or less, else by year */
