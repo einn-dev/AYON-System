@@ -2,7 +2,6 @@ const supabase = require('../config/supabase');
 const { logAudit } = require('../utils/audit');
 const { withOptionalColumns } = require('../utils/optionalColumns');
 const { notifyRole, fullName, notifyStaff, nameAndCollege } = require('../utils/roleNotify');
-const { notifyUser } = require('../utils/notify');
 const { statusLabel, SUBMIT_TYPES, GRANT_TYPES, wordFor } = require('../utils/terms');
 const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
@@ -1081,7 +1080,8 @@ const endorseProposal = async (req, res) => {
       await saveStep(proposal, role, req.user, formStep.value);
 
       const whereTo = next ? `the ${ROLE_LABEL[next.role]}` : 'the MSIRC Special Assistant for document validation';
-      await notifyUser({
+      /* in-app only: no email at each stage (the email comes at final approval) */
+      await supabase.from('notifications').insert({
         user_id:     proposal.user_id,
         proposal_id: Number(id),
         notif_type:  'endorsement',
@@ -1155,7 +1155,8 @@ const endorseProposal = async (req, res) => {
     });
     if (insErr) console.error('endorsement row failed:', insErr.message || insErr);
 
-    await notifyUser({
+    /* in-app only: no email at each stage */
+    await supabase.from('notifications').insert({
       user_id:     proposal.user_id,
       proposal_id: Number(id),
       notif_type:  'endorsement',
