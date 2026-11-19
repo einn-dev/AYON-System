@@ -1,0 +1,129 @@
+/* ═══ AYON — Sign in / Register: smoother motion ═══
+   Added on top of AuthSlider.css. Everything here is decoration:
+   remove this file and the page still works the same. */
+
+.as-wrapper {
+  --am-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3a0910 0%, #6f0b0d 45%, #8d1b2d 75%, #5e1420 100%);
+  background-size: 220% 220%;
+  animation: am-shift 18s ease-in-out infinite;
+}
+@keyframes am-shift { 0%, 100% { background-position: 0% 40%; } 50% { background-position: 100% 60%; } }
+
+.as-wrapper > .reg-card, .as-wrapper > .as-back-home { position: relative; z-index: 1; }
+@media (min-width: 901px) { .as-wrapper > .as-back-home { position: absolute; } }
+
+/* the card rises in on first load */
+.reg-card.as-card { animation: am-enter 0.9s var(--am-ease) both; }
+@keyframes am-enter { from { opacity: 0; transform: translateY(28px) scale(0.97); } to { opacity: 1; transform: none; } }
+.as-clip { box-shadow: 0 30px 80px rgba(20, 2, 6, 0.35); border-radius: 18px; }
+
+/* back to home: slides in, arrow nudges on hover */
+.as-back-home { animation: am-left 0.7s var(--am-ease) 0.2s both; }
+.as-back-home .ic { transition: transform 0.25s var(--am-ease); }
+.as-back-home:hover .ic { transform: translateX(-4px); }
+@keyframes am-left { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+
+/* ── the maroon panel: its text comes in line by line each time it turns ── */
+.is-login .as-face-login > div > *,
+.is-register .as-face-register > div > *,
+.is-login .as-face-login .reg-points li,
+.is-register .as-face-register .reg-points li {
+  animation: am-up 0.65s var(--am-ease) both;
+}
+.as-face > div > *:nth-child(1) { animation-delay: 0.30s; }
+.as-face > div > *:nth-child(2) { animation-delay: 0.38s; }
+.as-face > div > *:nth-child(3) { animation-delay: 0.46s; }
+.as-face > div > *:nth-child(4) { animation-delay: 0.54s; }
+.as-face > div > *:nth-child(5) { animation-delay: 0.70s; }
+.as-face .reg-points li:nth-child(1) { animation-delay: 0.56s; }
+.as-face .reg-points li:nth-child(2) { animation-delay: 0.62s; }
+.as-face .reg-points li:nth-child(3) { animation-delay: 0.68s; }
+.as-face .reg-points li:nth-child(4) { animation-delay: 0.74s; }
+@keyframes am-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* the circles on the panel float slowly */
+.as-overlay::before { animation: am-float 9s ease-in-out infinite alternate; }
+.as-overlay::after  { animation: am-float 11s ease-in-out infinite alternate-reverse; }
+@keyframes am-float { from { transform: translate(0, 0); } to { transform: translate(-18px, -22px); } }
+
+/* outlined button: the white fills in from the left */
+.as-ghost-btn {
+  background: linear-gradient(90deg, #fff 50%, transparent 50%) right / 205% 100% no-repeat;
+  transition: background-position 0.4s var(--am-ease), color 0.3s, transform 0.25s var(--am-ease);
+}
+.as-ghost-btn:hover { background-position: left; color: #6f0b0d; transform: translateY(-2px); }
+
+/* ── the form: fields come in one after another ── */
+.is-login .as-panel-login .as-login-inner > *,
+.is-login .as-panel-login .as-login-form > *,
+.is-register .as-panel-register .as-form-wrap > *,
+.is-register .as-panel-register .reg-grid > * {
+  animation: am-up 0.6s var(--am-ease) both;
+}
+.as-login-inner > *:nth-child(1), .as-form-wrap > *:nth-child(1) { animation-delay: 0.30s; }
+.as-login-inner > *:nth-child(2), .as-form-wrap > *:nth-child(2) { animation-delay: 0.36s; }
+.as-login-inner > *:nth-child(3), .as-form-wrap > *:nth-child(3) { animation-delay: 0.42s; }
+.as-login-inner > *:nth-child(4), .as-form-wrap > *:nth-child(4) { animation-delay: 0.48s; }
+.as-login-inner > *:nth-child(n+5), .as-form-wrap > *:nth-child(n+5) { animation-delay: 0.54s; }
+.as-login-form > *:nth-child(1), .reg-grid > *:nth-child(-n+3) { animation-delay: 0.44s; }
+.as-login-form > *:nth-child(2), .reg-grid > *:nth-child(n+4):nth-child(-n+6) { animation-delay: 0.52s; }
+.as-login-form > *:nth-child(3), .reg-grid > *:nth-child(n+7):nth-child(-n+9) { animation-delay: 0.60s; }
+.as-login-form > *:nth-child(n+4), .reg-grid > *:nth-child(n+10) { animation-delay: 0.68s; }
+/* a message or button that appears later should not wait */
+.as-login-form > .auth-error, .as-login-form > .as-resend { animation-delay: 0s; }
+
+/* fields: a soft maroon ring on focus, and the label lights up */
+.as-card .form-group label { transition: color 0.2s; }
+.as-card .form-group:focus-within label { color: #8d1b2d; }
+.as-card .form-group input,
+.as-card .form-group select {
+  transition: border-color 0.2s, box-shadow 0.25s var(--am-ease), background 0.2s !important;
+}
+.as-card .form-group input:hover,
+.as-card .form-group select:hover { border-color: #cdb3b8 !important; }
+.as-card .form-group input:focus,
+.as-card .form-group select:focus { border-color: #8d1b2d !important; box-shadow: 0 0 0 4px rgba(141, 27, 45, 0.12); }
+
+/* main button: lifts, a light sweeps across, and a spinner while signing in */
+.as-card .auth-btn {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background 0.2s, transform 0.25s var(--am-ease), box-shadow 0.25s;
+}
+.as-card .auth-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(141, 27, 45, 0.28); }
+.as-card .auth-btn:not(:disabled):active { transform: translateY(0) scale(0.99); }
+.as-card .auth-btn::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+}
+.as-card .auth-btn:not(:disabled):hover::after { transform: translateX(320%) skewX(-18deg); transition: transform 0.8s var(--am-ease); }
+.as-card .auth-btn.is-loading { background: #8d1b2d; cursor: progress; }
+.as-spin {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #fff; animation: am-spin 0.7s linear infinite;
+}
+@keyframes am-spin { to { transform: rotate(360deg); } }
+
+/* error message: drops in with a small shake */
+.as-card .auth-error { animation: am-shake 0.5s var(--am-ease) both; }
+@keyframes am-shake {
+  0% { opacity: 0; transform: translateY(-6px); }
+  30% { opacity: 1; transform: translateX(-6px); }
+  50% { transform: translateX(5px); }
+  70% { transform: translateX(-3px); }
+  100% { transform: none; }
+}
+
+/* links: a smooth underline */
+.as-forgot a, .reg-footer a, .as-legal a { background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat; transition: background-size 0.3s var(--am-ease), color 0.2s; }
+.as-forgot a:hover, .reg-footer a:hover, .as-legal a:hover { background-size: 100% 1px; text-decoration: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .as-wrapper, .reg-card.as-card, .as-back-home, .as-overlay::before, .as-overlay::after,
+  .as-card *, .as-face * { animation: none !important; }
+  .as-spin { animation: am-spin 1.4s linear infinite !important; }
+}

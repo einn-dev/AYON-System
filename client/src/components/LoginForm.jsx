@@ -161,13 +161,15 @@ const LoginForm = () => {
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          {/* the key replays the shake each time a new message appears */}
+          {error && <p className="auth-error" key={error} role="alert">{error}</p>}
 
           {unverified && (
             <ResendVerification email={form.email.trim().toLowerCase()} />
           )}
 
-          <button type="submit" className="auth-btn" disabled={loading}>
+          <button type="submit" className={`auth-btn${loading ? ' is-loading' : ''}`} disabled={loading}>
+            {loading && <span className="as-spin" aria-hidden="true" />}
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>

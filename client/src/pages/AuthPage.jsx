@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa6';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
+import AuthBackdrop from '../components/AuthBackdrop';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import './RegisterPage.css';
 import './AuthSlider.css';
+import './AuthMotion.css';
 
 /*
   One card, two faces. The maroon panel slides between the left side
@@ -55,6 +57,8 @@ const AuthPage = ({ mode }) => {
 
   return (
     <div className="auth-wrapper as-wrapper">
+      {/* the animated background behind the card */}
+      <AuthBackdrop />
       <Link to="/" className="as-back-home"><FaArrowLeft className="ic" />Back to home</Link>
       <div className={`reg-card as-card is-${shown}`}>
 
