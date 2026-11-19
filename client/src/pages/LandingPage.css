@@ -650,3 +650,30 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .lp-foot-mark, .lp-foot-glow i, .lp-foot-status.is-open i { animation: none !important; }
 }
+
+/* ── What you can submit: two groups ── */
+.lp-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; max-width: 1180px; margin: 0 auto; }
+.lp-group {
+  background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 28px 28px 30px;
+  box-shadow: 0 10px 30px rgba(74, 13, 22, 0.05);
+  transition: opacity 0.8s var(--ease), filter 0.8s var(--ease), transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+.lp-group.is-in:hover { transform: translateY(-4px); box-shadow: 0 20px 44px rgba(74, 13, 22, 0.1); }
+.lp-group-head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.lp-group-ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: #fbe9ec; color: var(--maroon); font-size: 1.3rem; flex-shrink: 0; }
+.lp-group h3 { margin: 0; font-size: 1.35rem; color: var(--maroon-dark); }
+.lp-group-head p { margin: 2px 0 0; font-size: 0.95rem; color: var(--faint); }
+.lp-group .lp-types { justify-content: flex-start; gap: 12px; }
+.lp-group .lp-type { padding: 13px 22px; font-size: 1.05rem; }
+.lp-types-note {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 28px auto 0; max-width: 760px;
+  padding: 14px 20px; border-radius: 999px; background: var(--tint); color: var(--muted); font-size: 1rem; text-align: center;
+}
+.lp-types-note svg { color: var(--gold); flex-shrink: 0; }
+.lp-types-note b { color: var(--maroon-dark); }
+@media (max-width: 960px) { .lp-groups { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .lp-group { padding: 22px 20px 24px; }
+  .lp-group .lp-type { padding: 11px 16px; font-size: 0.95rem; }
+  .lp-types-note { border-radius: 14px; text-align: left; align-items: flex-start; font-size: 0.92rem; }
+}

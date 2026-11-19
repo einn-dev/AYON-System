@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaChevronDown, FaCloudArrowUp,
   FaClipboardCheck, FaHandHoldingDollar, FaMagnifyingGlassChart, FaUserGraduate,
-  FaBuildingColumns, FaUserCheck, FaUserTie, FaStamp, FaDatabase, FaArrowUp, FaChartColumn, FaEnvelope, FaPhone, FaLocationDot, FaClock, FaCopy,
+  FaBuildingColumns, FaUserCheck, FaUserTie, FaStamp, FaDatabase, FaArrowUp, FaChartColumn, FaEnvelope, FaPhone, FaLocationDot, FaClock, FaCopy, FaFlask, FaGlobe,
 } from 'react-icons/fa6';
 import logo from '../assets/ayon-logo.png';
 import { CONTACT } from '../data/helpContent';
@@ -53,7 +53,7 @@ const ABOUT = [
 
 const STATS = [
   [9, 'user roles', 'from Researcher to VCRED'],
-  [5, 'proposal types', 'one place for every submission'],
+  [5, 'submission types', 'research, grants and incentives'],
   [6, 'approval stages', 'each one tracked and visible'],
   [1, 'digital repository', 'for all approved research'],
 ];
@@ -68,12 +68,10 @@ const STEPS = [
   [FaDatabase,        'Repository',        'Shared with the campus',    'VCRED or the Administrator adds the approved research to the Research Repository, where it can be searched later.', 'Approved'],
 ];
 
-const TYPES = [
-  'Research Spotlight',
-  'Internally Funded Research',
-  'Publication Incentive',
-  'Travel Subsidy / Oral Presentation',
-  'Externally Funded Research',
+/* what a researcher submits for approval: the same two groups as their two pages in AYON */
+const TYPE_GROUPS = [
+  [FaFlask,             'Research proposals',     'Submitted from My Research',            ['Research Spotlight', 'Internally Funded Research']],
+  [FaHandHoldingDollar, 'Grants and incentives',  'Submitted from Grants and Incentives',  ['Travel Subsidy', 'Oral Presentation', 'Publication Incentive']],
 ];
 
 const FAQ = [
@@ -567,12 +565,23 @@ const LandingPage = () => {
 
       {/* ── Proposal types ── */}
       <section className="lp-section">
-        <Reveal><p className="lp-eyebrow">What you can submit</p><h2>Five kinds of proposals, one system</h2></Reveal>
-        <div className="lp-types">
-          {TYPES.map((t, i) => (
-            <Reveal key={t} delay={i * 70} className="lp-type"><FaCheck />{t}</Reveal>
+        <Reveal><p className="lp-eyebrow">What you can submit</p><h2>Five kinds of submissions, one system</h2></Reveal>
+        <div className="lp-groups">
+          {TYPE_GROUPS.map(([Icon, title, where, items], g) => (
+            <Reveal key={title} delay={g * 120} className="lp-group">
+              <div className="lp-group-head">
+                <span className="lp-group-ic"><Icon /></span>
+                <div><h3>{title}</h3><p>{where}</p></div>
+              </div>
+              <div className="lp-types">
+                {items.map(t => <span key={t} className="lp-type is-in"><FaCheck />{t}</span>)}
+              </div>
+            </Reveal>
           ))}
         </div>
+        <Reveal delay={240} className="lp-types-note">
+          <FaGlobe /><span>Research funded by an agency outside the University? Record it on the <b>External Research</b> page.</span>
+        </Reveal>
       </section>
 
       {/* ── FAQ ── */}
