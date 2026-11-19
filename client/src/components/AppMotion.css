@@ -1,0 +1,101 @@
+/* ═══ AYON — smoother motion inside the system (every role) ═══
+   Loaded once by Layout.jsx. Only decoration: deleting this file changes no behaviour.
+   Animations use "backwards" fill, so once they finish, hover effects work as before. */
+
+:root { --ui-ease: cubic-bezier(0.22, 1, 0.36, 1); }
+.main-content { scroll-behavior: smooth; }
+
+/* ── page change: a soft fade and rise ── */
+.page-anim { transition: opacity 0.35s var(--ui-ease), translate 0.45s var(--ui-ease); }
+.page-anim:not(.is-in) { opacity: 0; translate: 0 8px; transition: none; }
+
+/* ── panels, number cards and chart cards rise in, one after another ── */
+@keyframes ui-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.main-content .panel,
+.main-content .stat-card,
+.main-content .ps-card,
+.main-content .page-header {
+  animation: ui-rise 0.55s var(--ui-ease) backwards;
+}
+.main-content .page-header { animation-duration: 0.45s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(2) { animation-delay: 0.05s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(3) { animation-delay: 0.10s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(4) { animation-delay: 0.15s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(5) { animation-delay: 0.20s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(6) { animation-delay: 0.25s; }
+.main-content :is(.stat-card, .panel, .ps-card):nth-child(n+7) { animation-delay: 0.30s; }
+
+/* ── table rows ripple in ── */
+@keyframes ui-row { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.data-table tbody tr { animation: ui-row 0.4s var(--ui-ease) backwards; }
+.data-table tbody tr:nth-child(2)  { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3)  { animation-delay: 0.06s; }
+.data-table tbody tr:nth-child(4)  { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(5)  { animation-delay: 0.12s; }
+.data-table tbody tr:nth-child(6)  { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(7)  { animation-delay: 0.18s; }
+.data-table tbody tr:nth-child(8)  { animation-delay: 0.21s; }
+.data-table tbody tr:nth-child(n+9) { animation-delay: 0.24s; }
+.data-table td { transition: background 0.2s; }
+
+/* ── pop-ups: the dark backdrop fades, the box scales in ── */
+@keyframes ui-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-pop { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+:is(.modal-overlay, .pm-overlay, .po-overlay, .tb-overlay) { animation: ui-fade 0.22s ease backwards; }
+.modal-overlay > *, .pm-overlay > * { animation: ui-pop 0.32s var(--ui-ease) backwards; }
+
+/* ── buttons: a small lift and shadow on hover, a press on click ── */
+.btn { transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.25s, transform 0.2s var(--ui-ease); }
+.btn:not(:disabled):hover { transform: translateY(-1px); }
+.btn-primary:not(:disabled):hover { box-shadow: 0 6px 16px rgba(141, 27, 45, 0.25); }
+.btn-success:not(:disabled):hover { box-shadow: 0 6px 16px rgba(39, 103, 73, 0.22); }
+.btn-danger:not(:disabled):hover  { box-shadow: 0 6px 16px rgba(197, 48, 48, 0.22); }
+.btn:not(:disabled):active { transform: translateY(0) scale(0.98); transition-duration: 0.08s; }
+
+/* ── sidebar: a gold bar slides in beside the open page, icons nudge on hover ── */
+.nav-item { position: relative; transition: background 0.2s, color 0.2s, padding-left 0.25s var(--ui-ease); }
+.nav-item::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0;
+  background: #e0b93a; transform: scaleY(0); transition: transform 0.3s var(--ui-ease);
+}
+.nav-item.active::before { transform: scaleY(1); }
+.nav-item svg { transition: transform 0.25s var(--ui-ease); }
+.nav-item:hover svg { transform: translateX(2px) scale(1.08); }
+
+/* ── messages drop in; empty lists float gently ── */
+@keyframes ui-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.alert { animation: ui-drop 0.35s var(--ui-ease) backwards; }
+@keyframes ui-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.empty-state { animation: ui-fade 0.5s ease backwards; }
+.empty-state > svg, .empty-state > .empty-icon { animation: ui-float 4s ease-in-out infinite; }
+
+/* ── charts: bars grow from zero ── */
+@keyframes ui-grow-x { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes ui-grow-y { from { transform: scaleY(0); } to { transform: none; } }
+.ps-hbar-bar, .ps-seg { transform-origin: left center; animation: ui-grow-x 0.8s var(--ui-ease) 0.15s backwards; }
+.ps-col-bar { transform-origin: bottom center; animation: ui-grow-y 0.8s var(--ui-ease) 0.15s backwards; }
+.ps-cols .ps-col:nth-child(2) .ps-col-bar { animation-delay: 0.2s; }
+.ps-cols .ps-col:nth-child(3) .ps-col-bar { animation-delay: 0.25s; }
+.ps-cols .ps-col:nth-child(4) .ps-col-bar { animation-delay: 0.3s; }
+.ps-cols .ps-col:nth-child(n+5) .ps-col-bar { animation-delay: 0.35s; }
+
+/* ── fields: a soft maroon ring while typing ── */
+.main-content :is(.form-group input, .form-group select, .form-group textarea, .search-input) {
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.25s var(--ui-ease);
+}
+.main-content :is(.form-group input, .form-group select, .form-group textarea, .search-input):focus {
+  box-shadow: 0 0 0 4px rgba(141, 27, 45, 0.1);
+}
+
+/* ── "Loading…" text gets moving dots ── */
+.loading::after { content: ''; display: inline-block; width: 1.2em; text-align: left; animation: ui-dots 1.2s steps(4, end) infinite; }
+@keyframes ui-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-anim, .page-anim:not(.is-in) { opacity: 1; translate: none; transition: none; }
+  .main-content *, .main-content *::before, .main-content *::after,
+  :is(.modal-overlay, .pm-overlay, .po-overlay, .tb-overlay), .modal-overlay > *, .loading::after {
+    animation: none !important;
+  }
+  .btn, .nav-item, .nav-item::before, .nav-item svg { transition: none; }
+}

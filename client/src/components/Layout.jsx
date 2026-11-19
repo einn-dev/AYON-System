@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 import './Account.css';
 import './OfficeNotifications.css';
+import './AppMotion.css';
 import API from '../services/authService';
 import Avatar from './Avatar';
 import ProfileModal from './ProfileModal';
@@ -25,6 +26,15 @@ const Layout = ({ children, navItems, role }) => {
   const { user, logout, updateUser } = useAuth();
   const navigate          = useNavigate();
   const location          = useLocation();
+
+  /* a soft fade each time the page changes (the page itself is not reloaded) */
+  const [pageIn, setPageIn] = useState(true);
+  useEffect(() => {
+    setPageIn(false);
+    let r2;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setPageIn(true)); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [location.pathname]);
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(null);   // null, or the tab to open
   const [unread, setUnread] = useState(0);
@@ -206,9 +216,11 @@ const Layout = ({ children, navItems, role }) => {
         <TopBar navItems={menuItems} unread={unread} onMenu={phone ? () => setMenuOpen(true) : null} />
         <AnnouncementBanner />
         {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
-        {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage />
-          : onProfile ? <ProfilePage roleLabel={role} />
-          : children}
+        <div className={`page-anim${pageIn ? ' is-in' : ''}`}>
+          {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage />
+            : onProfile ? <ProfilePage roleLabel={role} />
+            : children}
+        </div>
       </main>
 
       {toast && (
