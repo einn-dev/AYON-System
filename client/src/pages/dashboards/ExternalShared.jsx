@@ -4,6 +4,8 @@ import API from '../../services/authService';
 import { FileButtons } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
 import { useLiveRefresh } from '../../utils/liveRefresh';
+import { SDGS, sdgList } from '../../utils/sdgs';
+import './External.css';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (externally funded research, Repository only)
@@ -24,14 +26,29 @@ export const PrivateBadge = () => (
   </span>
 );
 
+/* the SDGs as small coloured chips */
+export const SdgChips = ({ value, small = false }) => {
+  const list = sdgList(value);
+  if (!list.length) return null;
+  return (
+    <span className={`ext-chips${small ? ' sm' : ''}`}>
+      {list.map((n) => {
+        const [, name, color] = SDGS[n - 1];
+        return <span key={n} className="ext-chip" style={{ '--sdg': color }} title={`SDG ${n}: ${name}`}><b>{n}</b>{small ? '' : name}</span>;
+      })}
+    </span>
+  );
+};
+
 export const ExternalDetails = ({ item, onClose }) => {
   if (!item) return null;
   const owner = personName(item);
   const rows = [
-    { label: 'Researchers / Co-authors', value: item.researchers || owner || '—' },
-    { label: 'External Funding Agency',  value: item.external_agency || '—' },
-    { label: 'Funding Amount',           value: peso(item.funding_amount) },
-    { label: 'Research Period',          value: item.start_date || item.end_date ? `${day(item.start_date)} to ${day(item.end_date)}` : '—' },
+    { label: 'Project Leader',  value: item.project_leader || owner || '—' },
+    { label: 'Project Members', value: item.researchers || '—' },
+    { label: 'Funder',          value: item.external_agency || '—' },
+    { label: 'Funding Amount',  value: peso(item.funding_amount) },
+    { label: 'Project Period',  value: item.start_date || item.end_date ? `${day(item.start_date)} to ${day(item.end_date)}` : '—' },
     ...(owner ? [{ label: 'Uploaded By', value: owner }] : []),
     ...(item.college ? [{ label: 'College', value: item.college }] : []),
     ...(item.department ? [{ label: 'Department', value: item.department }] : []),
@@ -53,10 +70,29 @@ export const ExternalDetails = ({ item, onClose }) => {
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Abstract</p>
-        <p style={{ margin: '0 0 14px', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{item.description || '—'}</p>
-        {item.keywords && (
-          <p style={{ margin: '0 0 14px' }}><b>Keywords:</b> {item.keywords}</p>
+        {sdgList(item.sdgs).length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <p className="ext-cap">Sustainable Development Goals hit</p>
+            <SdgChips value={item.sdgs} />
+          </div>
+        )}
+        {item.description && (
+          <>
+            <p className="ext-cap">Abstract</p>
+            <p style={{ margin: '0 0 14px', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{item.description}</p>
+          </>
+        )}
+        {item.keywords && <p style={{ margin: '0 0 14px' }}><b>Keywords:</b> {item.keywords}</p>}
+        {(item.files || []).length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <p className="ext-cap">Supporting documents</p>
+            <ul className="ext-files">
+              {item.files.map((f) => (
+                <li key={f.file_id || f.file_path}><span><b>{f.label}</b><small>{f.file_name}</small></span>
+                  <FileButtons path={f.file_path} name={f.file_name} label={f.label} /></li>
+              ))}
+            </ul>
+          </div>
         )}
         <div className="modal-actions" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <FileButtons path={item.file_path} label="the research document" small={false} />
@@ -89,7 +125,7 @@ export const CollegeExternalPage = () => {
   const depts = [...new Set(items.map((x) => x.department).filter(Boolean))].sort();
   const needle = q.trim().toLowerCase();
   const shown = items.filter((x) => (!dept || x.department === dept)
-    && (!needle || [x.title, x.researchers, x.external_agency, personName(x), x.keywords].some((v) => String(v || '').toLowerCase().includes(needle))));
+    && (!needle || [x.title, x.project_leader, x.researchers, x.external_agency, personName(x), x.keywords].some((v) => String(v || '').toLowerCase().includes(needle))));
 
   return (
     <>
@@ -107,7 +143,7 @@ export const CollegeExternalPage = () => {
           <h2>Externally Funded Research</h2>
           <span className="badge badge-blue">{shown.length}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
-            <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, researcher, agency..."
+            <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder..."
               aria-label="Search external research" style={{ minWidth: 220 }} />
             <select className="search-input" value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Filter by department">
               <option value="">All departments</option>
@@ -123,7 +159,7 @@ export const CollegeExternalPage = () => {
           <div className="table-scroll" style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
-                <tr><th style={{ minWidth: 220 }}>Title</th><th>Researcher</th><th style={{ minWidth: 150 }}>Department</th><th>Funding Agency</th><th>Amount</th><th>Period</th><th>Action</th></tr>
+                <tr><th style={{ minWidth: 220 }}>Title</th><th>Researcher</th><th style={{ minWidth: 150 }}>Department</th><th>Funder</th><th>Amount</th><th>Period</th><th>Action</th></tr>
               </thead>
               <tbody>
                 {shown.map((x) => (

@@ -166,7 +166,8 @@ export const docsSummary = (v) => [
 ];
 
 /* ── Editor ── */
-export const DocumentsEditor = ({ value, onChange, onError, disabled = false }) => {
+/* mainLabel and labels let other pages (External Research) name their own documents */
+export const DocumentsEditor = ({ value, onChange, onError, disabled = false, mainLabel = MAIN_LABEL, labels = LABELS }) => {
   const mainRef = useRef(null);
   const rowRefs = useRef({});
 
@@ -188,7 +189,7 @@ export const DocumentsEditor = ({ value, onChange, onError, disabled = false }) 
     rows: value.rows.filter(x => x.key !== r.key),
     removed: r.existing?.file_id ? [...value.removed, r.existing.file_id] : value.removed,
   });
-  const addRow = () => onChange({ ...value, rows: [...value.rows, { key: key(), existing: null, file: null, choice: LABELS[0], custom: '' }] });
+  const addRow = () => onChange({ ...value, rows: [...value.rows, { key: key(), existing: null, file: null, choice: labels[0], custom: '' }] });
 
   const full = value.rows.length >= MAX_SUPPORTING;
   const m = value.main;
@@ -196,9 +197,9 @@ export const DocumentsEditor = ({ value, onChange, onError, disabled = false }) 
   return (
     <div className="pf-edit">
       <div className="pf-rows">
-        {/* Main Proposal Document */}
+        {/* the main document */}
         <div className="pf-row">
-          <div className="pf-cell-label"><span><b>{MAIN_LABEL}</b> <span className="pf-req" title="Required to submit">*</span></span></div>
+          <div className="pf-cell-label"><span><b>{mainLabel}</b> <span className="pf-req" title="Required to submit">*</span></span></div>
           <div className="pf-cell-file">
             {m.file ? <><FaFileLines className="pf-ic" /> {m.file.name} <small>· {sizeText(m.file.size)}{m.existing ? ' · replaces the saved file' : ''}</small></>
               : m.existing ? <><FaFileLines className="pf-ic" /> <a href={fileHref(m.existing.file_path)} target="_blank" rel="noreferrer">{nameOf(m.existing)}</a> <small>· saved</small></>
@@ -227,7 +228,7 @@ export const DocumentsEditor = ({ value, onChange, onError, disabled = false }) 
                   <select className="search-input pf-select" value={r.choice} disabled={disabled}
                     aria-label={`Label of supporting document ${i + 1}`}
                     onChange={e => setRow(r.key, { choice: e.target.value })}>
-                    {LABELS.map(l => <option key={l} value={l}>{l === OTHER ? 'Other (type your own)' : l}</option>)}
+                    {labels.map(l => <option key={l} value={l}>{l === OTHER ? 'Other (type your own)' : l}</option>)}
                   </select>
                   {r.choice === OTHER && (
                     <input className="search-input pf-select" placeholder="Label, e.g. Letter of Intent" maxLength={LABEL_MAX}
