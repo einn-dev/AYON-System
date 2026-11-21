@@ -4,11 +4,11 @@ import API from '../services/authService';
 import './Layout.css';
 import './OfficeNotifications.css';
 import { useLiveRefresh } from '../utils/liveRefresh';
-import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaChevronRight, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
 
 /* Notifications page for the MSIRC Special Assistant, MSIRC Director, VCRED and MSIRC Staff.
      queuePath:   where "Open" goes (their queue), for example "/director/for-review"
-     openLabel:   the button text (default "Review")
+     openLabel:   the link text at the right of each row (default "Open")
      filters:     the filter list, [value, label, test(n)] (default: the office filters)
      repoPath:    where a "New research in the Repository" notice opens (optional)       */
 
@@ -36,7 +36,7 @@ const OFFICE_FILTERS = [
 /* tells the sidebar to refresh its unread count */
 const announce = () => { try { window.dispatchEvent(new Event('ayon:notifs-changed')); } catch { /* ignore */ } };
 
-const OfficeNotifications = ({ queuePath, intro, openLabel = 'Review', filters = OFFICE_FILTERS, repoPath }) => {
+const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = OFFICE_FILTERS, repoPath }) => {
   const navigate = useNavigate();
   const [notifs,  setNotifs]  = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,9 +136,17 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Review', filters =
             <p>{filter === 'all' ? 'No notifications yet.' : 'Nothing matches this filter.'}</p>
           </div>
         ) : (
-          shown.map((n) => (
-            <div key={n.notif_id} className={`on-item${n.is_read ? '' : ' unread'}`}
-              onClick={() => { if (!n.is_read) markRead(n.notif_id); }}>
+          shown.map((n) => {
+            /* like the college pages: clicking the notification itself opens what it is about */
+            const opens = !!n.proposal_id || (!!repoPath && isRepoNews(n));
+            const click = () => (opens ? openIt(n) : (!n.is_read && markRead(n.notif_id)));
+            return (
+            <div key={n.notif_id} className={`on-item${n.is_read ? '' : ' unread'}${opens ? ' opens' : ''}`}
+              onClick={click}
+              {...(opens ? {
+                role: 'button', tabIndex: 0, title: n.proposal_id ? 'Open this proposal' : 'Open the Research Repository',
+                onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); click(); } },
+              } : {})}>
               <div className="on-ico" aria-hidden="true">{ICONS[n.notif_type] || <FaBell />}</div>
               <div className="on-body">
                 <strong>{n.title}</strong>
@@ -147,15 +155,13 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Review', filters =
               </div>
               <div className="on-act">
                 {!n.is_read && <span className="badge badge-blue">New</span>}
-                {(n.proposal_id || (repoPath && isRepoNews(n))) && (
-                  <button type="button" className={`btn ${n.proposal_id ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    onClick={(e) => { e.stopPropagation(); openIt(n); }}>
-                    {openLabel}
-                  </button>
+                {opens && (
+                  <span className="on-open">{openLabel} <FaChevronRight aria-hidden="true" /></span>
                 )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
         {!loading && !failed && notifs.length >= 100 && (
           <div className="on-note">Showing your latest 100 notifications.</div>
