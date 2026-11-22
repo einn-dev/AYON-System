@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -13,7 +14,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import RecordDetails from '../../components/RecordDetails';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
   { path: '/ovcred/approved',        label: 'Approved',  icon: <FaCircleCheck /> },
   { path: '/ovcred/rejected',        label: 'Rejected',  icon: <FaCircleXmark /> },
+  { path: '/ovcred/external',   label: 'External Research', icon: <FaGlobe /> },
   { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/ovcred/reports',         label: 'Reports',             icon: <FaChartColumn /> },
   { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
@@ -758,6 +760,7 @@ const OvcredDashboard = () => {
         <Route path="repository"
           element={<StoreToRepository proposals={proposals} />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="external" element={<OfficeExternalPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/ovcred/for-endorsement"
             intro="Proposals the MSIRC Director endorsed to you, and reminders from the MSIRC Administrator." />} />

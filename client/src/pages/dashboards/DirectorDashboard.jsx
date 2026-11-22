@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { OfficeExternalPage } from './ExternalShared';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from 'react-icons/fa6';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -15,7 +16,7 @@ import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { path: '/director/approved',      label: 'Approved', icon: <FaCircleCheck /> },
   { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark /> },
   { path: '/director/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
+  { path: '/director/external',   label: 'External Research', icon: <FaGlobe /> },
   { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
   { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
@@ -464,6 +466,7 @@ const DirectorDashboard = () => {
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="terminal-reports" element={<TerminalReportsPage />} />
+        <Route path="external" element={<OfficeExternalPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
             intro="Proposals the MSIRC Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />

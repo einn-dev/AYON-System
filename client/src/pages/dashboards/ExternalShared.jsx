@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FaLock } from 'react-icons/fa6';
+import { FaDownload, FaLock } from 'react-icons/fa6';
 import API from '../../services/authService';
 import { FileButtons } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';
@@ -11,6 +11,9 @@ import './External.css';
    External Research (externally funded research, Repository only)
      ExternalDetails      the details of one item, in a window   (everyone who can see it)
      CollegeExternalPage  read-only list of one college's items  (College Chairperson, College Coordinator, College Dean)
+     OfficeExternalPage   read-only list of every college's items, with totals, filters and a CSV
+                          download in the order of VCRED's "Externally Funded Projects" report
+                          (Admin, VCRED, MSIRC Director, MSIRC Special Assistant, MSIRC Staff)
    Always private: only the researcher, their college and the MSIRC offices see it.
    ───────────────────────────────────────────────────────────── */
 
@@ -169,6 +172,136 @@ export const CollegeExternalPage = () => {
                     <td style={{ color: '#4a5568' }}>{x.department || '—'}</td>
                     <td style={{ color: '#718096' }}>{x.external_agency || '—'}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{peso(x.funding_amount)}</td>
+                    <td style={{ color: '#718096', minWidth: 110 }}>{period(x.start_date, x.end_date)}</td>
+                    <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpen(x)}>View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ExternalDetails item={open} onClose={() => setOpen(null)} />
+    </>
+  );
+};
+
+/* ── Admin and the MSIRC offices: External Research of every college (read only) ── */
+const yearOf = (x) => { const d = x.start_date || x.uploaded_at; return d ? String(new Date(d).getFullYear()) : ''; };
+const csvCell = (v) => { const t = String(v ?? ''); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+/* a cell that starts like a formula is written as text, so a spreadsheet does not run it */
+const safeCell = (v) => { const t = String(v ?? ''); return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t; };
+
+export const OfficeExternalPage = () => {
+  const [items, setItems]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState('');
+  const [open, setOpen]     = useState(null);
+  const [college, setCollege] = useState('');
+  const [year, setYear]     = useState('');
+  const [sdg, setSdg]       = useState('');
+  const [q, setQ]           = useState('');
+
+  const load = useCallback(() => {
+    API.get('/external')
+      .then((res) => { setItems(res.data?.items || []); setFailed(''); })
+      .catch((err) => setFailed(err.response?.data?.message || 'Could not load External Research.'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useLiveRefresh(load);
+
+  const colleges = [...new Set(items.map((x) => x.college).filter(Boolean))].sort();
+  const years    = [...new Set(items.map(yearOf).filter(Boolean))].sort().reverse();
+  const needle = q.trim().toLowerCase();
+  const shown = items.filter((x) => (!college || x.college === college)
+    && (!year || yearOf(x) === year)
+    && (!sdg || sdgList(x.sdgs).includes(Number(sdg)))
+    && (!needle || [x.title, x.project_leader, x.researchers, x.external_agency, personName(x), x.keywords, x.department]
+      .some((v) => String(v || '').toLowerCase().includes(needle))));
+
+  const total = shown.reduce((sum, x) => sum + (Number(x.funding_amount) || 0), 0);
+  const collegeCount = new Set(shown.map((x) => x.college).filter(Boolean)).size;
+
+  /* the list as shown, in the order of VCRED's "Externally Funded Projects" report */
+  const download = () => {
+    const head = ['Title', 'Project Leader', 'Project Members', 'Funder', 'Funding Amount (PHP)', 'SDGs', 'Start Date', 'End Date', 'College', 'Department', 'Keywords', 'Date Uploaded'];
+    const rows = shown.map((x) => [
+      x.title, x.project_leader || personName(x), x.researchers, x.external_agency,
+      x.funding_amount ?? '', sdgList(x.sdgs).map((n) => `SDG ${n}`).join('; '),
+      x.start_date || '', x.end_date || '', x.college, x.department, x.keywords,
+      x.uploaded_at ? String(x.uploaded_at).slice(0, 10) : '',
+    ]);
+    const text = [head, ...rows].map((r) => r.map((v) => csvCell(safeCell(v))).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `AYON-External-Research-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+
+  return (
+    <>
+      <div className="page-header">
+        <h1>External Research</h1>
+        <p>Externally funded research of every college, in the Research Repository. Read only: these do not go through the approval offices.</p>
+      </div>
+      <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <FaLock style={{ marginTop: 3, flexShrink: 0 }} />
+        <span>These are <b>private</b>: only the researcher, their college and the MSIRC offices can see them. Other researchers cannot see or search them.</span>
+      </div>
+      {failed && <div className="alert alert-error" role="alert">{failed}</div>}
+
+      <div className="stats-grid">
+        <div className="stat-card blue"><span className="stat-label">Projects</span><span className="stat-value">{shown.length}</span></div>
+        <div className="stat-card green"><span className="stat-label">Total Funding</span><span className="stat-value" style={{ fontSize: '1.35rem' }}>{peso(total)}</span></div>
+        <div className="stat-card amber"><span className="stat-label">Colleges</span><span className="stat-value">{collegeCount}</span></div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <h2>Externally Funded Research</h2>
+          <span className="badge badge-blue">{shown.length}</span>
+          <button type="button" className="btn btn-outline btn-sm" style={{ marginLeft: 'auto' }} onClick={download} disabled={!shown.length}
+            title="The list as shown, in the order of VCRED's Externally Funded Projects report">
+            <FaDownload className="ic" />Download list (CSV)
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 20px 14px' }}>
+          <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder..."
+            aria-label="Search external research" style={{ minWidth: 220, flex: '1 1 220px' }} />
+          <select className="search-input" value={college} onChange={(e) => setCollege(e.target.value)} aria-label="Filter by college">
+            <option value="">All colleges</option>
+            {colleges.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="search-input" value={year} onChange={(e) => setYear(e.target.value)} aria-label="Filter by year">
+            <option value="">All years</option>
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select className="search-input" value={sdg} onChange={(e) => setSdg(e.target.value)} aria-label="Filter by SDG">
+            <option value="">All SDGs</option>
+            {SDGS.map(([n, name]) => <option key={n} value={n}>{`SDG ${n}: ${name}`}</option>)}
+          </select>
+        </div>
+        {loading ? (
+          <div className="empty-state"><p>Loading...</p></div>
+        ) : shown.length === 0 ? (
+          <div className="empty-state"><p>{items.length ? 'Nothing matches your filters.' : 'No externally funded research yet.'}</p></div>
+        ) : (
+          <div className="table-scroll" style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr><th style={{ minWidth: 220 }}>Title</th><th>Project Leader</th><th style={{ minWidth: 150 }}>College</th><th>Funder</th><th>Amount</th><th>SDGs</th><th>Period</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {shown.map((x) => (
+                  <tr key={x.external_id}>
+                    <td><strong>{x.title}</strong></td>
+                    <td>{x.project_leader || personName(x) || '—'}</td>
+                    <td style={{ color: '#4a5568' }}>{x.college || '—'}{x.department && <small style={{ display: 'block', color: '#8a7a7d' }}>{x.department}</small>}</td>
+                    <td style={{ color: '#718096' }}>{x.external_agency || '—'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{peso(x.funding_amount)}</td>
+                    <td><SdgChips value={x.sdgs} small /></td>
                     <td style={{ color: '#718096', minWidth: 110 }}>{period(x.start_date, x.end_date)}</td>
                     <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpen(x)}>View</button></td>
                   </tr>
