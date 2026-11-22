@@ -6,6 +6,7 @@ import {
   FaBuildingColumns, FaUserCheck, FaUserTie, FaStamp, FaDatabase, FaArrowUp, FaChartColumn, FaEnvelope, FaPhone, FaLocationDot, FaClock, FaCopy, FaFlask, FaGlobe,
 } from 'react-icons/fa6';
 import logo from '../assets/ayon-logo.png';
+import msircLogo from '../assets/msirc-emblem.png';
 import { CONTACT } from '../data/helpContent';
 import photoTeam       from '../assets/msirc-team.jpg';
 import photoSpotlight  from '../assets/research-spotlight.jpg';
@@ -458,10 +459,17 @@ const LandingPage = () => {
       <nav className={`lp-nav${scrolled ? ' is-scrolled' : ''}`}>
         <span className="lp-progress" aria-hidden="true" />
         <div className="lp-nav-inner">
-          <a href="#top" className="lp-brand">
-            <img src={logo} alt="AYON logo" className="lp-logo" />
-            <span className="lp-wordmark">AYON</span>
-          </a>
+          <div className="lp-brand-row">
+            <a href="#top" className="lp-brand">
+              <img src={logo} alt="AYON logo" className="lp-logo" />
+              <span className="lp-wordmark">AYON</span>
+            </a>
+            {/* the office AYON is made for */}
+            <span className="lp-partner" title="Mamitua Saber Institute of Research and Creation, MSU Main Campus">
+              <img src={msircLogo} alt="MSIRC logo" className="lp-partner-logo" />
+              <span className="lp-partner-text">Mamitua Saber Institute<br />of Research and Creation</span>
+            </span>
+          </div>
           <div className="lp-nav-links">
             {[['top', 'Home'], ['about', 'About'], ['features', 'Features'], ['how', 'How it works'], ['faq', 'FAQ']].map(([id, label]) => (
               <a key={id} href={`#${id}`} className={(id === 'top' ? !section : section === id) ? 'is-active' : ''}

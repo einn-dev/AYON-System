@@ -241,3 +241,12 @@
 @media (max-height: 760px) {
   .as-ghost-btn { padding: 10px 26px; }
 }
+/* ── the MSIRC logo at the bottom of the maroon panel ── */
+.reg-brand-foot.as-msirc { display: flex; align-items: center; gap: 12px; text-align: left; line-height: 1.3; }
+.as-msirc-chip {
+  width: 46px; height: 46px; border-radius: 50%; background: #fff; flex-shrink: 0;
+  display: grid; place-items: center; box-shadow: 0 4px 14px rgba(20, 2, 6, 0.25);
+}
+.as-msirc-chip img { height: 34px; width: auto; display: block; }
+.reg-brand-foot.as-msirc small { display: block; opacity: 0.75; font-size: 0.85em; margin-top: 2px; }
+.reg-brand-foot.as-msirc { text-transform: none; letter-spacing: 0.2px; font-size: 0.8rem; color: rgba(255, 255, 255, 0.85); }

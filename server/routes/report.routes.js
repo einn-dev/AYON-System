@@ -215,10 +215,22 @@ const buildSummary = (all, f) => {
 /* ── PDF helpers (maroon AYON style) ── */
 const MAROON = '#5e1420';
 
+/* the MSIRC logo for the report header (left out if the file is missing) */
+const MSIRC_LOGO = (() => {
+  try { return require('fs').readFileSync(require('path').join(__dirname, '..', 'assets', 'msirc-emblem.png')); } catch { return null; }
+})();
+
 const drawHeader = (doc, title, filtersText, who) => {
   doc.rect(0, 0, doc.page.width, 84).fill(MAROON);
-  doc.fillColor('#ffffff').fontSize(22).font('Helvetica-Bold').text('AYON', 50, 24);
-  doc.fontSize(9).font('Helvetica').text('MSIRC – Mindanao State University Main Campus', 50, 52);
+  let x = 50;
+  if (MSIRC_LOGO) {                                   // the logo in a white circle, then the name
+    doc.circle(50 + 27, 42, 27).fill('#ffffff');
+    doc.image(MSIRC_LOGO, 50 + 27 - 18, 42 - 19.5, { height: 39 });
+    x = 50 + 54 + 14;
+  }
+  doc.fillColor('#ffffff').fontSize(22).font('Helvetica-Bold').text('AYON', x, 22);
+  doc.fontSize(9).font('Helvetica').text('Mamitua Saber Institute of Research and Creation (MSIRC)', x, 48);
+  doc.text('Mindanao State University – Main Campus', x, 60);
   doc.fillColor(MAROON).fontSize(15).font('Helvetica-Bold').text(title, 50, 104);
   doc.fontSize(9).font('Helvetica').fillColor('#6b5e61')
      .text(`Filters: ${filtersText}`, 50, 124, { width: doc.page.width - 100 });

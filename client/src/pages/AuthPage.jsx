@@ -5,6 +5,7 @@ import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import AuthBackdrop from '../components/AuthBackdrop';
 import logo from '../assets/ayon-logo.png';
+import msircLogo from '../assets/msirc-emblem.png';
 import './AuthPages.css';
 import './RegisterPage.css';
 import './AuthSlider.css';
@@ -30,6 +31,14 @@ const Brand = () => (
     </div>
     <span className="reg-wordmark">AYON</span>
   </Link>
+);
+
+/* the office AYON is made for, at the bottom of the maroon panel */
+const BrandFoot = () => (
+  <p className="reg-brand-foot as-msirc">
+    <span className="as-msirc-chip"><img src={msircLogo} alt="MSIRC logo" /></span>
+    <span>Mamitua Saber Institute of Research and Creation<small>MSU Main Campus</small></span>
+  </p>
 );
 
 const AuthPage = ({ mode }) => {
@@ -81,7 +90,7 @@ const AuthPage = ({ mode }) => {
               </ul>
               <Link to="/login" className="as-ghost-btn">Sign in</Link>
             </div>
-            <p className="reg-brand-foot">MSIRC · MSU Main Campus</p>
+            <BrandFoot />
           </div>
 
           {/* shown while on Login (right side) */}
@@ -100,7 +109,7 @@ const AuthPage = ({ mode }) => {
               </ul>
               <Link to="/register" className="as-ghost-btn">Create an account</Link>
             </div>
-            <p className="reg-brand-foot">MSIRC · MSU Main Campus</p>
+            <BrandFoot />
           </div>
         </aside>
 
