@@ -14,6 +14,7 @@ const reportRoutes       = require('./routes/report.routes');
 const signatureRoutes    = require('./routes/signature.routes');
 const announcementRoutes = require('./routes/announcement.routes');
 const searchRoutes       = require('./routes/search.routes');
+const terminalReportRoutes = require('./routes/terminalReport.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +51,8 @@ app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/auth',          authRoutes);
 app.use('/api/admin',         adminRoutes);
+/* Terminal Report (Form 007): /api/proposals/:id/terminal-report and /api/terminal-reports */
+app.use('/api',               terminalReportRoutes);
 app.use('/api/proposals',     proposalRoutes);
 app.use('/api/repository',    repositoryRoutes);
 app.use('/api/notifications', notificationRoutes);

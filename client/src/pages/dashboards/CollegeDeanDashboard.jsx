@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TerminalReportsPage } from '../../components/TerminalReport';
+import { FaFlagCheckered } from 'react-icons/fa6';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -20,6 +22,7 @@ const NAV_ITEMS = [
   { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
   { path: '/college-dean/endorsed',        label: 'Endorsed', icon: <FaCircleCheck /> },
   { path: '/college-dean/external',       label: 'External Research', icon: <FaGlobe /> },
+  { path: '/college-dean/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/college-dean/notifications',   label: 'Notifications',    icon: <FaBell /> },
 ];
 
@@ -75,6 +78,7 @@ const CollegeDeanDashboard = () => {
         } />
         <Route path="endorsed"      element={<EndorsedHistory />} />
         <Route path="external"      element={<CollegeExternalPage />} />
+        <Route path="terminal-reports" element={<TerminalReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>

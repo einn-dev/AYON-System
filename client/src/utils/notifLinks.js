@@ -10,6 +10,9 @@ import { ROLE_REDIRECTS } from './roleRoutes';
    ───────────────────────────────────────────────────────────── */
 export const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
 export const isRepoNews   = (n) => /^new research in the repository/i.test(n.title || '');
+/* Terminal Report (Form 007) notices: offices open their Terminal Reports page */
+export const isTerminalNews = (n) => /terminal report/i.test(n.title || '');
+const TERMINAL_ROLES = ['college_dean', 'special_assistant', 'msric_director'];
 
 /* the page (under each role's address) that opens a record with ?open=<id> */
 const OPEN_ON = {
@@ -30,6 +33,7 @@ export const notifTarget = (n, role) => {
   if (!base || !n) return '';
   if (isRepoNews(n) && role === 'msric_staff') return '/msric-staff/repository';
   if (isGrantAlert(n) && role !== 'researcher') return `${base}/grants`;
+  if (isTerminalNews(n) && TERMINAL_ROLES.includes(role)) return `${base}/terminal-reports`;
   if (!n.proposal_id || !OPEN_ON[role]) return '';
   return `${base}/${OPEN_ON[role]}?open=${n.proposal_id}`;
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import TerminalReportBox from '../../components/TerminalReport';
 import { Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -22,6 +23,9 @@ import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+
+/* approved Internally Funded Research whose Terminal Report was accepted shows as Completed */
+const statusText = (p) => (p?.completed_at ? 'Completed' : statusLabel(p?.status));
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -185,7 +189,7 @@ const Overview = ({ proposals: all, user }) => {
                 <td style={{ color: '#718096' }}>{typeLabelOf(p)}</td>
                 <td>
                   <span className={`badge ${statusBadge(p.status)}`}>
-                    {statusLabel(p.status)}
+                    {statusText(p)}
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>{p.submitted_at ? shortDate(p.submitted_at) : '—'}</td>
@@ -429,7 +433,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                 </td>
                 <td>
                   <span className={`badge ${statusBadge(p.status)}`}>
-                    {statusLabel(p.status)}
+                    {statusText(p)}
                   </span>
                   {where(p) && (
                     <div style={{ fontSize: '0.72rem', color: '#718096', marginTop: 3 }}>{where(p)}</div>
@@ -507,10 +511,12 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
               </div>
             )}
             <ProposalFiles proposal={selected} />
+            {/* approved Internally Funded Research: the Terminal Report (MSIRC Form No. 007) */}
+            <TerminalReportBox proposal={selected} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', marginBottom: 16 }}>
               {[
                 { label: K.typeHead, value: typeText(selected.proposal_type) },
-                { label: 'Status',      value: statusLabel(selected.status) },
+                { label: 'Status',      value: statusText(selected) },
                 { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
                 ...(['approved', 'rejected'].includes(selected.status) && selected.decided_at

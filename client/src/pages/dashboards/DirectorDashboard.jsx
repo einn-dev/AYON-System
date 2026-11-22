@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TerminalReportsPage } from '../../components/TerminalReport';
+import { FaFlagCheckered } from 'react-icons/fa6';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -30,6 +32,7 @@ const NAV_ITEMS = [
   { path: '/director/endorsed',      label: 'Endorsed to VCRED', icon: <FaPaperPlane /> },
   { path: '/director/approved',      label: 'Approved', icon: <FaCircleCheck /> },
   { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark /> },
+  { path: '/director/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
   { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
@@ -460,6 +463,7 @@ const DirectorDashboard = () => {
         <Route path="endorsed"
           element={<ProposalTable proposals={proposals} statusFilter="endorsed" onRefresh={fetchProposals} />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="terminal-reports" element={<TerminalReportsPage />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
             intro="Proposals the MSIRC Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />

@@ -25,6 +25,7 @@ const isGrantAlert = (n) => /^new grant application/i.test(n.title || '');
 const isReminder = (n) => /^reminder/i.test(n.title || '');
 const isWaiting  = (n) => !!n.proposal_id && !isReminder(n);
 const isRepoNews = (n) => /^new research in the repository/i.test(n.title || '');
+const isTerminalNews = (n) => /terminal report/i.test(n.title || '');
 
 const OFFICE_FILTERS = [
   ['all',      'All Notifications',                () => true],
@@ -85,10 +86,14 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
 
   /* a grant alert opens the Grant Applications page of the same office ("/director/..." -> "/director/grants") */
   const grantsPath = `/${String(queuePath || '').split('/')[1]}/grants`;
+  /* a Terminal Report notice opens the Terminal Reports page (MSIRC Special Assistant, MSIRC Director) */
+  const officeBase = String(queuePath || '').split('/')[1];
+  const terminalPath = ['special-assistant', 'director'].includes(officeBase) ? `/${officeBase}/terminal-reports` : '';
 
   const openIt = async (n) => {
     if (!n.is_read) await markRead(n.notif_id);
     if (isRepoNews(n) && repoPath) { navigate(repoPath); return; }
+    if (isTerminalNews(n) && terminalPath) { navigate(terminalPath); return; }
     navigate(isGrantAlert(n) ? grantsPath : `${queuePath}?open=${n.proposal_id}`);
   };
 

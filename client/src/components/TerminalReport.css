@@ -1,0 +1,91 @@
+/* Terminal Report (MSIRC Form No. 007) */
+
+/* ── on the researcher's record ── */
+.tr-box { border: 1px solid #efe5e6; border-left: 4px solid #8d1b2d; border-radius: 12px; padding: 16px 18px; margin: 4px 0 18px; background: #fffaf9; }
+.tr-box.is-done { border-left-color: #0ca30c; background: #f6fcf6; }
+.tr-box-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.tr-box-head > div { flex: 1; min-width: 180px; }
+.tr-box-head b { display: block; color: #3d3235; font-size: 0.98rem; }
+.tr-box-ic { font-size: 1.3rem; color: #8d1b2d; flex-shrink: 0; }
+.tr-box.is-done .tr-box-ic { color: #0ca30c; }
+.tr-cap { display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8a7a7d; }
+.tr-box-text { margin: 10px 0 0; font-size: 0.86rem; line-height: 1.6; color: #5e5155; }
+.tr-done { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: #ecf8ec; color: #1d6b26; font-size: 0.86rem; line-height: 1.5; }
+.tr-done svg { margin-top: 3px; flex-shrink: 0; }
+
+/* steps */
+.tr-track { list-style: none; margin: 14px 0 12px; padding: 0; display: flex; }
+.tr-track li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; text-align: center; }
+.tr-track li:not(:last-child)::after { content: ''; position: absolute; top: 13px; left: calc(50% + 16px); right: calc(-50% + 16px); height: 2px; background: #ece4e5; }
+.tr-track li.done:not(:last-child)::after { background: #8d1b2d; }
+.tr-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 0.75rem; font-weight: 700; background: #fff; border: 2px solid #e3d6d8; color: #b8aaad; position: relative; z-index: 1; }
+.tr-track li.done .tr-dot { background: #8d1b2d; border-color: #8d1b2d; color: #fff; }
+.tr-track li.now .tr-dot { border-color: #8d1b2d; color: #8d1b2d; box-shadow: 0 0 0 4px rgba(141, 27, 45, 0.12); }
+.tr-lbl { font-size: 0.72rem; color: #8a7a7d; line-height: 1.25; }
+.tr-track li.done .tr-lbl, .tr-track li.now .tr-lbl { color: #3d3235; font-weight: 600; }
+.tr-lbl em { display: block; font-style: normal; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #8d1b2d; }
+
+.tr-fcard { margin: 8px 0 10px; }
+.tr-file { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #efe5e6; border-radius: 10px; background: #fff; margin-bottom: 10px; flex-wrap: wrap; }
+.tr-file-ic { font-size: 1.4rem; color: #b02a2a; flex-shrink: 0; }
+.tr-file-ic.word { color: #2a5bb0; }
+.tr-file-text { flex: 1; min-width: 160px; display: flex; flex-direction: column; }
+.tr-file-text b { font-size: 0.88rem; color: #3d3235; overflow-wrap: anywhere; }
+.tr-file-text small { font-size: 0.75rem; color: #8a7a7d; }
+.tr-hist ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.tr-hist li { font-size: 0.82rem; color: #5e5155; line-height: 1.5; }
+.tr-hist li b { color: #1d6b26; }
+.tr-hist li b.bad { color: #c53030; }
+.tr-hist q { display: block; font-style: italic; color: #6b5e61; }
+
+/* ── the form and the review window ── */
+.tr-modal { max-width: 720px !important; position: relative; }
+.tr-modal-head { position: relative; padding-right: 36px; margin-bottom: 12px; }
+.tr-modal-head h3 { margin: 2px 0 4px !important; }
+.tr-formno { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #b09519; }
+.tr-sub { margin: 0; color: #6b5e61; font-size: 0.88rem; }
+.tr-x { position: absolute; top: 0; right: 0; }
+.tr-hint { margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: #faf6ef; color: #6b4f10; font-size: 0.84rem; line-height: 1.5; }
+.tr-small { display: block; margin-top: 4px; font-size: 0.76rem; color: #8a7a7d; line-height: 1.45; }
+.tr-row3 { grid-template-columns: 0.7fr 1fr 1fr !important; }
+.tr-count { float: right; font-weight: 600; text-transform: none; letter-spacing: 0; color: #8a7a7d; }
+.tr-count.bad { color: #c53030; }
+.tr-modal textarea { width: 100%; border: 1px solid #e0d3d5; border-radius: 8px; padding: 10px 14px; font: inherit; font-size: 0.92rem; background: #faf7f7; resize: vertical; line-height: 1.55; }
+.tr-modal textarea:focus { outline: none; border-color: #8d1b2d; background: #fff; }
+.tr-drop { display: flex; align-items: center; gap: 12px; padding: 16px; border: 2px dashed #e0d3d5; border-radius: 10px; cursor: pointer; color: #6b5e61; font-size: 0.88rem; transition: border-color 0.2s, background 0.2s; }
+.tr-drop:hover, .tr-drop:focus-visible { border-color: #8d1b2d; background: #fffaf9; outline: none; }
+.tr-drop.has { border-style: solid; border-color: #9ae6b4; background: #f6fcf6; }
+.tr-drop-ic { font-size: 1.5rem; color: #8d1b2d; flex-shrink: 0; }
+.tr-drop b { color: #3d3235; overflow-wrap: anywhere; }
+.tr-act { margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1e8e9; }
+.tr-muted { color: #8a7a7d; }
+
+/* ── Terminal Reports page tabs ── */
+.tr-tabs { gap: 6px; justify-content: flex-start !important; }
+.tr-tabs button { border: 0; background: none; font: inherit; font-size: 0.88rem; font-weight: 600; color: #8a7a7d; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.tr-tabs button span { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 10px; background: #f3e9ea; font-size: 0.75rem; }
+.tr-tabs button.on { background: #8d1b2d; color: #fff; }
+.tr-tabs button.on span { background: rgba(255, 255, 255, 0.25); }
+
+/* ── the paper form (A4) ── */
+.f7-paper { width: 794px; max-width: none; background: #fff; color: #000; font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 13px; padding: 40px 56px; box-sizing: border-box; }
+.f7-title { text-align: center; font-size: 14px; font-weight: 700; margin: 22px 0 12px; letter-spacing: 0.2px; }
+.f7-table { width: 100%; border-collapse: collapse; }
+.f7-table th, .f7-table td { border: 1px solid #000; padding: 5px 8px; vertical-align: top; text-align: left; line-height: 1.35; }
+.f7-table th { width: 22%; font-weight: 700; }
+.f7-table td { min-height: 38px; }
+.f7-long { min-height: 90px; white-space: pre-wrap; text-align: justify; }
+.f7-signs { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 24px 0 26px; }
+.f7-sign { text-align: center; margin-top: 4px; }
+.f7-signame { border-bottom: 1px solid #000; font-weight: 700; min-height: 18px; margin: 0 14px; }
+.f7-sigrole { font-weight: 700; margin-top: 2px; }
+.f7-notes { font-size: 12.5px; line-height: 1.4; }
+.f7-notes p { margin: 8px 0 2px; }
+.f7-notes ol { margin: 0; padding-left: 28px; }
+
+@media (max-width: 640px) {
+  .tr-row3 { grid-template-columns: 1fr !important; }
+  .tr-lbl { font-size: 0.62rem; }
+  .tr-dot { width: 24px; height: 24px; }
+  .tr-track li:not(:last-child)::after { top: 11px; }
+}
