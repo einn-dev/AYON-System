@@ -1,5 +1,5 @@
 const supabase = require('../config/supabase');
-const { sendEmail } = require('./mailer');
+const { sendEmail, emailHeader } = require('./mailer');
 const { TYPE_LABEL, GRANT_TYPES } = require('./terms');
 const { personName } = require('./names');
 
@@ -51,10 +51,7 @@ const approvalEmailHtml = ({ name, title, type, typeLabel, word, approvedOn, app
   <div style="background:#f4f1f1;padding:24px 12px">
   <div style="font-family:Segoe UI,Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;
     border:1px solid #e8edf2;border-radius:12px;overflow:hidden">
-    <div style="background:#8d1b2d;padding:24px;text-align:center">
-      <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:2px">AYON</h1>
-      <p style="color:#f0cdd2;margin:4px 0 0;font-size:12px">MSIRC – Mindanao State University Main Campus</p>
-    </div>
+    ${emailHeader()}
     <div style="height:4px;background:#c9a227"></div>
 
     <div style="padding:28px 30px 0;color:#2d2327;font-size:14px;line-height:1.75">

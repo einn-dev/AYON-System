@@ -120,15 +120,34 @@ const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false
   }
 };
 
+/* ── the maroon top of every AYON email, with the MSIRC logo ──
+   The logo is the image the AYON website serves (client/public/msirc-emblem.png), so it
+   needs the website's public address: APP_URL (or FRONTEND_URL) on Render. On your own
+   computer (localhost) an email app cannot load it, so the top is shown without the logo. */
+const siteUrl = () => String(process.env.APP_URL || process.env.FRONTEND_URL || '')
+  .split(',')[0].trim().replace(/\/+$/, '');
+const emailHeader = () => {
+  const site = siteUrl();
+  const logo = /^https:\/\//i.test(site) ? `${site}/msirc-emblem.png` : '';
+  return `
+    <div style="background:#8d1b2d;padding:24px;text-align:center">
+      ${logo ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:0 auto 10px">
+        <tr><td style="background:#ffffff;border-radius:50%;width:64px;height:64px;text-align:center;vertical-align:middle">
+          <img src="${logo}" width="44" height="48" alt="MSIRC logo"
+            style="display:inline-block;width:44px;height:48px;border:0;vertical-align:middle">
+        </td></tr>
+      </table>` : ''}
+      <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:2px">AYON</h1>
+      <p style="color:#f0cdd2;margin:4px 0 0;font-size:12px">
+        Mamitua Saber Institute of Research and Creation (MSIRC)<br>Mindanao State University – Main Campus
+      </p>
+    </div>`;
+};
+
 const emailTemplate = (title, message) => `
   <div style="font-family:Segoe UI,sans-serif;max-width:560px;margin:0 auto;
     border:1px solid #e8edf2;border-radius:12px;overflow:hidden">
-    <div style="background:#8d1b2d;padding:24px;text-align:center">
-      <h1 style="color:#fff;margin:0;font-size:22px;letter-spacing:2px">AYON</h1>
-      <p style="color:#f0cdd2;margin:4px 0 0;font-size:12px">
-        MSIRC – Mindanao State University Main Campus
-      </p>
-    </div>
+    ${emailHeader()}
     <div style="padding:28px">
       <h2 style="color:#8d1b2d;font-size:17px;margin:0 0 12px">${title}</h2>
       <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:0">${message}</p>
@@ -142,4 +161,4 @@ const emailTemplate = (title, message) => `
   </div>
 `;
 
-module.exports = { sendEmail, emailTemplate };
+module.exports = { sendEmail, emailTemplate, emailHeader };
