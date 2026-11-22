@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import API from '../services/authService';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
+import AuthBackdrop from '../components/AuthBackdrop';
 import '../components/PasswordPages.css';
 import { FaArrowLeft, FaEnvelope } from 'react-icons/fa6';
 
@@ -48,7 +49,9 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper as-pw-wrapper">
+      {/* the Research Repository shelf, below the card */}
+      <AuthBackdrop look="shelf" card=".as-pw-wrapper > .auth-card" />
       <div className="auth-card">
         <div className="auth-logo">
           <img src={logo} alt="AYON logo" />

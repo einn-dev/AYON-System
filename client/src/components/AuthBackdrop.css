@@ -6,3 +6,22 @@
 }
 @keyframes as-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .as-backdrop { animation: none; } }
+
+/* Forgot password and Reset password: the Research Repository shelf below the card */
+.as-pw-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3a0910 0%, #6f0b0d 45%, #8d1b2d 75%, #5e1420 100%);
+  background-size: 220% 220%;
+  animation: as-pw-shift 18s ease-in-out infinite;
+}
+@keyframes as-pw-shift { 0%, 100% { background-position: 0% 40%; } 50% { background-position: 100% 60%; } }
+.as-pw-wrapper > .auth-card {
+  position: relative; z-index: 1;
+  box-shadow: 0 30px 80px rgba(20, 2, 6, 0.35);
+  animation: as-pw-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes as-pw-enter { from { opacity: 0; transform: translateY(28px) scale(0.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .as-pw-wrapper, .as-pw-wrapper > .auth-card { animation: none; }
+}

@@ -6,6 +6,7 @@ import PasswordInput from '../components/PasswordInput';
 import { PasswordStrength, PasswordRules, checkNewPassword } from '../components/PasswordStrength';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
+import AuthBackdrop from '../components/AuthBackdrop';
 import '../components/PasswordPages.css';
 import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
@@ -53,7 +54,9 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper as-pw-wrapper">
+      {/* the Research Repository shelf, below the card */}
+      <AuthBackdrop look="shelf" card=".as-pw-wrapper > .auth-card" />
       <div className="auth-card">
         <div className="auth-logo">
           <img src={logo} alt="AYON logo" />

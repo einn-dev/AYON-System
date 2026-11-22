@@ -7,6 +7,10 @@ import './AuthBackdrop.css';
    linked to an MSIRC hub above the card. A college lights up and
    sends a pulse to MSIRC; some pulses go on to VCRED below the card,
    like a proposal moving through AYON.
+   look="shelf" (Forgot password, Reset password): the Research
+   Repository. Maroon and gold book spines slide onto a shelf below
+   the card, one by one; when the shelf is full it fades and starts
+   again.
    Drawn on one <canvas> in the space around the card. It pauses
    when the tab is hidden and stays still for "reduce motion".
    ───────────────────────────────────────────────────────────── */
@@ -15,8 +19,8 @@ const GOLD = '243, 217, 138';
 const rand = (a, b) => a + Math.random() * (b - a);
 
 /* where is the card, and where is there room around it? */
-const cardBox = (canvas) => {
-  const card = document.querySelector('.reg-card.as-card');
+const cardBox = (canvas, selector = '.reg-card.as-card') => {
+  const card = document.querySelector(selector);
   if (!card) return null;
   const c = canvas.getBoundingClientRect(), r = card.getBoundingClientRect();
   return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height };
@@ -98,7 +102,50 @@ const drawColleges = (ctx, s, w, h, dt) => {
   });
 };
 
-const AuthBackdrop = () => {
+/* ── the Research Repository shelf ── */
+const SPINE = ['rgba(141, 27, 45, 0.9)', 'rgba(111, 11, 13, 0.9)', 'rgba(176, 72, 70, 0.85)', 'rgba(224, 185, 58, 0.8)', 'rgba(94, 20, 32, 0.95)', 'rgba(243, 217, 138, 0.55)'];
+const newShelf = (delay = 0) => ({ books: [], fill: 30, t: -delay, next: 0.2, fading: 0 });
+const makeShelves = () => ({ bottom: newShelf(0) });
+const drawOneShelf = (ctx, S, band, w, dt) => {
+  const room = band[1] - band[0];
+  if (room < 70) return;                                           // no room on this side of the card
+  const bh = Math.max(44, Math.min(110, room - 30));
+  const shelfY = band[0] + room / 2 + bh / 2;
+  S.t += dt;
+  if (S.fading > 0) { S.fading -= dt; if (S.fading <= 0) { S.books = []; S.fill = 30; S.t = -0.4; } }
+  else if (S.t > S.next) {
+    S.t = 0; S.next = rand(0.3, 0.65);
+    const bw = rand(12, 24);
+    if (S.fill + bw > w - 30) S.fading = 1.4;
+    else {
+      S.books.push({ x: S.fill, w: bw, h: bh * rand(0.6, 1), c: SPINE[Math.floor(rand(0, SPINE.length))], slide: 1,
+        tilt: Math.random() < 0.12 ? rand(-0.12, -0.06) : 0, bands: Math.random() < 0.5 ? 2 : 1 });
+      S.fill += bw + 2;
+    }
+  }
+  const fadeA = S.fading > 0 ? S.fading / 1.4 : 1;
+  ctx.fillStyle = `rgba(${GOLD}, 0.35)`; ctx.fillRect(16, shelfY, w - 32, 3);           // the shelf board
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.18)'; ctx.fillRect(16, shelfY + 3, w - 32, 6);
+  S.books.forEach((bk) => {
+    bk.slide = Math.max(0, bk.slide - dt * 2.2);
+    const e = bk.slide * bk.slide, x = bk.x + e * (w - bk.x), y = shelfY - bk.h;
+    ctx.save(); ctx.globalAlpha = fadeA * (1 - e * 0.6);
+    ctx.translate(x, shelfY); ctx.rotate(bk.tilt); ctx.translate(-x, -shelfY);
+    ctx.fillStyle = bk.c; ctx.fillRect(x, y, bk.w, bk.h);
+    ctx.fillStyle = `rgba(${GOLD}, 0.7)`; ctx.fillRect(x + 2, y + 8, bk.w - 4, 2);           // gold bands on the spine
+    if (bk.bands > 1) ctx.fillRect(x + 2, y + bk.h - 12, bk.w - 4, 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)'; ctx.fillRect(x, y, 2, bk.h);
+    ctx.restore();
+  });
+};
+const drawShelves = (ctx, s, w, h, dt) => {
+  const bd = bands(w, h, s.box);
+  drawOneShelf(ctx, s.shelf.bottom, bd.bottom, w, dt);              // one shelf, below the card
+};
+
+/* look: 'colleges' (Sign in, Register) or 'shelf' (Forgot password, Reset password)
+   card: where the form card is, so nothing is drawn behind it */
+const AuthBackdrop = ({ look = 'colleges', card = '.reg-card.as-card' }) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -114,13 +161,16 @@ const AuthBackdrop = () => {
       w = canvas.clientWidth; h = canvas.clientHeight;
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      s.col = makeColleges(w, h, cardBox(canvas));
+      s.box = cardBox(canvas, card);
+      if (look === 'shelf') { if (!s.shelf) s.shelf = makeShelves(); }
+      else s.col = makeColleges(w, h, s.box);
     };
 
     const frame = (now) => {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       ctx.clearRect(0, 0, w, h);
-      drawColleges(ctx, s, w, h, dt);
+      if (look === 'shelf') drawShelves(ctx, s, w, h, dt);
+      else drawColleges(ctx, s, w, h, dt);
       if (!still) raf = requestAnimationFrame(frame);
     };
 
@@ -131,7 +181,10 @@ const AuthBackdrop = () => {
 
     build();
     const settle = setTimeout(build, 1000);        // measure again once the card has finished rising in
-    if (still) frame(performance.now()); else raf = requestAnimationFrame(frame);
+    if (still) {                                     // reduce motion: one still frame (a full shelf for the Repository)
+      if (look === 'shelf') for (let i = 0; i < 80; i += 1) drawShelves(ctx, s, w, h, 0.05);
+      frame(performance.now());
+    } else raf = requestAnimationFrame(frame);
     window.addEventListener('resize', build);
     document.addEventListener('visibilitychange', onVis);
     return () => {
@@ -140,7 +193,7 @@ const AuthBackdrop = () => {
       window.removeEventListener('resize', build);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, []);
+  }, [look, card]);
 
   return <canvas ref={ref} className="as-backdrop" aria-hidden="true" />;
 };
