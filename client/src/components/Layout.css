@@ -503,3 +503,17 @@ html.ayon-app { font-size: 112.5%; }
   text-transform: uppercase; color: rgba(255, 255, 255, 0.5);
 }
 .layout.collapsed .nav-section { font-size: 0; height: 1px; margin: 12px 14px 6px; background: rgba(255, 255, 255, 0.2); }
+/* ── A faint AYON logo behind the pages, so wide screens do not look plain ──
+   It stays still while the page scrolls and sits behind everything: the white
+   cards and tables cover it, so it only shows in the empty space. */
+.main-content { isolation: isolate; }
+.main-content::before {
+  content: ''; position: fixed; top: 0; right: 0; bottom: 0; left: 256px;   /* the space beside the sidebar */
+  z-index: -1; pointer-events: none;
+  background: url('../assets/ayon-logo.png') no-repeat center 58% / min(40vw, 560px) auto;
+  opacity: 0.05;
+  transition: left 0.25s ease;
+}
+.layout.collapsed .main-content::before { left: 68px; }
+@media (max-width: 820px) { .main-content::before { left: 0; } }
+@media print { .main-content::before { display: none; } }
