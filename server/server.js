@@ -19,27 +19,47 @@ const terminalReportRoutes = require('./routes/terminalReport.routes');
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
-// Gather all allowed origins (defaults + .env values)
+/* On Render the app sits behind a proxy: this lets req.ip be the visitor's address
+   (used by the sign-in attempt limits) */
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+/* Security headers: this server only sends JSON, so nothing may run or be framed */
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options':    'nosniff',
+    'X-Frame-Options':           'DENY',
+    'Referrer-Policy':           'no-referrer',
+    'Content-Security-Policy':   "default-src 'none'; frame-ancestors 'none'",
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Strict-Transport-Security': 'max-age=15552000; includeSubDomains',
+  });
+  next();
+});
+
+/* Which websites may call this API.
+   Live (Render): only the AYON website and FRONTEND_URL.
+   On your own computer: also localhost and addresses on your local network. */
+const isLive = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
 const envOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim().replace(/\/+$/, ''))
   : [];
 
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://10.12.76.138:3000',
+  'https://ayon-system.vercel.app',
+  ...(isLive ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000']),
   ...envOrigins
 ].filter(Boolean);
+const isLocalNetwork = (o) => !isLive && (o.startsWith('http://10.') || o.startsWith('http://192.168.'));
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser requests (Postman, curl) or matched origins
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://10.') || origin.startsWith('http://192.168.')) {
+    // Requests without an Origin (Postman, curl, server to server) carry no browser session, so they are allowed
+    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork(origin)) {
       return callback(null, true);
-    } else {
-      console.warn('Blocked by CORS:', origin);
-      return callback(null, false);
     }
+    console.warn('Blocked by CORS:', origin);
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

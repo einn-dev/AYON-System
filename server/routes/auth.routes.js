@@ -10,6 +10,7 @@ const {
   changePassword, forgotPassword, resetPassword,
 } = require('../controllers/password.controller');
 const { verifyToken } = require('../middleware/authMiddleware');
+const { limit } = require('../utils/rateLimit');
 
 /* Profile pictures: kept in memory (they go to Supabase, not to disk), 2MB max. */
 const avatarUpload = multer({
@@ -33,14 +34,23 @@ const handleAvatarUpload = (req, res, next) => {
   });
 };
 
-router.post('/register',            register);
-router.post('/login',               login);
-router.post('/verify-email',        verifyEmail);
-router.post('/resend-verification', resendVerification);
+/* How often the same person can try (see utils/rateLimit.js) */
+const tries = {
+  login:     [limit({ name: 'login-ip', max: 50, windowMin: 15 }), limit({ name: 'login', max: 10, windowMin: 15, by: 'ip+email' })],
+  register:  limit({ name: 'register', max: 10, windowMin: 60 }),
+  emailSend: limit({ name: 'email-send', max: 5, windowMin: 15, by: 'ip+email' }),   // reset link, verification email
+  code:      limit({ name: 'code', max: 20, windowMin: 15 }),                         // verify link, reset link use
+  password:  limit({ name: 'password', max: 10, windowMin: 15 }),
+};
 
-router.post('/forgot-password',     forgotPassword);
-router.post('/reset-password',      resetPassword);
-router.post('/change-password',     verifyToken, changePassword);
+router.post('/register',            tries.register, register);
+router.post('/login',               ...tries.login, login);
+router.post('/verify-email',        tries.code, verifyEmail);
+router.post('/resend-verification', tries.emailSend, resendVerification);
+
+router.post('/forgot-password',     tries.emailSend, forgotPassword);
+router.post('/reset-password',      tries.code, resetPassword);
+router.post('/change-password',     verifyToken, tries.password, changePassword);
 
 router.get('/profile',   verifyToken, getProfile);
 router.patch('/profile', verifyToken, updateProfile);

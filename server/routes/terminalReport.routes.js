@@ -10,6 +10,7 @@ const { endorsersFor, notifyIds }     = require('../utils/endorsementChain');
 const { logAudit }                    = require('../utils/audit');
 const { personName }                  = require('../utils/names');
 const { ROLE_LABEL }                  = require('../utils/terms');
+const { contentProblem }              = require('../utils/proposalFiles');
 
 /* ─────────────────────────────────────────────────────────────
    Terminal Report (MSIRC Form No. 007) for approved Internally Funded Research.
@@ -216,6 +217,7 @@ router.post('/proposals/:id/terminal-report', verifyToken, authorizeRoles('resea
     const { f, error } = readForm(body.form_data);
     if (error) return res.status(400).json({ message: error });
     if (!req.file && !old?.file_path) return res.status(400).json({ message: 'Please upload the full terminal report.' });
+    if (req.file) { const bad = contentProblem(req.file); if (bad) return res.status(400).json({ message: bad }); }
 
     const sig = await requireSignature(req);
     if (!sig.ok) return res.status(sig.status).json(sig.body);

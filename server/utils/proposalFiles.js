@@ -55,6 +55,21 @@ const readIds = (raw) => {
   return [...new Set([].concat(list).map(Number).filter(n => Number.isInteger(n) && n > 0))];
 };
 
+/* Is the file really a PDF or a Word document? The type the browser sends can be faked,
+   so the first bytes of the file are checked too. Returns '' or the problem. */
+const PDF  = Buffer.from('%PDF-');
+const ZIP  = Buffer.from([0x50, 0x4b, 0x03, 0x04]);                          // .docx
+const OLE  = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);  // .doc
+const contentProblem = (f) => {
+  const buf  = f?.buffer;
+  const name = String(f?.originalname || 'the file');
+  if (!buf || !buf.length) return `"${name}" is empty.`;
+  const starts = (sig) => buf.length >= sig.length && buf.subarray(0, sig.length).equals(sig);
+  const isPdf = buf.subarray(0, 1024).indexOf(PDF) !== -1;               // a few PDFs have bytes before %PDF-
+  const ok = isPdf || starts(ZIP) || starts(OLE);
+  return ok ? '' : `"${name}" is not a real PDF, DOC or DOCX file.`;
+};
+
 /* The new files in the request: { main, supporting: [{ file, label }] }, or { error } */
 const readUpload = (req) => {
   const files      = req.files || {};
@@ -64,6 +79,10 @@ const readUpload = (req) => {
 
   if (supporting.length > MAX_SUPPORTING) {
     return { error: `You can attach at most ${MAX_SUPPORTING} supporting documents.` };
+  }
+  for (const f of [main, ...supporting].filter(Boolean)) {
+    const bad = contentProblem(f);
+    if (bad) return { error: bad };
   }
   const list = [];
   for (let i = 0; i < supporting.length; i += 1) {
@@ -235,7 +254,7 @@ const removeAllFiles = async (proposalId, extraPath = null) => {
 };
 
 module.exports = {
-  MAX_MB, MAX_SUPPORTING, MAX_FILES, LABEL_MAX, MAIN_LABEL, SUPPORTING_LABELS, ALLOWED_MIME,
+  MAX_MB, MAX_SUPPORTING, MAX_FILES, LABEL_MAX, MAIN_LABEL, SUPPORTING_LABELS, ALLOWED_MIME, contentProblem,
   readUpload, readIds, uploadAll, listFiles, attachFiles, planChange, applyChange,
   removeKeys, removeAllFiles, publicFile, keyFromPath,
 };

@@ -2,6 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const multer   = require('multer');
 const supabase = require('../config/supabase');
+const { contentProblem } = require('../utils/proposalFiles');
 const { notifyUser } = require('../utils/notify');
 const { notifyStaff } = require('../utils/roleNotify');
 const { personName } = require('../utils/names');
@@ -92,6 +93,7 @@ const problemOf = (f, file, supporting, labels) => {
   if (!file) return 'The research document is required (PDF or Word).';
   if (supporting.length > MAX_SUPPORTING) return `You can attach at most ${MAX_SUPPORTING} supporting documents.`;
   if (supporting.some((x, i) => !labels[i])) return 'Each supporting document needs a label.';
+  for (const x of [file, ...supporting]) { const bad = contentProblem(x); if (bad) return bad; }
   return '';
 };
 
