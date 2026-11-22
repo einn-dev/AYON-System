@@ -128,3 +128,10 @@
   .ps-overview.has-extra .ps-ov-rate, .ps-overview.has-extra .ps-ov-extra { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 520px) { .ps-overview.has-extra { grid-template-columns: 1fr; } }
+/* External Research (externally funded, uploaded to the Research Repository) */
+.ps-ext-body { display: grid; grid-template-columns: minmax(170px, 0.6fr) minmax(0, 1.4fr); gap: 18px; align-items: start; }
+@media (max-width: 800px) { .ps-ext-body { grid-template-columns: 1fr; } }
+.ps-ext-nums { display: grid; gap: 10px; }
+.ps-ext-nums div { background: #e8f5f7; border-radius: 10px; padding: 10px 14px; border-left: 4px solid #127b8f; }
+.ps-ext-nums span { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #4d6b70; }
+.ps-ext-nums b { font-size: 1.3rem; color: #0d5c6b; }

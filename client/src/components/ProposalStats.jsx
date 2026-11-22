@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import API from '../services/authService';
 import { TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES } from '../utils/terms';
 import './ProposalStats.css';
 
@@ -46,6 +47,13 @@ const whenOf = (p) => p.submitted_at || p.created_at || null;
 const yearOf = (p) => (whenOf(p) ? new Date(whenOf(p)).getFullYear() : null);
 const pct    = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 const plural = (n, w = 'submission') => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/* External Research: externally funded research uploaded to the Research Repository.
+   It has no approval steps, so it is counted beside the submissions, not in their stages. */
+export const EXT_COLOR = '#127b8f';
+const EXT_NAME = 'External Research (uploaded)';
+const extYear = (x) => (x.uploaded_at ? new Date(x.uploaded_at).getFullYear() : null);
+const peso = (v) => `₱${Number(v || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /* small hover note that follows the mouse */
 export const useTip = () => {
@@ -165,17 +173,30 @@ export const StageOverview = ({ total, totalLabel, stages, bind, extra = null })
   );
 };
 
-const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submission Statistics' }) => {
+/* externalFrom: where to read External Research ('/external' for the MSIRC offices,
+   '/external/college' for the college offices); leave it out to show none */
+const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submission Statistics', externalFrom = '' }) => {
   const [year, setYear] = useState('all');
   const [bind, tipNode] = useTip();
+  const [external, setExternal] = useState([]);
+  useEffect(() => {
+    if (!externalFrom) return undefined;
+    let live = true;
+    API.get(externalFrom)
+      .then((res) => { if (live) setExternal(res.data?.items || []); })
+      .catch(() => { if (live) setExternal([]); });              // the statistics still show without it
+    return () => { live = false; };
+  }, [externalFrom]);
 
   /* drafts are not submitted, so they are not counted */
   const all = useMemo(() => proposals.filter(p => p.status !== 'draft'), [proposals]);
 
   const years = useMemo(() => {
-    const ys = [...new Set(all.map(yearOf).filter(Boolean))].sort((a, b) => b - a);
+    const ys = [...new Set([...all.map(yearOf), ...external.map(extYear)].filter(Boolean))].sort((a, b) => b - a);
     return ys.length ? ys : [new Date().getFullYear()];
-  }, [all]);
+  }, [all, external]);
+  const extList = year === 'all' ? external : external.filter(x => extYear(x) === Number(year));
+  const extFunding = extList.reduce((a, x) => a + (Number(x.funding_amount) || 0), 0);
 
   const list = year === 'all' ? all : all.filter(p => yearOf(p) === Number(year));
   const total = list.length;
@@ -196,9 +217,18 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
 
   /* the types offered now, plus an older type only if some records still use it */
   const typeOrder = Object.keys(TYPE_LABEL).filter(t => OFFERED.includes(t) || all.some(p => p.proposal_type === t));
-  const byType = typeOrder.map(t => ({
-    name: TYPE_LABEL[t], color: TYPE_COLOR[t] || OLD_TYPE_COLOR, count: list.filter(p => p.proposal_type === t).length,
-  }));
+  const byType = [
+    ...typeOrder.map(t => ({
+      name: TYPE_LABEL[t], color: TYPE_COLOR[t] || OLD_TYPE_COLOR, count: list.filter(p => p.proposal_type === t).length,
+    })),
+    ...(externalFrom ? [{ name: EXT_NAME, color: EXT_COLOR, count: extList.length }] : []),
+  ];
+  let extGroups = [];
+  if (externalFrom && groupBy) {
+    const counts = {};
+    extList.forEach(x => { const g = x[groupBy] || 'Not set'; counts[g] = (counts[g] || 0) + 1; });
+    extGroups = Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }
 
   let byGroup = null;
   if (groupBy) {
@@ -221,7 +251,7 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
       <div className="ps-head">
         <div>
           <h2 id="ps-title">{title}</h2>
-          <p>Research proposals and applications together. Drafts are not counted.</p>
+          <p>Research proposals and applications together. Drafts are not counted.{externalFrom ? ' External Research has no approval steps, so it is counted on its own.' : ''}</p>
         </div>
         <label className="ps-field">
           Year
@@ -243,8 +273,8 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
         </div>
         <div className="ps-card">
           <h3>By Type</h3>
-          <div className="ps-card-sub">Research, grants and incentives{year === 'all' ? '' : `, ${year}`}</div>
-          <HBars rows={byType} total={total} bind={bind} />
+          <div className="ps-card-sub">Research, grants and incentives{externalFrom ? ', and External Research' : ''}{year === 'all' ? '' : `, ${year}`}</div>
+          <HBars rows={byType} total={total + (externalFrom ? extList.length : 0)} bind={bind} />
         </div>
       </div>
 
@@ -253,6 +283,25 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
           <h3>{groupBy === 'college' ? 'By College' : 'By Department'}</h3>
           <div className="ps-card-sub">{groupBy === 'college' ? 'The top 6 colleges, the rest grouped together' : 'Departments of your college'}</div>
           <HBars rows={byGroup} total={total} bind={bind} color="#1baf7a" />
+        </div>
+      )}
+
+      {externalFrom && (
+        <div className="ps-card ps-solo ps-ext">
+          <h3>External Research</h3>
+          <div className="ps-card-sub">Externally funded research uploaded to the Research Repository{year === 'all' ? '' : `, ${year}`}</div>
+          <div className="ps-ext-body">
+            <div className="ps-ext-nums">
+              <div><span>Projects</span><b>{extList.length}</b></div>
+              <div><span>Total Funding</span><b>{peso(extFunding)}</b></div>
+            </div>
+            <div className="ps-ext-bars">
+              {extList.length
+                ? (groupBy ? <HBars rows={extGroups} total={extList.length} bind={bind} color={EXT_COLOR} />
+                           : <div className="ps-empty">{plural(extList.length, 'project')} from your college.</div>)
+                : <div className="ps-empty">No External Research {year === 'all' ? 'yet' : `in ${year}`}.</div>}
+            </div>
+          </div>
         </div>
       )}
 
@@ -286,12 +335,22 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
                     </tr>
                   );
                 })}
+                {externalFrom && (
+                  <tr>
+                    <th scope="row"><i className="ps-dot" style={{ background: EXT_COLOR }} aria-hidden="true" />{EXT_NAME}</th>
+                    {tableYears.map(y => {
+                      const n = external.filter(x => extYear(x) === y).length;
+                      return <td key={y} style={{ background: shade(n) }} {...bind(`${EXT_NAME}, ${y}`, plural(n, 'project'))}>{n || <span className="ps-zero">0</span>}</td>;
+                    })}
+                    <td className="ps-sum">{external.length}</td>
+                  </tr>
+                )}
               </tbody>
               <tfoot>
                 <tr>
                   <th scope="row">All types</th>
-                  {tableYears.map(y => <td key={y}>{all.filter(p => yearOf(p) === y).length}</td>)}
-                  <td className="ps-sum">{all.length}</td>
+                  {tableYears.map(y => <td key={y}>{all.filter(p => yearOf(p) === y).length + external.filter(x => extYear(x) === y).length}</td>)}
+                  <td className="ps-sum">{all.length + external.length}</td>
                 </tr>
               </tfoot>
             </table>

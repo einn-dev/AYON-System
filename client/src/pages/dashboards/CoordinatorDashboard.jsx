@@ -59,7 +59,7 @@ const Overview = ({ proposals }) => {
           </tbody>
         </table>
       </div>
-      <ProposalStats proposals={proposals} groupBy="department" />
+      <ProposalStats proposals={proposals} groupBy="department" externalFrom="/external/college" />
     </>
   );
 };

@@ -80,7 +80,7 @@ const Overview = ({ proposals }) => {
           </tbody>
         </table>
       </div>
-      <ProposalStats proposals={proposals} groupBy="college" />
+      <ProposalStats proposals={proposals} groupBy="college" externalFrom="/external" />
     </>
   );
 };

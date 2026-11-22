@@ -3,12 +3,13 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './Reports.css';
 import {
-  FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaHandHoldingDollar, FaTableList,
+  FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableList,
   FaRotateLeft, FaFilePdf, FaFileCsv, FaUserPen,
 } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { HBars, Columns, Ring, useTip, TYPE_COLOR, OLD_TYPE_COLOR } from '../../components/ProposalStats';
+import { SDGS } from '../../utils/sdgs';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
@@ -23,6 +24,8 @@ const REPORT_TYPES = [
     desc: 'Every proposal: researcher, college, type, status and who has it now.', csv: true },
   { key: 'grants',     icon: <FaHandHoldingDollar />, color: 'teal',   label: 'Grants and Incentives',
     desc: 'Travel, oral presentation and publication applications with their amounts.', csv: true },
+  { key: 'external',   icon: <FaGlobe />,             color: 'cyan',   label: 'External Research',
+    desc: 'Externally funded research: leader, funder, amount and SDGs, in the order of VCRED\'s report.', csv: true },
   { key: 'repository', icon: <FaBoxArchive />,        color: 'purple', label: 'Research Repository',
     desc: 'Research stored in the repository.', csv: true },
   { key: 'summary',    icon: <FaChartColumn />,       color: 'maroon', label: 'Summary',
@@ -55,6 +58,9 @@ const toParams = (f) => {
 };
 
 const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
+const peso = (v) => `₱${Number(v || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/* External Research: uploaded to the Research Repository, no approval steps */
+const EXT_COLOR = '#127b8f';
 const plural = (n, w = 'proposal') => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /* stage colors (same as the dashboards) */
@@ -226,7 +232,19 @@ const ReportsPage = () => {
 
   const t = summary?.totals;
   const isDefault = JSON.stringify(filters) === JSON.stringify(EMPTY);
-  const typeRows = (summary?.by_type || []).map(x => ({ name: x.label, count: x.count, color: TYPE_COLOR[x.type] || OLD_TYPE_COLOR }));
+  const ext = summary?.external;
+  const typeRows = [
+    ...(summary?.by_type || []).map(x => ({ name: x.label, count: x.count, color: TYPE_COLOR[x.type] || OLD_TYPE_COLOR })),
+    ...(ext?.total ? [{ name: 'External Research (uploaded)', count: ext.total, color: EXT_COLOR }] : []),
+  ];
+  const typeTotal = (t?.total || 0) + (ext?.total || 0);
+  /* By College: proposals, plus colleges that only have External Research */
+  const extByCollege = Object.fromEntries((ext?.by_college || []).map(c => [c.name, c]));
+  const collegeRows = [
+    ...(summary?.by_college || []),
+    ...(ext?.by_college || []).filter(c => !(summary?.by_college || []).some(p => p.name === c.name))
+      .map(c => ({ name: c.name, total: 0, at_college: 0, in_office: 0, returned: 0, approved: 0, rejected: 0, approval_rate: null })),
+  ];
   const timeline = summary?.timeline || { unit: 'month', points: [] };
   /* many months: label every other month (January always, with its year) so the labels fit */
   const dense = timeline.points.length > 12;
@@ -334,9 +352,9 @@ const ReportsPage = () => {
       {/* By type + over time */}
       <div className="rp-row">
         <div className="panel rp-panel">
-          <div className="panel-header"><h2>By Type</h2><small>{t ? plural(t.total, 'submission') : ''}</small></div>
+          <div className="panel-header"><h2>By Type</h2><small>{t ? `${plural(t.total, 'submission')}${ext?.total ? ` · ${ext.total} external` : ''}` : ''}</small></div>
           <div className="rp-pad">
-            {summary ? <HBars rows={typeRows} total={t?.total} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
+            {summary ? <HBars rows={typeRows} total={typeTotal} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
           </div>
         </div>
         <div className="panel rp-panel">
@@ -352,6 +370,45 @@ const ReportsPage = () => {
         </div>
       </div>
 
+      {/* External Research: uploaded to the Research Repository (no approval steps) */}
+      <div className="panel rp-panel rp-ext">
+        <div className="panel-header">
+          <h2>External Research</h2>
+          <small>externally funded, uploaded to the Research Repository · period and college filters</small>
+        </div>
+        {!ext ? <div className="empty-state"><p>Loading…</p></div> : (
+          <div className="rp-ext-body">
+            <div className="rp-ext-nums">
+              <div><span>Projects</span><b>{ext.total}</b></div>
+              <div><span>Total Funding</span><b>{peso(ext.funding)}</b></div>
+              <div><span>Colleges</span><b>{ext.colleges}</b></div>
+            </div>
+            <div className="rp-ext-col">
+              <h4>By college</h4>
+              {ext.total
+                ? <HBars rows={ext.by_college.map(c => ({ name: c.name, count: c.count }))} total={ext.total} bind={bind} color={EXT_COLOR} />
+                : <div className="ps-empty">No external research in these filters.</div>}
+            </div>
+            <div className="rp-ext-col">
+              <h4>SDGs hit</h4>
+              {ext.by_sdg.length ? (
+                <ul className="rp-sdgs">
+                  {ext.by_sdg.map(({ sdg, count }) => {
+                    const [, name, color] = SDGS[sdg - 1];
+                    return (
+                      <li key={sdg} style={{ '--sdg': color }} tabIndex={0} aria-label={`SDG ${sdg}, ${name}: ${plural(count, 'project')}`}
+                        {...bind(`SDG ${sdg}: ${name}`, plural(count, 'project'))}>
+                        <i>{sdg}</i><span>{name}</span><b>{count}</b>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : <div className="ps-empty">No SDGs yet.</div>}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* By college */}
       <div className="panel rp-panel">
         <div className="panel-header"><h2>By College</h2><small>approval rate = approved ÷ decided</small></div>
@@ -361,10 +418,11 @@ const ReportsPage = () => {
               <tr>
                 <th>College</th><th className="rp-n">Total</th><th className="rp-stack-h">Where they stand</th>
                 <th className="rp-n">Approved</th><th className="rp-n">Rejected</th><th className="rp-n">Approval Rate</th>
+                <th className="rp-n" title="Externally funded research uploaded by this college">External</th>
               </tr>
             </thead>
             <tbody>
-              {(summary?.by_college || []).map(c => (
+              {collegeRows.map(c => (
                 <tr key={c.name}>
                   <td>{c.name}</td>
                   <td className="rp-n"><b>{c.total}</b></td>
@@ -372,10 +430,11 @@ const ReportsPage = () => {
                   <td className="rp-n">{c.approved}</td>
                   <td className="rp-n">{c.rejected}</td>
                   <td className="rp-n"><span className="rp-rate-pill">{pct(c.approval_rate)}</span></td>
+                  <td className="rp-n">{extByCollege[c.name]?.count || 0}</td>
                 </tr>
               ))}
-              {summary && summary.by_college.length === 0 && (
-                <tr><td colSpan={6}><div className="empty-state"><p>No proposals match these filters.</p></div></td></tr>
+              {summary && collegeRows.length === 0 && (
+                <tr><td colSpan={7}><div className="empty-state"><p>No proposals match these filters.</p></div></td></tr>
               )}
             </tbody>
           </table>
@@ -389,7 +448,7 @@ const ReportsPage = () => {
       {/* Downloads */}
       <div className="rp-section-h">
         <h2>Download a Report</h2>
-        <span>Every download uses the filters above. Grants and Repository use the period and college only.</span>
+        <span>Every download uses the filters above. External Research and Repository use the period and college only.</span>
       </div>
       <div className="rp-dl">
         {REPORT_TYPES.map(r => (

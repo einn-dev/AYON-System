@@ -168,3 +168,19 @@
   .rp-loading i { animation: none; }
   .rp-node, .rp-dl-card { transition: none; }
 }
+/* ── External Research (externally funded, uploaded to the Research Repository) ── */
+.rp-dl-card.cyan { --dc: #127b8f; --dc-tint: #e8f5f7; }
+.rp-ext-body { display: grid; grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.2fr); gap: 18px; padding: 6px 20px 18px; }
+@media (max-width: 1000px) { .rp-ext-body { grid-template-columns: 1fr; } }
+.rp-ext-nums { display: grid; gap: 10px; align-content: start; }
+.rp-ext-nums div { background: #e8f5f7; border-radius: 10px; padding: 10px 14px; border-left: 4px solid #127b8f; }
+.rp-ext-nums span { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #4d6b70; }
+.rp-ext-nums b { font-size: 1.35rem; color: #0d5c6b; }
+.rp-ext-col h4 { margin: 0 0 8px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6b5e61; }
+.rp-sdgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rp-sdgs li { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: #3d3235; padding: 4px 8px; border-radius: 8px; border: 1px solid #eee6e7; }
+.rp-sdgs li:hover, .rp-sdgs li:focus { border-color: var(--sdg); outline: none; }
+.rp-sdgs i { font-style: normal; width: 22px; height: 22px; border-radius: 6px; background: var(--sdg); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.74rem; flex-shrink: 0; }
+.rp-sdgs span { flex: 1; min-width: 0; }
+.rp-sdgs b { color: #0d5c6b; }
+.rp-dl { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }   /* 5 report cards */

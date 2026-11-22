@@ -44,7 +44,7 @@ const Overview = ({ proposals }) => (
         </tbody>
       </table>
     </div>
-    <ProposalStats proposals={proposals} groupBy={null} />
+    <ProposalStats proposals={proposals} groupBy={null} externalFrom="/external/college" />
   </>
 );
 
