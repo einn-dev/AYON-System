@@ -110,6 +110,17 @@ const GRANT_FORMS = {
         { k: 'guidelines',    label: 'The extended abstract follows the Research Spotlight guidelines' },
         { k: 'waiver',        label: 'Faculty Waiver Form is attached (student thesis entry)', optional: true },
       ] },
+      /* the college checklist (Chairperson to College Dean), checked again by the MSIRC Special Assistant;
+         the MSIRC Director only views it */
+      special_assistant: { college: true, items: [
+        { k: 'not_presented', label: 'The paper has not yet been presented in any conference, symposium or forum elsewhere' },
+        { k: 'research_work', label: 'The paper is a product of a research work' },
+        { k: 'guidelines',    label: 'The extended abstract follows the Research Spotlight guidelines' },
+        { k: 'waiver',        label: 'Faculty Waiver Form is attached (student thesis entry)', optional: true },
+        { k: 'signed_chair',  label: 'The Certification and Endorsement is signed by the Department Chairperson' },
+        { k: 'signed_coord',  label: 'The Certification and Endorsement is signed by the College Research Coordinator' },
+        { k: 'signed_dean',   label: 'The Certification and Endorsement is signed by the College Dean' },
+      ], hint: 'The college checklist. Check each item again before you forward the entry. If something is missing, return it with your remarks.' },
     },
   },
 
@@ -152,7 +163,21 @@ const GRANT_FORMS = {
       { label: 'Curriculum Vitae of Proponent(s)', required: true, hint: 'Section (16): one file with the CV of each proponent.' },
       { label: 'Research Ethics, Biosafety or IACUC Clearance', hint: 'Attach it if you already have it. If it is not out yet, you can still submit. If an office asks for it, you can attach it when you resubmit.' },
     ],
-    steps: {},
+    /* Form 005 has no checklist for the college offices, so the MSIRC Special Assistant checks
+       the whole application here (what the college endorsed); the MSIRC Director only views it */
+    steps: {
+      special_assistant: { college: true, items: [
+        { k: 'complete',  label: 'Form 005 is complete, sections (1) to (17)' },
+        { k: 'cv',        label: 'Curriculum Vitae of each proponent is attached' },
+        { k: 'budget',    label: 'The budget is not more than ₱50,000.00, with no honoraria for the project leader or members' },
+        { k: 'months',    label: 'The work plan is within 5 months' },
+        { k: 'agenda',    label: 'The R&D Priority Area is from the MSU-Main Campus R&D Agenda 2023-2028' },
+        { k: 'clearance', label: 'Research Ethics, Biosafety or IACUC Clearance is attached', optional: true },
+        { k: 'endorsed_chair', label: 'Endorsed by the Department Chairperson' },
+        { k: 'endorsed_coord', label: 'Endorsed by the College Research Coordinator' },
+        { k: 'endorsed_dean',  label: 'Endorsed by the College Dean' },
+      ], hint: 'Check each item before you forward the proposal. If something is missing, return it with your remarks.' },
+    },
   },
 
   '001': {

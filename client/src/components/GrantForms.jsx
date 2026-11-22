@@ -565,10 +565,57 @@ export const FormGuide = ({ form }) => (form && form.guide ? (
 /* ── An office's step on the form ──   value = { ticks: [], answers: {} } */
 export const EMPTY_CHECK = { ticks: [], answers: {} };
 
+const COLLEGE_ROLES = ['chairperson', 'research_coordinator', 'college_dean'];
+
+/* the college offices that ticked the same item on their own step */
+const collegeTicks = (proposal, form, k) => COLLEGE_ROLES.filter((r) => {
+  const step = form.steps[r];
+  const check = ((proposal && proposal.form_checks) || []).find((c) => c.role === r);
+  return step && check && (step.items || []).some((it) => it.k === k) && (check.ticks || []).includes(k);
+});
+
+/* the MSIRC Special Assistant's checklist, read only (what the MSIRC Director sees) */
+const CheckedView = ({ proposal, form }) => {
+  const step = form.steps.special_assistant;
+  const check = ((proposal && proposal.form_checks) || []).find((c) => c.role === 'special_assistant');
+  const ticks = (check && check.ticks) || [];
+  return (
+    <div className="gf-check gf-check-ro">
+      <p className="gf-check-title">{formLabel(form)}: checklist <span className="gf-ro-tag">View only</span></p>
+      <p className="gf-check-hint">
+        {check ? `Checked by the MSIRC Special Assistant${check.signer_name ? `, ${check.signer_name}` : ''}.` : 'Not checked yet by the MSIRC Special Assistant.'}
+        {' '}Review the application, then sign.
+      </p>
+      <ul className="gf-ro-list">
+        {(step.items || []).map((it) => {
+          const on = ticks.includes(it.k);
+          return (
+            <li key={it.k} className={on ? 'on' : ''}>
+              <span className="gf-ro-box" aria-hidden="true">{on && <FaCheck />}</span>
+              <span>{it.label}{it.optional && <em> (if it applies)</em>}
+                <span className="gf-sr">{on ? ': checked' : ': not checked'}</span>
+                {collegeTicks(proposal, form, it.k).map((r) => (
+                  <small key={r} className="gf-by"><FaCheck aria-hidden="true" /> {ROLE_LABEL[r]}</small>
+                ))}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
 export const FormChecklist = ({ proposal, role, value, onChange, disabled = false }) => {
   const form = formOf(proposal);
   const step = stepOf(proposal, role);
-  if (!form || !Object.keys(form.steps || {}).length) return null;   // e.g. Form 005 has no office checklist
+  if (!form || !Object.keys(form.steps || {}).length) return null;
+  const sa = form.steps.special_assistant;
+  /* the college checklist that the MSIRC Special Assistant checks again (Research Spotlight, Form 005):
+     the MSIRC Director only views it */
+  if (!step && role === 'msric_director' && sa && sa.college) return <CheckedView proposal={proposal} form={form} />;
+  /* Form 005 has no checklist for the college offices */
+  if (!step && COLLEGE_ROLES.includes(role) && !COLLEGE_ROLES.some((r) => form.steps[r])) return null;
   if (!step) {
     return (
       <div className="gf-check">
@@ -596,7 +643,11 @@ export const FormChecklist = ({ proposal, role, value, onChange, disabled = fals
         return (
           <label key={it.k} className={`gf-tick${on ? ' on' : ''}`}>
             <input type="checkbox" checked={on} disabled={disabled} onChange={() => tick(it.k)} data-tick={it.k} />
-            <span>{it.label}{it.optional && <em> (if it applies)</em>}</span>
+            <span>{it.label}{it.optional && <em> (if it applies)</em>}
+              {step.college && collegeTicks(proposal, form, it.k).map((r) => (
+                <small key={r} className="gf-by"><FaCheck aria-hidden="true" /> {ROLE_LABEL[r]}</small>
+              ))}
+            </span>
           </label>
         );
       })}

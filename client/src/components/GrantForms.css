@@ -238,3 +238,29 @@
 .gf-budget-sum tr.gf-bsum-grp td { font-weight: 400; color: #6b5e61; }
 .gf-bgrp-row td { font-weight: 600; font-style: italic; color: #4a3d40; }
 .gf-bsub.light td { font-weight: 500; color: #6b5e61; }
+
+/* the college checklist checked again by the MSIRC Special Assistant (Research Spotlight, Form 005) */
+.gf-by {
+  display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 1px 7px;
+  border-radius: 999px; background: #eef6f0; color: #276749; font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+}
+.gf-by svg { font-size: 0.6rem; }
+/* the MSIRC Director's view of it */
+.gf-check-ro { border-left-color: #b9a6a9; }
+.gf-ro-tag {
+  margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: #f1ebec; color: #6b5e61;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; vertical-align: 1px;
+}
+.gf-ro-list { list-style: none; margin: 0; padding: 0; }
+.gf-ro-list li {
+  display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; margin-bottom: 6px;
+  border: 1px solid #eee6e7; border-radius: 8px; background: #fff; font-size: 0.84rem; color: #6b5e61; line-height: 1.4;
+}
+.gf-ro-list li.on { border-color: #c6ebd2; background: #f6fcf8; color: #22543d; }
+.gf-ro-list em { color: #8a7a7d; font-style: normal; }
+.gf-ro-box {
+  width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; border-radius: 4px; border: 1.5px solid #cfc3c5;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; color: #fff;
+}
+.gf-ro-list li.on .gf-ro-box { background: #276749; border-color: #276749; }
+.gf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
