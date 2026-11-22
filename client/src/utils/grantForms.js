@@ -241,6 +241,7 @@ const GRANT_FORMS = {
       { label: 'Request Letter', required: true, hint: 'Explain how the conference is relevant to your academic or research interests.' },
       { label: 'Invitation Letter or Proof of Registration', required: true },
       { label: 'Official Call or Announcement of the Conference', required: true },
+      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
     ],
     steps: {
       chairperson: { items: [
@@ -281,6 +282,7 @@ const GRANT_FORMS = {
       { label: 'Presentation Article', required: true },
       { label: 'Certificate of Presentation', required: true, hint: 'Research Spotlight and the international conference, in one file.' },
       { label: 'Special Order (S.O.)', required: true },
+      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
     ],
     steps: {
@@ -325,6 +327,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Request Letter', required: true },
       { label: 'Published Article', required: true },
+      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
     ],
     steps: {
@@ -366,6 +369,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Request Letter', required: true },
       { label: 'Copy of the Book or Chapter', required: true },
+      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
       { label: 'CHED and DepEd Recognition or ISBN Record', hint: 'Certificate of recognition, or the ISBN Directory entry of the National Library of the Philippines.' },
       { label: 'Certification That Schools Use the Book', hint: 'From at least two DepEd schools or SUCs outside the MSU System.' },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
