@@ -9,7 +9,9 @@ const supabase = require('../config/supabase');
    ───────────────────────────────────────────────────────────── */
 
 const MAX_MB          = 10;
-const MAX_SUPPORTING  = 4;
+/* Form 003 asks for 10 supporting documents (MSIRC's checklist), so the limit is 10.
+   My Research (no form) still offers only 4 on the screen. */
+const MAX_SUPPORTING  = 10;
 const MAX_FILES       = 1 + MAX_SUPPORTING;
 const LABEL_MAX       = 60;
 const MAIN_LABEL      = 'Main Proposal Document';

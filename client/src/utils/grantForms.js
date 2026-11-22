@@ -241,7 +241,7 @@ const GRANT_FORMS = {
       { label: 'Request Letter', required: true, hint: 'Explain how the conference is relevant to your academic or research interests.' },
       { label: 'Invitation Letter or Proof of Registration', required: true },
       { label: 'Official Call or Announcement of the Conference', required: true },
-      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
+      { label: 'Certification on Active Duty', hint: 'Issued and signed by your College Dean.' },
     ],
     steps: {
       chairperson: { items: [
@@ -279,10 +279,15 @@ const GRANT_FORMS = {
     ],
     docs: [
       { label: 'Request Letter', required: true },
-      { label: 'Presentation Article', required: true },
-      { label: 'Certificate of Presentation', required: true, hint: 'Research Spotlight and the international conference, in one file.' },
+      { label: 'Notice of Acceptance', required: true, hint: 'From the conference organizers.' },
+      { label: 'Presentation Article', required: true, hint: 'The full paper.' },
+      { label: 'Certificate of Presentation', required: true, hint: 'From the Research Spotlight.' },
+      { label: 'Certificate of Recognition from the Conference', required: true },
       { label: 'Special Order (S.O.)', required: true },
       { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
+      { label: 'Proof of Travel', hint: 'Ticket or stamped passport. Not needed if you presented online.' },
+      { label: 'Photo Documentation at the Conference', required: true, hint: 'Screenshots if you presented online.' },
+      { label: 'Conference Programme', required: true },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
     ],
     steps: {
@@ -298,7 +303,25 @@ const GRANT_FORMS = {
         { k: 'so',          label: 'S.O. (Special Order)' },
         { k: 'ors_dv',      label: '4 copies of ORS and DV' },
       ] },
-      special_assistant: {
+      /* MSIRC's "Requirements for processing Presentation Cash Incentives" (14 items);
+         the MSIRC Director only views it */
+      special_assistant: { college: true,
+        items: [
+          { k: 'form',         label: 'MSIRC Form No. 003' },
+          { k: 'ors_dv',       label: 'Obligation Request and Disbursement Voucher (4 copies)' },
+          { k: 'request',      label: 'Request Letter' },
+          { k: 'acceptance',   label: 'Notice of Acceptance' },
+          { k: 'article',      label: 'Full paper of the presentation article' },
+          { k: 'bor',          label: 'BOR Resolution No. 272, Series of 2019' },
+          { k: 'waiver',       label: 'Consent/waiver from the co-authors', optional: true },
+          { k: 'active_duty',  label: 'Certification of on-active duty' },
+          { k: 'certificate',  label: 'Certificate of Presentation during Spotlight' },
+          { k: 'recognition',  label: 'Certificate of Recognition from the Conference' },
+          { k: 'so',           label: 'Special Order' },
+          { k: 'travel',       label: 'Proof of Travel (Ticket/Stamped passport)', optional: true },
+          { k: 'photos',       label: 'Photo Documentation at the conference' },
+          { k: 'programme',    label: 'Conference Programme' },
+        ],
         inputs: [
           { k: 'date_started', label: 'Research Date Started', type: 'date' },
           { k: 'date_ended',   label: 'Date Ended', type: 'date', after: 'date_started' },
@@ -306,7 +329,7 @@ const GRANT_FORMS = {
           { k: 'fund_amount',  label: 'Amount of Fund (₱)', type: 'money' },
           { k: 'amount',       label: 'Eligible for Incentive, Amount (₱)', type: 'money', required: true },
         ],
-        hint: 'If the application is not eligible, return it with your remarks instead.',
+        hint: 'MSIRC\'s checklist for Presentation Cash Incentives. Check each item, then fill in the amount. If something is missing or the application is not eligible, return it with your remarks.',
       },
     },
   },
@@ -327,7 +350,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Request Letter', required: true },
       { label: 'Published Article', required: true },
-      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
+      { label: 'Certification on Active Duty', hint: 'Issued and signed by your College Dean.' },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
     ],
     steps: {
@@ -369,7 +392,7 @@ const GRANT_FORMS = {
     docs: [
       { label: 'Request Letter', required: true },
       { label: 'Copy of the Book or Chapter', required: true },
-      { label: 'Certification on Active Duty', required: true, hint: 'Issued and signed by your College Dean.' },
+      { label: 'Certification on Active Duty', hint: 'Issued and signed by your College Dean.' },
       { label: 'CHED and DepEd Recognition or ISBN Record', hint: 'Certificate of recognition, or the ISBN Directory entry of the National Library of the Philippines.' },
       { label: 'Certification That Schools Use the Book', hint: 'From at least two DepEd schools or SUCs outside the MSU System.' },
       { label: 'Consent or Waiver of Co-authors', hint: 'Only if there are 2 or more authors.' },
