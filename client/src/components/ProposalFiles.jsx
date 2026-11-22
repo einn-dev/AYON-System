@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare, FaDownload } from 'react-icons/fa6';
 import './ProposalFiles.css';
+import API from '../services/authService';
 import { GrantFormView, mainDocLabel } from './GrantForms';
 
 /* ─────────────────────────────────────────────────────────────
@@ -44,17 +45,64 @@ export const downloadHref = (fp, name) => {
   return `${url}${url.includes('?') ? '&' : '?'}download=${encodeURIComponent(file)}`;
 };
 
+/* Files are private: the server checks who is asking and gives a link that works for a few minutes.
+   Returns that link, or the stored one when it is not in our storage. */
+const isStorage = (fp) => /\/storage\/v1\/object\//i.test(String(fp || ''));
+export const fileLink = async (fp, download) => {
+  if (!isStorage(fp)) return download ? downloadHref(fp, download) : rawHref(fp);
+  const res = await API.get('/files/link', { params: { path: fp, ...(download ? { download } : {}) } });
+  return res.data.url;
+};
+const linkError = (err) => (err?.response?.status === 401 ? 'Please sign in to open this file.'
+  : err?.response?.status === 403 ? 'You cannot open this file.'
+  : 'Could not open the file. Please try again.');
+
 /* View + Download, side by side */
-export const FileButtons = ({ path, name, label = 'document', small = true }) => (path ? (
-  <span className="pf-btns">
-    <a className={`btn btn-outline ${small ? 'btn-sm' : ''}`} href={fileHref(path)} target="_blank" rel="noreferrer" aria-label={`View ${label} in a new tab`}>
-      View <FaArrowUpRightFromSquare className="ic-r" />
-    </a>
-    <a className={`btn btn-outline ${small ? 'btn-sm' : ''}`} href={downloadHref(path, name)} download={name || true} aria-label={`Download ${label}`}>
-      <FaDownload className="ic" />Download
-    </a>
-  </span>
-) : null);
+export const FileButtons = ({ path, name, label = 'document', small = true }) => {
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+  if (!path) return null;
+  const fileName = name || decodeURIComponent(String(path).split('?')[0].split('/').pop() || 'document');
+
+  /* the new tab opens right away (so the browser does not block it), then gets the link */
+  const view = async () => {
+    setErr(''); setBusy('view');
+    const tab = window.open('', '_blank');
+    try {
+      const url = await fileLink(path);
+      const href = isWord(path) && /^https:\/\//i.test(url)
+        ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+        : url;
+      if (tab) { tab.opener = null; tab.location.href = href; } else window.location.href = href;
+    } catch (e) {
+      if (tab) tab.close();
+      setErr(linkError(e));
+    } finally { setBusy(''); }
+  };
+  const download = async () => {
+    setErr(''); setBusy('download');
+    try {
+      const url = await fileLink(path, fileName);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName; a.rel = 'noreferrer';
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch (e) {
+      setErr(linkError(e));
+    } finally { setBusy(''); }
+  };
+
+  return (
+    <span className="pf-btns">
+      <button type="button" className={`btn btn-outline ${small ? 'btn-sm' : ''}`} onClick={view} disabled={!!busy} aria-label={`View ${label} in a new tab`}>
+        {busy === 'view' ? 'Opening...' : <>View <FaArrowUpRightFromSquare className="ic-r" /></>}
+      </button>
+      <button type="button" className={`btn btn-outline ${small ? 'btn-sm' : ''}`} onClick={download} disabled={!!busy} aria-label={`Download ${label}`}>
+        <FaDownload className="ic" />{busy === 'download' ? 'Preparing...' : 'Download'}
+      </button>
+      {err && <span role="alert" style={{ flexBasis: '100%', color: '#c53030', fontSize: '0.78rem' }}>{err}</span>}
+    </span>
+  );
+};
 
 const extOf  = (name) => String(name || '').split('?')[0].split('.').pop().toLowerCase();
 const nameOf = (f) => f.file_name || decodeURIComponent(String(f.file_path || '').split('?')[0].split('/').pop() || 'Document');
