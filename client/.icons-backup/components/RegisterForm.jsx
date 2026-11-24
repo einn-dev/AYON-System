@@ -202,7 +202,7 @@ const RegisterForm = () => {
           <div className="form-group reg-half">
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
+              onChange={handleChange} placeholder="yourname@gmail.com" autoComplete="off" />
           </div>
 
           <div className="form-group reg-half">

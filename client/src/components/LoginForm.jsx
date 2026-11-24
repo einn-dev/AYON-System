@@ -142,7 +142,7 @@ const LoginForm = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="you@msumain.edu.ph"
+              placeholder="you@gmail.com"
               autoComplete="off"
             />
           </div>
