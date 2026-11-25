@@ -180,7 +180,9 @@ const Layout = ({ children, navItems, role }) => {
             {item.account && <div className="nav-section" aria-hidden="true">Account</div>}
             <NavLink
               to={item.path}
-              onClick={() => setMenuOpen(false)}
+              /* on a computer, opening a page folds the sidebar to its icons; ☰ opens it again */
+              onClick={() => { setMenuOpen(false); if (!phone) setCollapsed(true); }}
+              title={collapsed && !phone ? item.label : undefined}
               className={({ isActive }) =>
                 `nav-item ${isActive ? 'active' : ''}`
               }
