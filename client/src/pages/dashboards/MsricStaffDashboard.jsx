@@ -20,8 +20,8 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 const NAV_ITEMS = [
   { path: '/msric-staff/dashboard',      label: 'Dashboard',       icon: <FaTableCellsLarge /> },
   { path: '/msric-staff/submissions',    label: 'All Submissions',     icon: <FaInbox /> },
-  { path: '/msric-staff/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/msric-staff/external',   label: 'External Research', icon: <FaGlobe /> },
+  { path: '/msric-staff/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/msric-staff/notifications',  label: 'Notifications',    icon: <FaBell /> },
 ];
 

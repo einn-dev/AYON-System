@@ -35,8 +35,8 @@ const NAV_ITEMS = [
   { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines /> },
   { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
   { path: '/researcher/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
-  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
+  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
   
 ];
