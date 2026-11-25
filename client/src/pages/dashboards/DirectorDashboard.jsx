@@ -370,7 +370,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       </button>
 
                       {/* Return to the researcher (a reason is required) */}
-                      <button className="btn btn-outline"
+                      <button className="btn btn-warning"
                         disabled={saving}
                         onClick={() => setReturning(selected)}>
                         <FaRotateLeft className="ic" />Return to Researcher

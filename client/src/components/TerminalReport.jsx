@@ -472,7 +472,7 @@ export const TerminalReportsPage = () => {
                 {A.sign && <SignConfirm key={sel.report_id} onReady={setSignReady} verb="endorse" noun="terminal report" disabled={!!busy} />}
                 {err && <div className="alert alert-error" role="alert">{err}</div>}
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-danger" disabled={!!busy} onClick={() => act('return')}>{busy === 'return' ? 'Returning...' : 'Return to Researcher'}</button>
+                  <button type="button" className="btn btn-warning" disabled={!!busy} onClick={() => act('return')}>{busy === 'return' ? 'Returning...' : 'Return to Researcher'}</button>
                   <button type="button" className="btn btn-success" disabled={!!busy} onClick={() => act('approve')}>{busy === 'approve' ? 'Saving...' : A.verb}</button>
                 </div>
               </div>

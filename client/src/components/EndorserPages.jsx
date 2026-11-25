@@ -302,7 +302,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                   title={signReady ? undefined : 'Tick the box under your signature first'}>
                   {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse and Sign</>}
                 </button>
-                <button className="btn btn-danger" disabled={saving}
+                <button className="btn btn-warning" disabled={saving}
                   onClick={() => (noteOk ? setConfirming(true) : send('returned'))}>
                   <FaRotateLeft className="ic" />Return to Researcher
                 </button>
@@ -314,7 +314,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                   After they resubmit, it starts again from the College Chairperson.
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-danger btn-sm" disabled={saving} onClick={() => send('returned')}>
+                  <button className="btn btn-warning btn-sm" disabled={saving} onClick={() => send('returned')}>
                     {saving ? 'Returning...' : 'Yes, Return It'}
                   </button>
                   <button className="btn btn-outline btn-sm" disabled={saving} onClick={() => setConfirming(false)}>

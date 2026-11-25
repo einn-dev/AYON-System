@@ -286,26 +286,49 @@ html.ayon-app { font-size: 112.5%; }
 .badge-gray   { background: #f7f4f4; color: #6b5e61; }
 .badge-purple { background: #faf5ff; color: #6b46c1; }
 
-/* ── Buttons ── */
+/* ── Buttons ──
+   One look for every button in AYON:
+     btn-primary  main action (Save, Submit, Download PDF)
+     btn-success  approve / endorse / sign
+     btn-warning  return to the researcher for changes
+     btn-danger   reject / delete / deactivate (cannot be undone)
+     btn-outline  secondary (View, Cancel, Close)
+   Icons sit inside with an even gap; every kind has the same height. */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   padding: 8px 16px;
+  border: 1px solid transparent;
   border-radius: 8px;
+  font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
   cursor: pointer;
-  border: none;
-  transition: background 0.2s, transform 0.1s;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
 }
+.btn > .ic { flex-shrink: 0; margin: 0 !important; }   /* the gap above spaces the icon */
 .btn:active { transform: scale(0.98); }
-.btn-primary       { background: #8d1b2d; color: #fff; }
-.btn-primary:hover { background: #a72a3e; }
-.btn-success       { background: #276749; color: #fff; }
-.btn-success:hover { background: #2f855a; }
-.btn-danger        { background: #c53030; color: #fff; }
-.btn-danger:hover  { background: #e53e3e; }
-.btn-outline       { background: #fff; color: #5e1420; border: 1px solid #e0d3d5; }
-.btn-outline:hover { background: #faf7f7; }
-.btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+.btn:focus-visible { outline: 3px solid rgba(201, 162, 39, 0.6); outline-offset: 2px; }
+
+.btn-primary { background: #8d1b2d; color: #fff; }
+.btn-primary:not(:disabled):hover { background: #a72a3e; }
+.btn-success { background: #276749; color: #fff; }
+.btn-success:not(:disabled):hover { background: #2f855a; }
+.btn-warning { background: #fffaf0; color: #975a16; border-color: #f0d49b; }
+.btn-warning:not(:disabled):hover { background: #fdf0d8; border-color: #e5bf6f; }
+.btn-danger  { background: #c53030; color: #fff; }
+.btn-danger:not(:disabled):hover { background: #e53e3e; }
+.btn-outline { background: #fff; color: #5e1420; border-color: #e0d3d5; }
+.btn-outline:not(:disabled):hover { background: #faf7f7; border-color: #cdb8bb; }
+
+.btn-sm { padding: 5px 10px; font-size: 0.78rem; gap: 5px; }
+
+.btn:disabled,
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ── Forms ── */
 .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }

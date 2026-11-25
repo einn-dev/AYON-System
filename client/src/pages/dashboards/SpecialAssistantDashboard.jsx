@@ -202,7 +202,7 @@ const Submissions = ({ proposals, onRefresh }) => {
                 <td>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {p.status === 'submitted' && (
-                      <button className="btn btn-danger btn-sm"
+                      <button className="btn btn-warning btn-sm"
                         onClick={() => setReturning({
                           id: p.proposal_id, title: p.title,
                           name: personName(p),

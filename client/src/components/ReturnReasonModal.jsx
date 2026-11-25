@@ -74,7 +74,7 @@ const ReturnReasonModal = ({ title, researcher, onConfirm, onClose }) => {
 
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
-          <button type="button" className="btn btn-danger" onClick={send} disabled={!canSend}>
+          <button type="button" className="btn btn-warning" onClick={send} disabled={!canSend}>
             {saving ? 'Returning...' : 'Return to Researcher'}
           </button>
         </div>
