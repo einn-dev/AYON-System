@@ -158,7 +158,7 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
             <h2 id="pm-title">My Profile</h2>
             <p>{current.sub}</p>
           </div>
-          <button type="button" className="pm-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="btn-close" onClick={onClose} aria-label="Close">
             <FaXmark />
           </button>
         </div>

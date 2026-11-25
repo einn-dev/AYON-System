@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FaXmark } from 'react-icons/fa6';
 import API from '../services/authService';
 import './Resubmit.css';
 import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';
@@ -121,7 +122,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
             <h3 id="rs-title">Edit and Resubmit</h3>
             <p>Fix what the office asked for, then send it back.</p>
           </div>
-          <button type="button" className="rs-x" onClick={onClose} disabled={saving} aria-label="Close">✕</button>
+          <button type="button" className="btn-close" onClick={onClose} disabled={saving} aria-label="Close"><FaXmark /></button>
         </div>
 
         <div className="rs-returned">

@@ -54,8 +54,8 @@
 
 /* result window */
 .tb-sum { position: relative; max-width: 680px; max-height: 90vh; overflow: auto; }
-.tb-x { position: absolute; top: 12px; right: 12px; background: none; border: none; color: #8a7a7d; cursor: pointer; font-size: 1rem; padding: 4px; display: inline-flex; }
-.tb-sum-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding-right: 28px; }
+.tb-x { position: absolute; top: 12px; right: 12px; }
+.tb-sum-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding-right: 40px; }
 .tb-sum-head h3 { margin: 0; overflow-wrap: anywhere; }
 .tb-sub { font-size: 0.8rem; color: #8a7a7d; margin: 4px 0 12px; overflow-wrap: anywhere; }
 .tb-dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 14px; }

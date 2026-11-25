@@ -815,7 +815,7 @@ const FormPanel = ({ proposal, form, view, paper, onView, onClose }) => {
               <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => onView('list')}>List view</button>
             </div>
           )}
-          <button type="button" className="gf-x gf-panel-x" ref={closeRef} onClick={onClose} aria-label="Close the form"><FaXmark /></button>
+          <button type="button" className="btn-close" ref={closeRef} onClick={onClose} aria-label="Close the form"><FaXmark /></button>
         </div>
         <div className="gf-panel-body" ref={bodyRef}>
           {paper && view === 'form' ? <OriginalForm proposal={proposal} /> : <ListView proposal={proposal} form={form} />}

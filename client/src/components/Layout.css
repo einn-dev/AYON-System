@@ -330,6 +330,19 @@ html.ayon-app { font-size: 112.5%; }
 .btn:disabled,
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* the close (x) button of every pop-up and side panel */
+.btn-close {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border: 0; border-radius: 50%;
+  background: #f6eff0; color: #8d1b2d;
+  font-size: 1rem; cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-close:not(:disabled):hover { background: #ecdadd; color: #5e1420; }
+.btn-close:focus-visible { outline: 3px solid rgba(201, 162, 39, 0.6); outline-offset: 2px; }
+.btn-close:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ── Forms ── */
 .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .form-group label {

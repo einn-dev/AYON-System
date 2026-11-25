@@ -165,7 +165,7 @@ const ReportCard = ({ proposal, report }) => {
           <aside className="gf-panel" role="dialog" aria-modal="true" aria-label="MSIRC Form No. 007">
             <div className="gf-panel-head">
               <div className="gf-panel-title"><b>MSIRC Form No. 007</b><small>{proposal.title}</small></div>
-              <button type="button" className="gf-x gf-panel-x" onClick={() => setOpen(false)} aria-label="Close the form"><FaXmark /></button>
+              <button type="button" className="btn-close" onClick={() => setOpen(false)} aria-label="Close the form"><FaXmark /></button>
             </div>
             <div className="gf-panel-body">
               <div className="of-wrap">
@@ -264,7 +264,7 @@ export const TerminalReportForm = ({ proposal, report, onClose, onDone }) => {
           <span className="tr-formno">MSIRC Form No. 007</span>
           <h3>{report ? 'Fix and Resubmit the Terminal Report' : 'Submit the Terminal Report'}</h3>
           <p className="tr-sub">{proposal.title}</p>
-          <button type="button" className="gf-x tr-x" onClick={onClose} aria-label="Close"><FaXmark /></button>
+          <button type="button" className="btn-close tr-x" onClick={onClose} aria-label="Close"><FaXmark /></button>
         </div>
         {report?.status === 'returned' && report.return_reason && (
           <div className="rs-returned"><strong>Returned by the {report.returned_by_label || 'office'}</strong><p>{report.return_reason}</p></div>
@@ -458,7 +458,7 @@ export const TerminalReportsPage = () => {
               <span className="tr-formno">Terminal Report · MSIRC Form No. 007</span>
               <h3>{sel.title}</h3>
               <p className="tr-sub">{personName(sel)} · {sel.college}</p>
-              <button type="button" className="gf-x tr-x" onClick={() => setSel(null)} aria-label="Close"><FaXmark /></button>
+              <button type="button" className="btn-close tr-x" onClick={() => setSel(null)} aria-label="Close"><FaXmark /></button>
             </div>
             <ReportTracker report={sel} />
             <ReportCard proposal={sel} report={sel} />

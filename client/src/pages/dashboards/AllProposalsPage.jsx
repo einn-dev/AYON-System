@@ -7,7 +7,7 @@ import './AdminModule.css';
 import './ProposalOversight.css';
 import { errText, fmtWhen, Pager } from './adminShared';
 import { ProposalFiles } from '../../components/ProposalFiles';
-import { FaLock } from 'react-icons/fa6';
+import { FaLock, FaXmark } from 'react-icons/fa6';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL, typeChoices } from '../../utils/terms';
 
 /* ─────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
               {STATUS_LABELS[proposal.status] || proposal.status}
             </span>
           </div>
-          <button type="button" className="po-close" onClick={onClose} aria-label="Close">×</button>
+          <button type="button" className="btn-close" onClick={onClose} aria-label="Close"><FaXmark /></button>
         </div>
 
         <div className="po-body">

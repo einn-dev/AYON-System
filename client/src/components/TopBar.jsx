@@ -91,7 +91,7 @@ const Summary = ({ item, role, base, onClose }) => {
   return createPortal(
     <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal tb-sum" role="dialog" aria-modal="true" aria-label="Search result">
-        <button type="button" className="tb-x" onClick={onClose} aria-label="Close"><FaXmark /></button>
+        <button type="button" className="btn-close tb-x" onClick={onClose} aria-label="Close"><FaXmark /></button>
 
         {isProposal && (
           <>
