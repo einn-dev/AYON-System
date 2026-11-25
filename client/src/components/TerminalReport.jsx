@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaFileLines, FaXmark, FaCloudArrowUp, FaCheck, FaRotateLeft, FaFlagCheckered, FaCircleCheck, FaFilePdf, FaFileWord,
-  FaArrowLeft, FaArrowRight,
+  FaArrowRight,
 } from 'react-icons/fa6';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -416,7 +416,9 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
   const projects = useMemo(() => proposals.filter(canHaveTerminalReport)
     .sort((a, b) => new Date(b.decided_at || b.submitted_at || 0) - new Date(a.decided_at || a.submitted_at || 0)), [proposals]);
   const [reports, setReports] = useState(null);       // proposal_id -> report or null
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(null);         // View: the pop-up with the route and history
+  const [formId, setFormId] = useState(null);         // Submit / Fix and Resubmit: straight to Form 007
+  const [askId,  setAskId]  = useState(null);         // ?open=<id>, waiting for the reports to load
 
   const loadAll = useCallback(async () => {
     const pairs = await Promise.all(projects.map((p) => API.get(`/proposals/${p.proposal_id}/terminal-report`)
@@ -428,27 +430,23 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
   /* ?open=<id> */
   useEffect(() => {
     const id = new URLSearchParams(location.search).get('open');
-    if (id) { setOpenId(Number(id)); navigate(location.pathname, { replace: true }); }
+    if (id) { setAskId(Number(id)); navigate(location.pathname, { replace: true }); }
   }, [location.search, location.pathname, navigate]);
 
-  const opened = projects.find((p) => p.proposal_id === openId);
-  const back = () => { setOpenId(null); loadAll(); if (onRefresh) onRefresh(); };
+  /* nothing to read yet (no report, or returned): the form; otherwise the pop-up */
+  const act = useCallback((id) => {
+    const r = reports?.[id];
+    if (!r || r.status === 'returned') setFormId(id); else setOpenId(id);
+  }, [reports]);
+  useEffect(() => {
+    if (askId == null || !reports) return;
+    if (projects.some((p) => p.proposal_id === askId)) act(askId);
+    setAskId(null);
+  }, [askId, reports, projects, act]);
 
-  if (opened) {
-    return (
-      <>
-        <button type="button" className="btn btn-outline btn-sm" style={{ marginBottom: 16 }} onClick={back}>
-          <FaArrowLeft className="ic" />Back to Terminal Reports
-        </button>
-        <div className="panel tr-page-panel">
-          <div className="panel-header"><h2 style={{ overflowWrap: 'anywhere' }}>{opened.title}</h2></div>
-          <div style={{ padding: '16px 20px 4px' }}>
-            <TerminalReportBox proposal={opened} />
-          </div>
-        </div>
-      </>
-    );
-  }
+  const opened = projects.find((p) => p.proposal_id === openId);
+  const forForm = projects.find((p) => p.proposal_id === formId);
+  const close = () => { setOpenId(null); loadAll(); if (onRefresh) onRefresh(); };
 
   const counts = { all: projects.length, todo: 0, moving: 0, done: 0 };
   projects.forEach((p) => {
@@ -485,7 +483,7 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
                   <td>{reportBadge(r)}</td>
                   <td>
                     <button type="button" className={`btn btn-sm ${!r || r.status === 'returned' ? 'btn-primary' : 'btn-outline'}`}
-                      onClick={() => setOpenId(p.proposal_id)}>{label}</button>
+                      onClick={() => act(p.proposal_id)}>{label}</button>
                   </td>
                 </tr>
               );
@@ -499,6 +497,27 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Submit / Fix and Resubmit: Form 007 right away */}
+      {forForm && (
+        <TerminalReportForm proposal={forForm} report={reports?.[forForm.proposal_id] || null}
+          onClose={() => setFormId(null)}
+          onDone={() => { setFormId(null); loadAll(); if (onRefresh) onRefresh(); }} />
+      )}
+
+      {/* View: a pop-up over the list, like View Details on My Research */}
+      {opened && (
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+          <div className="modal" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Terminal Report"
+            onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ overflowWrap: 'anywhere' }}>{opened.title}</h3>
+            <TerminalReportBox proposal={opened} />
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline" onClick={close}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
