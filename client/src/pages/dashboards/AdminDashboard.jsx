@@ -14,7 +14,7 @@ import EmailLogPage from './EmailLogPage';
 import AdminRepositoryPage from './AdminRepositoryPage';
 import AdminGrantsPage from './AdminGrantsPage';
 import AdminAnnouncementsPage from './AdminAnnouncementsPage';
-import { FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLines, FaGlobe, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from 'react-icons/fa6';
+import { FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLines, FaGlobe, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from '../../utils/icons';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard',  label: 'Dashboard',             icon: <FaTableCellsLarge /> },

@@ -14,7 +14,7 @@ import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import RecordDetails from '../../components/RecordDetails';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaRotateLeft, FaTableCellsLarge, FaXmark } from '../../utils/icons';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';

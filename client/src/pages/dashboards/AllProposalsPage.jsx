@@ -7,7 +7,7 @@ import './AdminModule.css';
 import './ProposalOversight.css';
 import { errText, fmtWhen, Pager } from './adminShared';
 import { ProposalFiles } from '../../components/ProposalFiles';
-import { FaLock, FaXmark } from 'react-icons/fa6';
+import { FaLock, FaXmark } from '../../utils/icons';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL, typeChoices } from '../../utils/terms';
 import MessageToast from '../../components/MessageToast';
 

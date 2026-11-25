@@ -5,7 +5,7 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import { FaBell, FaBoxArchive, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
+import { FaBell, FaBoxArchive, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from '../../utils/icons';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { CollegeExternalPage } from './ExternalShared';
 import NotificationsPage from './NotificationsPage';

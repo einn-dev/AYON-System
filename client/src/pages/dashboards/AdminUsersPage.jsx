@@ -3,7 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import { COLLEGES, getDepartments } from '../../data/Colleges';
-import { FaCheck, FaLock, FaPlus } from 'react-icons/fa6';
+import { FaCheck, FaLock, FaPlus } from '../../utils/icons';
 import {
   ROLES, ROLE_LABELS, ROLES_NEED_COLLEGE, ROLES_NEED_DEPARTMENT,
   LOCKED_STYLE, roleBadge, userStatus, STATUS_META, errText,

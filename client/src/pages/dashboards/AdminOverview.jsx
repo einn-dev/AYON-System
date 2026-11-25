@@ -4,7 +4,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminOverview.css';
 import { ROLE_LABELS, roleBadge, userStatus, STATUS_META, errText } from './adminShared';
-import { FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaCircleCheck, FaTriangleExclamation } from '../../utils/icons';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { StageOverview, stagesOf, HBars, Columns, useTip, TYPE_COLOR, OLD_TYPE_COLOR, OFFERED } from '../../components/ProposalStats';
 import '../../components/ProposalStats.css';

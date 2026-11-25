@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FaDownload, FaLock } from 'react-icons/fa6';
+import { FaDownload, FaLock } from '../../utils/icons';
 import API from '../../services/authService';
 import { FileButtons } from '../../components/ProposalFiles';
 import { personName } from '../../utils/names';

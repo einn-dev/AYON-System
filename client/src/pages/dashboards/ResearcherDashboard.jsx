@@ -15,7 +15,7 @@ import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaFlagCheckered, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaFlagCheckered, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from '../../utils/icons';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType, repoTypeLabel } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import FormToast, { jumpTo } from '../../components/FormToast';

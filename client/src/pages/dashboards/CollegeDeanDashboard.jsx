@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TerminalReportsPage } from '../../components/TerminalReport';
-import { FaFlagCheckered } from 'react-icons/fa6';
+import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import { FaBell, FaBoxArchive, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
+import { FaBell, FaBoxArchive, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from '../../utils/icons';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { CollegeExternalPage } from './ExternalShared';
 import NotificationsPage from './NotificationsPage';

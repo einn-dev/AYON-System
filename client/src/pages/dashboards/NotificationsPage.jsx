@@ -3,7 +3,7 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import { useNavigate } from 'react-router-dom';
-import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature, FaChevronRight } from 'react-icons/fa6';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature, FaChevronRight } from '../../utils/icons';
 import { useAuth } from '../../context/AuthContext';
 import { notifTarget, timeAgo, fullTime } from '../../utils/notifLinks';
 

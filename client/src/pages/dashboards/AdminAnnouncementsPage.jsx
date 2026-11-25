@@ -8,7 +8,7 @@ import { errText } from './adminShared';
 import { ConfirmBox } from './AdminCatalogShared';
 import { AnnouncementCard, ANN_TYPES, ANN_CHANGED } from '../../components/Announcements';
 import { ROLE_LABEL } from '../../utils/terms';
-import { FaBullhorn, FaEye, FaEyeSlash, FaPen, FaPlus, FaTrashCan } from 'react-icons/fa6';
+import { FaBullhorn, FaEye, FaEyeSlash, FaPen, FaPlus, FaTrashCan } from '../../utils/icons';
 import MessageToast from '../../components/MessageToast';
 
 /* ─────────────────────────────────────────────────────────────

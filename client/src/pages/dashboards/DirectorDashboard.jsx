@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { TerminalReportsPage } from '../../components/TerminalReport';
-import { FaFlagCheckered } from 'react-icons/fa6';
+import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -16,7 +16,7 @@ import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
+import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from '../../utils/icons';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';

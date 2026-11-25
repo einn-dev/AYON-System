@@ -5,7 +5,7 @@ import './Reports.css';
 import {
   FaBoxArchive, FaChartColumn, FaDownload, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableList,
   FaRotateLeft, FaFilePdf, FaFileCsv, FaUserPen,
-} from 'react-icons/fa6';
+} from '../../utils/icons';
 import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { HBars, Columns, Ring, useTip, TYPE_COLOR, OLD_TYPE_COLOR } from '../../components/ProposalStats';

@@ -8,7 +8,7 @@ import API    from '../../services/authService';
 import '../../components/Layout.css';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
-import { FaBell, FaBoxArchive, FaGlobe, FaInbox, FaTableCellsLarge } from 'react-icons/fa6';
+import { FaBell, FaBoxArchive, FaGlobe, FaInbox, FaTableCellsLarge } from '../../utils/icons';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';

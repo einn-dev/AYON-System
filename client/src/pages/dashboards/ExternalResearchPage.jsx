@@ -3,7 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import '../../components/ProposalFiles.css';
 import './External.css';
-import { FaUpload } from 'react-icons/fa6';
+import { FaUpload } from '../../utils/icons';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import { useAuth } from '../../context/AuthContext';
 import { personName } from '../../utils/names';
