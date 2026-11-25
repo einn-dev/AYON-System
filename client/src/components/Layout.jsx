@@ -12,7 +12,7 @@ import ProfilePage from './ProfilePage';
 import AnnouncementBanner from './Announcements';
 import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
-import { FaChevronLeft, FaChevronRight, FaRightFromBracket, FaXmark, FaCircleUser } from 'react-icons/fa6';
+import { FaBars, FaRightFromBracket, FaXmark, FaCircleUser } from 'react-icons/fa6';
 import { personName } from '../utils/names';
 import { OPEN_PROFILE } from './Signature';
 import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
@@ -167,7 +167,7 @@ const Layout = ({ children, navItems, role }) => {
           ) : (
             <button type="button" className="collapse-btn" onClick={() => setCollapsed(!collapsed)}
               aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}>
-              {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+              <FaBars />
             </button>
           )}
         </div>
