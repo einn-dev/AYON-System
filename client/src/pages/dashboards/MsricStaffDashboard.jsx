@@ -13,6 +13,7 @@ import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL } from
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+import RepositoryBrowser from '../../components/RepositoryBrowser';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -160,70 +161,6 @@ const AllSubmissions = ({ proposals }) => {
   );
 };
 
-const Repository = () => {
-  const [items,   setItems]   = useState([]);
-  const [search,  setSearch]  = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    API.get('/repository').then(res => {
-      setItems(res.data.items || []);
-    }).catch(() => setItems([])).finally(() => setLoading(false));
-  }, []);
-
-  const filtered = items.filter(r =>
-    `${r.title} ${r.author}`.toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Research Repository</h1>
-        <p>Browse all archived research outputs in MSIRC.</p>
-      </div>
-      <div className="panel">
-        <div className="panel-header">
-          <input className="search-input" placeholder="Search by title or author…"
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        {loading ? (
-          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Research Title</th><th>Author</th><th>College</th>
-                <th>Access</th><th>Date Stored</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(r => (
-                <tr key={r.repo_id}>
-                  <td><strong>{r.title}</strong></td>
-                  <td>{r.author || '—'}</td>
-                  <td>{r.college || '—'}</td>
-                  <td>
-                    <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.access_type === 'public' ? 'Public' : 'Private'}
-                    </span>
-                  </td>
-                  <td style={{ color: '#718096' }}>
-                    {r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={5}>
-                  <div className="empty-state"><p>No research found.</p></div>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </>
-  );
-};
 
 /* What MSIRC Staff are told about (in AYON only): proposals arriving at MSIRC,
    final decisions, and new research in the Repository. */
@@ -261,7 +198,7 @@ const MsricStaffDashboard = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard"     element={<Overview proposals={proposals} />} />
         <Route path="submissions"   element={<AllSubmissions proposals={proposals} />} />
-        <Route path="repository"    element={<Repository />} />
+        <Route path="repository"    element={<RepositoryBrowser endpoint="/repository" />} />
         <Route path="external" element={<OfficeExternalPage />} />
         <Route path="notifications" element={
           <OfficeNotifications

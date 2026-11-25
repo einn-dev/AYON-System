@@ -7,6 +7,7 @@ const { checkSpotlight, attachSpotlight } = require('../utils/spotlight');
 const { readForm, readStep, saveStep, attachFormChecks } = require('../utils/formChecks');
 const { formOf, cleanFields, fieldsProblem } = require('../utils/grantForms');
 const { sendApprovalNotice, sendRejectionNotice } = require('../utils/approvalNotice');
+const { storeApproved } = require('../utils/autoRepository');
 const {
   CHAIN, ROLE_LABEL, NOTE_MIN, NOTE_MAX,
   ownerOf, nextStage, endorsedRoles, inScope, notifyIds, roundOf, attachTrail,
@@ -712,6 +713,7 @@ const updateProposalStatus = async (req, res) => {
     /* final approval: a congratulations notification and email (once, only when it really changed) */
     if (status === 'approved' && proposal.status !== 'approved') {
       sendApprovalNotice(proposal, req.user.role);       // not awaited: the email never slows the approval
+      storeApproved(proposal.proposal_id);               // into the Research Repository, as private
     } else if (status === 'rejected' && proposal.status !== 'rejected') {
       sendRejectionNotice(proposal, req.user.role, reason);   // a formal notice and email, like the approval
     } else {

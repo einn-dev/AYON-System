@@ -96,11 +96,17 @@ const mayExternal = async (me, externalId) => {
   return false;
 };
 
-/* ── Research Repository: public items for everyone; private ones for MSIRC and the owner ── */
+/* ── Research Repository: public items for everyone; private ones for MSIRC,
+      the college offices of the owner's college, and the owner ── */
 const mayRepository = async (me, item) => {
   if (item.access_type === 'public') return true;
   if (!me) return false;
   if (REPO_STAFF.includes(me.role)) return true;
+  if ([...COLLEGE_SCOPED, ...DEPARTMENT_SCOPED].includes(me.role)) {
+    const mine = await userOf(me.user_id);
+    const col = item.college || (await one('repository', 'college', 'repo_id', item.repo_id))?.college;
+    if (mine?.college && col && String(mine.college).trim().toLowerCase() === String(col).trim().toLowerCase()) return true;
+  }
   if (item.proposal_id) {
     const p = await one('research_proposals', 'user_id', 'proposal_id', item.proposal_id);
     if (p && Number(p.user_id) === Number(me.user_id)) return true;
@@ -116,7 +122,7 @@ const mayRepository = async (me, item) => {
    one record that allows it is enough. Unknown files: no. */
 const mayOpen = async (me, path) => {
   const repo = await supabase.from('repository')
-    .select('repo_id, proposal_id, external_id, access_type').eq('file_path', path);
+    .select('repo_id, proposal_id, external_id, access_type, college').eq('file_path', path);
   if (repo.error) throw repo.error;
   for (const item of repo.data || []) if (await mayRepository(me, item)) return true;
   if (!me) return false;                                   // not signed in: public repository only

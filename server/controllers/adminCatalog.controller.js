@@ -30,10 +30,11 @@ const listRepository = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('repository')
-      .select('*')
+      .select('*, research_proposals ( proposal_type )')
       .order('store_date', { ascending: false });
     if (error) throw error;
-    return res.status(200).json({ items: data || [] });
+    const items = (data || []).map(({ research_proposals: rp, ...r }) => ({ ...r, proposal_type: rp?.proposal_type || null }));
+    return res.status(200).json({ items });
   } catch (err) {
     console.error('Admin repository list error:', err);
     return res.status(500).json({ message: 'Server error.' });

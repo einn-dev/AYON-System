@@ -8,11 +8,11 @@ import { errText, Pager } from './adminShared';
 import { ConfirmBox, cap, fmtDate } from './AdminCatalogShared';
 import { FileButtons } from '../../components/ProposalFiles';
 import MessageToast from '../../components/MessageToast';
+import { repoTypeLabel } from '../../utils/terms';
 
 const PAGE_SIZE = 25;
 
 const ACCESS_BADGE = { public: 'badge-green', private: 'badge-amber' };
-const SOURCE_LABEL = { proposal: 'Proposal', external: 'Externally Funded' };
 
 /* ─────────── Details + edit pop-up ─────────── */
 const ItemModal = ({ item, onSaved, onClose }) => {
@@ -115,7 +115,6 @@ const ItemModal = ({ item, onSaved, onClose }) => {
 /* ─────────── The page ─────────── */
 const AdminRepositoryPage = () => {
   const [items,      setItems]      = useState([]);
-  const [candidates, setCandidates] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
   const [message,    setMessage]    = useState('');
@@ -132,13 +131,10 @@ const AdminRepositoryPage = () => {
   const load = useCallback(async () => {
     setError('');
     try {
-      const [list, cand] = await Promise.allSettled([
-        API.get('/admin/repository'),
-        API.get('/admin/repository/candidates'),
-      ]);
-      if (list.status === 'fulfilled') setItems(list.value.data.items || []);
-      else setError(errText(list.reason, 'Could not load the repository.'));
-      setCandidates(cand.status === 'fulfilled' ? (cand.value.data.candidates || []) : []);
+      const res = await API.get('/admin/repository');
+      setItems(res.data.items || []);
+    } catch (err) {
+      setError(errText(err, 'Could not load the repository.'));
     } finally {
       setLoading(false);
     }
@@ -146,6 +142,7 @@ const AdminRepositoryPage = () => {
 
   useEffect(() => { load(); }, [load]);
 
+  const types = useMemo(() => [...new Set(items.map(repoTypeLabel))].sort(), [items]);
   const colleges = useMemo(
     () => [...new Set(items.map(i => i.college).filter(Boolean))].sort(),
     [items],
@@ -155,7 +152,7 @@ const AdminRepositoryPage = () => {
     const q = search.trim().toLowerCase();
     return items.filter(i =>
       (access  === 'all' || i.access_type === access) &&
-      (source  === 'all' || i.source_type === source) &&
+      (source  === 'all' || repoTypeLabel(i) === source) &&
       (college === 'all' || i.college === college) &&
       (!q || `${i.title} ${i.author || ''} ${i.keywords || ''}`.toLowerCase().includes(q)));
   }, [items, search, access, source, college]);
@@ -178,23 +175,13 @@ const AdminRepositoryPage = () => {
     await load();
   };
 
-  const askStore = (c) => setConfirm({
-    title: 'Store in the Research Repository?',
-    text: `"${c.title}" will be stored as PRIVATE. You can make it public afterwards.`,
-    confirmLabel: 'Store',
-    run: async () => {
-      const res = await API.post('/admin/repository', { proposal_id: c.proposal_id, access_type: 'private' });
-      await done(`${res.data.message} The change is in the Audit Log.`);
-    },
-  });
-
   const askToggle = (i) => {
     const to = i.access_type === 'public' ? 'private' : 'public';
     setConfirm({
       title: `Make this ${to}?`,
       text: to === 'public'
         ? 'Every researcher will be able to see and open this in their Repository page.'
-        : 'Researchers will no longer see this item. MSIRC offices and the Administrator still can.',
+        : 'Other researchers will no longer see this item. The owner, their college offices, MSIRC and the Administrator still can.',
       confirmLabel: `Make ${to}`,
       run: async () => {
         await API.patch(`/admin/repository/${i.repo_id}`, { access_type: to });
@@ -221,7 +208,7 @@ const AdminRepositoryPage = () => {
     <>
       <div className="page-header">
         <h1>Research Repository</h1>
-        <p>Every stored research output. Control who can see each one, fix its details, or take it out.</p>
+        <p>Every approved submission is stored here automatically, as Private. Control who can see each one, fix its details, or take it out.</p>
       </div>
 
       {/* the list did not load: stays on the page; a saved change pops up */}
@@ -240,29 +227,6 @@ const AdminRepositoryPage = () => {
         <div className="stat-card"><span className="stat-label">Externally Funded Research</span><span className="stat-value">{counts.external}</span></div>
       </div>
 
-      {candidates.length > 0 && (
-        <div className="panel">
-          <div className="panel-header">
-            <div>
-              <strong style={{ color: '#5e1420' }}>Approved but not yet stored</strong>
-              <div className="ac-note">These proposals were approved but never added to the repository.</div>
-            </div>
-            <span className="badge badge-amber">{candidates.length} waiting</span>
-          </div>
-          {candidates.map(c => (
-            <div className="ac-cand" key={c.proposal_id}>
-              <div className="ac-cand-main">
-                <div className="ac-title">{c.title}</div>
-                <span className="ac-sub">{[c.author, c.college].filter(Boolean).join(' · ') || '—'}</span>
-              </div>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => askStore(c)}>
-                Store as Private
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
@@ -273,10 +237,9 @@ const AdminRepositoryPage = () => {
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
-            <select className="search-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source">
-              <option value="all">All Sources</option>
-              <option value="proposal">Proposal</option>
-              <option value="external">Externally Funded Research</option>
+            <select className="search-input" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Submission Type">
+              <option value="all">All Submission Types</option>
+              {types.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <select className="search-input" value={college} onChange={(e) => setCollege(e.target.value)} aria-label="College">
               <option value="all">All Colleges</option>
@@ -295,7 +258,7 @@ const AdminRepositoryPage = () => {
         <div className="am-scroll">
           <table className="data-table">
             <thead>
-              <tr><th>Research Title</th><th>Source</th><th>Access</th><th>Date Stored</th><th>Actions</th></tr>
+              <tr><th>Research Title</th><th>Submission Type</th><th>Access</th><th>Date Stored</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {pageRows.map(i => (
@@ -304,7 +267,7 @@ const AdminRepositoryPage = () => {
                     <div className="ac-title">{i.title}</div>
                     <span className="ac-sub">{[i.author, i.college].filter(Boolean).join(' · ') || '—'}</span>
                   </td>
-                  <td><span className="badge badge-gray">{SOURCE_LABEL[i.source_type] || i.source_type}</span></td>
+                  <td style={{ fontSize: '0.82rem', color: '#5e5155' }}>{repoTypeLabel(i)}</td>
                   <td><span className={`badge ${ACCESS_BADGE[i.access_type] || 'badge-gray'}`}>{cap(i.access_type)}</span></td>
                   <td className="am-muted" style={{ whiteSpace: 'nowrap' }}>{fmtDate(i.store_date)}</td>
                   <td>
@@ -337,7 +300,8 @@ const AdminRepositoryPage = () => {
         <Pager page={page} pageSize={PAGE_SIZE} total={filtered.length} onPage={setPage} />
 
         <div className="am-legend">
-          Public = shown to every researcher in their Repository page. Private = only MSIRC offices and the Administrator can see it.
+          Public = shown to every researcher in their Repository page. Private = only the researcher who owns it, the MSIRC offices and the Administrator can see it.
+          Only the owner and the Administrator can change it.
         </div>
       </div>
 

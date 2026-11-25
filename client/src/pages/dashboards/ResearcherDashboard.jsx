@@ -16,7 +16,7 @@ import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaFlagCheckered, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
-import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
+import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType, repoTypeLabel } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import FormToast, { jumpTo } from '../../components/FormToast';
 import { personName } from '../../utils/names';
@@ -1063,24 +1063,138 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
 };
 
 /* ─────────── Repository ─────────── */
+/* ── My research in the Repository: the owner chooses Public or Private ──
+   Only the researcher who owns the research and the Administrator can change it.
+   Externally funded research always stays private. */
+const MyRepositoryItems = ({ onChanged }) => {
+  const [items, setItems] = useState(null);
+  const [failed, setFailed] = useState('');
+  const [asking, setAsking] = useState(null);     // the item being changed, for the confirm pop-up
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await API.get('/repository/mine');
+      setItems(res.data.items || []);
+      setFailed('');
+    } catch (err) {
+      setItems([]);
+      setFailed(err.response?.data?.message || 'Could not load your research in the Repository.');
+    }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const change = async () => {
+    const item = asking;
+    const to = item.access_type === 'public' ? 'private' : 'public';
+    setSaving(true);
+    try {
+      const res = await API.patch(`/repository/mine/${item.repo_id}`, { access_type: to });
+      setMessage({ type: 'success', msg: res.data?.message || 'Access updated.' });
+      setAsking(null);
+      load();
+      if (onChanged) onChanged();      // the public list below changes too
+    } catch (err) {
+      setMessage({ type: 'error', msg: err.response?.data?.message || 'Could not change the access. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (items && items.length === 0 && !failed) return null;     // nothing of theirs stored yet
+
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <h2>My Research in the Repository</h2>
+        <small style={{ color: '#8a7a7d' }}>Only you and the Administrator can make it public or private.</small>
+      </div>
+      <MessageToast message={message} onClose={() => setMessage(null)} />
+      {failed && (
+        <div className="alert alert-error" role="alert" style={{ margin: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>{failed}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
+        </div>
+      )}
+      {!items ? (
+        <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
+      ) : items.length > 0 && (
+        <table className="data-table">
+          <thead><tr><th>Research Title</th><th>Submission Type</th><th>Access</th><th>Date Stored</th><th>Change Access</th></tr></thead>
+          <tbody>
+            {items.map((r) => {
+              const external = r.source_type === 'external';
+              return (
+                <tr key={r.repo_id}>
+                  <td style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{r.title}</td>
+                  <td style={{ color: '#718096', fontSize: '0.82rem' }}>{repoTypeLabel(r)}</td>
+                  <td>
+                    <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
+                      {r.access_type === 'public' ? 'Public' : 'Private'}
+                    </span>
+                  </td>
+                  <td style={{ color: '#718096', whiteSpace: 'nowrap' }}>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
+                  <td>
+                    {external ? (
+                      <span style={{ color: '#8a7a7d', fontSize: '0.8rem' }}>Always private</span>
+                    ) : (
+                      <button type="button" className={`btn btn-sm ${r.access_type === 'public' ? 'btn-outline' : 'btn-primary'}`}
+                        onClick={() => setAsking(r)}>
+                        Make {r.access_type === 'public' ? 'Private' : 'Public'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div className="am-legend" style={{ padding: '10px 20px', borderTop: '1px solid #efe5e6', fontSize: '0.8rem', color: '#8a7a7d' }}>
+        Public: anyone who opens the Research Repository can find and open it. Private: only you, your college offices and MSIRC can see it.
+      </div>
+
+      {asking && (
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !saving) setAsking(null); }}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Change access" style={{ maxWidth: 460 }}
+            onClick={(e) => e.stopPropagation()}>
+            <h3>Make it {asking.access_type === 'public' ? 'private' : 'public'}?</h3>
+            <p style={{ margin: '0 0 6px', fontWeight: 600, overflowWrap: 'anywhere' }}>"{asking.title}"</p>
+            <p style={{ margin: 0, color: '#5e5155', fontSize: '0.9rem', lineHeight: 1.55 }}>
+              {asking.access_type === 'public'
+                ? 'Only you, your college offices and MSIRC will be able to see it. It will no longer show for other researchers.'
+                : 'Anyone who opens the Research Repository will be able to find it and open its file. You can make it private again at any time.'}
+            </p>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline" onClick={() => setAsking(null)} disabled={saving}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={change} disabled={saving}>
+                {saving ? 'Saving…' : `Make ${asking.access_type === 'public' ? 'Private' : 'Public'}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Repository = () => {
   const [items,   setItems]   = useState([]);
   const [search,  setSearch]  = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchRepo = async () => {
-      try {
-        const res = await API.get('/repository?access=public');
-        setItems(res.data.items || []);
-      } catch {
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRepo();
+  const fetchRepo = useCallback(async () => {
+    try {
+      const res = await API.get('/repository?access=public');
+      setItems(res.data.items || []);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+  useEffect(() => { fetchRepo(); }, [fetchRepo]);
 
   const filtered = items.filter(r =>
     r.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1091,8 +1205,10 @@ const Repository = () => {
     <>
       <div className="page-header">
         <h1>Research Repository</h1>
-        <p>Browse and search completed and approved research outputs.</p>
+        <p>Your approved submissions are stored here automatically as Private. Below that, the public research of every college.</p>
       </div>
+
+      <MyRepositoryItems onChanged={fetchRepo} />
 
       <div className="panel">
         <div className="panel-header">
@@ -1109,6 +1225,7 @@ const Repository = () => {
             <thead>
               <tr>
                 <th>Research Title</th>
+                <th>Submission Type</th>
                 <th>Author</th>
                 <th>College</th>
                 <th>Access</th>
@@ -1120,6 +1237,7 @@ const Repository = () => {
               {filtered.map(r => (
                 <tr key={r.repo_id}>
                   <td><strong>{r.title}</strong></td>
+                  <td style={{ fontSize: '0.82rem', color: '#5e5155' }}>{repoTypeLabel(r)}</td>
                   <td>{r.author || '—'}</td>
                   <td>{r.college || '—'}</td>
                   <td>

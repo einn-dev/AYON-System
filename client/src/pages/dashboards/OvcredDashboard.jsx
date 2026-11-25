@@ -15,11 +15,12 @@ import { ProposalFiles } from '../../components/ProposalFiles';
 import RecordDetails from '../../components/RecordDetails';
 import ReportsPage from './ReportsPage';
 import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCheck, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaRotateLeft, FaTableCellsLarge, FaXmark } from 'react-icons/fa6';
-import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../../utils/terms';
+import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
+import RepositoryBrowser from '../../components/RepositoryBrowser';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -113,7 +114,6 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [remarks,  setRemarks]  = useState('');
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
-  const [storeToRepo, setStoreToRepo] = useState(true);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const endorsed = proposals.filter(p => p.status === 'endorsed');
@@ -162,24 +162,9 @@ const ForApproval = ({ proposals, onRefresh }) => {
         remarks:  remarks || `${wordFor(selected).P} ${newStatus} by VCRED.`,
       });
 
-      const archive = decision === 'approve' && storeToRepo && !isGrantType(selected.proposal_type);   // applications are not research to archive
-      if (archive) {
-        await API.post('/repository', {
-          proposal_id: selected.proposal_id,
-          title:       selected.title,
-          abstract:    selected.description || '',
-          author:      personName(selected),
-          college:     selected.college || '',
-          department:  selected.department || '',
-          file_path:   selected.file_path || '',
-          access_type: 'private',
-          source_type: 'proposal',
-        });
-      }
-
       setAlert({
         type: 'success',
-        msg: `${wordFor(selected).P} ${newStatus === 'approved' ? 'signed and approved' : 'rejected'}.${archive ? ' It was stored in the Research Repository.' : ''}`,
+        msg: `${wordFor(selected).P} ${newStatus === 'approved' ? 'signed and approved. It is now in the Research Repository as Private.' : 'rejected.'}`,
       });
       setSelected(null);
       setRemarks('');
@@ -342,32 +327,6 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     </p>
                   </div>
 
-                  {/* Store to repository toggle (research only: applications are not archived) */}
-                  {!isGrantType(selected.proposal_type) && <div style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '12px', background: '#f8fafc',
-                    borderRadius: 8, border: '1px solid #e8edf2',
-                    marginBottom: 14, cursor: 'pointer',
-                  }} onClick={() => setStoreToRepo(!storeToRepo)}>
-                    <div style={{
-                      width: 20, height: 20, borderRadius: 4, flexShrink: 0,
-                      border: `2px solid ${storeToRepo ? '#276749' : '#d1d9e0'}`,
-                      background: storeToRepo ? '#276749' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: '0.72rem', fontWeight: 700,
-                    }}>
-                      {storeToRepo ? <FaCheck /> : ''}
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 600, color: '#1a3a5c',
-                        margin: '0 0 2px', fontSize: '0.85rem' }}>
-                        Store to Repository
-                      </p>
-                      <p style={{ color: '#718096', margin: 0, fontSize: '0.75rem' }}>
-                        Automatically archive this research upon approval
-                      </p>
-                    </div>
-                  </div>}
 
                   <SignConfirm key={selected.proposal_id} onReady={setSignReady} verb="grant final approval to" noun={wordFor(selected).p} disabled={saving} />
 
@@ -395,7 +354,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     fontSize: '0.78rem', color: '#276749',
                   }}>
                     <strong>Final approval</strong> places your signature on the {wordFor(selected).p} and notifies the researcher and the MSIRC Director.
-                    {!isGrantType(selected.proposal_type) && ' If "Store to Repository" is checked, the research will be archived automatically.'}
+                    {' '}It is then stored in the Research Repository automatically, as Private; the researcher decides whether to make it Public.
                   </div>
                 </div>
               </div>
@@ -482,245 +441,6 @@ const FilteredList = ({ proposals, statusFilter }) => {
 };
 
 /* ─────────── Store to Repository ─────────── */
-const StoreToRepository = ({ proposals }) => {
-  const [form,    setForm]    = useState({
-    title: '', abstract: '', author: '', college: '',
-    department: '', keywords: '', access_type: 'private',
-    source_type: 'proposal', proposal_id: '',
-  });
-  const [alert,   setAlert]   = useState(null);
-  const [saving,  setSaving]  = useState(false);
-  const [repoList, setRepoList] = useState([]);
-  const [tab,     setTab]     = useState('store');
-
-  const approved = proposals.filter(p => p.status === 'approved');
-
-  useEffect(() => {
-    const fetchRepo = async () => {
-      try {
-        const res = await API.get('/repository');
-        setRepoList(res.data.items || []);
-      } catch { setRepoList([]); }
-    };
-    fetchRepo();
-  }, [tab]);
-
-  const prefill = (proposal) => {
-    setForm({
-      title:       proposal.title,
-      abstract:    proposal.description || '',
-      author:      personName(proposal),
-      college:     proposal.college || '',
-      department:  proposal.department || '',
-      keywords:    '',
-      access_type: 'private',
-      source_type: 'proposal',
-      proposal_id: proposal.proposal_id,
-      file_path:   proposal.file_path || '',
-    });
-    setTab('store');
-  };
-
-  const handleStore = async (e) => {
-    e.preventDefault();
-    if (!form.title.trim()) return setAlert({ type: 'error', msg: 'Research title is required.' });
-    setSaving(true);
-    try {
-      await API.post('/repository', form);
-      setAlert({ type: 'success', msg: 'Research stored in the Research Repository.' });
-      setForm({ title:'',abstract:'',author:'',college:'',department:'',
-        keywords:'',access_type:'private',source_type:'proposal',proposal_id:'' });
-    } catch (err) {
-      setAlert({ type: 'error', msg: err.response?.data?.message || 'The research could not be stored. Please try again.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="page-header">
-        <h1>Research Repository</h1>
-        <p>Archive approved research outputs in the MSIRC digital repository.</p>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 20,
-        borderBottom: '2px solid #e8edf2' }}>
-        {[
-          { key: 'store',  label: 'Store Research' },
-          { key: 'list',   label: 'Repository Items' },
-          { key: 'select', label: 'From Approved Proposals' },
-        ].map(t => (
-          <button key={t.key}
-            onClick={() => setTab(t.key)}
-            style={{
-              padding: '10px 20px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontWeight: tab === t.key ? 700 : 400,
-              color: tab === t.key ? '#1a3a5c' : '#718096',
-              borderBottom: tab === t.key ? '2px solid #1a3a5c' : '2px solid transparent',
-              marginBottom: -2, fontSize: '0.9rem',
-            }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <MessageToast message={alert} onClose={() => setAlert(null)} />
-
-      {/* Store Form */}
-      {tab === 'store' && (
-        <div className="panel" style={{ maxWidth: 620 }}>
-          <div className="panel-header"><h2>Add to Repository</h2></div>
-          <div className="panel-body">
-            <form onSubmit={handleStore}>
-              <div className="form-group">
-                <label>Research Title</label>
-                <input value={form.title}
-                  onChange={e => setForm({ ...form, title: e.target.value })}
-                  placeholder="Enter research title" required />
-              </div>
-              <div className="form-group">
-                <label>Abstract</label>
-                <textarea rows={4} value={form.abstract}
-                  onChange={e => setForm({ ...form, abstract: e.target.value })}
-                  placeholder="Enter abstract or description…"
-                  style={{ resize: 'vertical' }} />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Author</label>
-                  <input value={form.author}
-                    onChange={e => setForm({ ...form, author: e.target.value })}
-                    placeholder="Full name of researcher" />
-                </div>
-                <div className="form-group">
-                  <label>College</label>
-                  <input value={form.college}
-                    onChange={e => setForm({ ...form, college: e.target.value })}
-                    placeholder="e.g. CICS" />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Department</label>
-                  <input value={form.department}
-                    onChange={e => setForm({ ...form, department: e.target.value })}
-                    placeholder="e.g. IT Department" />
-                </div>
-                <div className="form-group">
-                  <label>Keywords</label>
-                  <input value={form.keywords}
-                    onChange={e => setForm({ ...form, keywords: e.target.value })}
-                    placeholder="e.g. AI, Machine Learning" />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Access Type</label>
-                <select value={form.access_type}
-                  onChange={e => setForm({ ...form, access_type: e.target.value })}>
-                  <option value="private">Private (logged-in users only)</option>
-                  <option value="public">Public (anyone can search)</option>
-                </select>
-              </div>
-              <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Storing…' : <><FaBoxArchive className="ic" />Store to Repository</>}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Repository List */}
-      {tab === 'list' && (
-        <div className="panel">
-          <div className="panel-header">
-            <h2>Repository Items</h2>
-            <span className="badge badge-blue">{repoList.length} total</span>
-          </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Research Title</th>
-                <th>Author</th>
-                <th>College</th>
-                <th>Access</th>
-                <th>Date Stored</th>
-              </tr>
-            </thead>
-            <tbody>
-              {repoList.map(r => (
-                <tr key={r.repo_id}>
-                  <td><strong>{r.title}</strong></td>
-                  <td>{r.author || '—'}</td>
-                  <td>{r.college || '—'}</td>
-                  <td>
-                    <span className={`badge ${r.access_type === 'public' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.access_type === 'public' ? 'Public' : 'Private'}
-                    </span>
-                  </td>
-                  <td style={{ color: '#718096' }}>
-                    {r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}
-                  </td>
-                </tr>
-              ))}
-              {repoList.length === 0 && (
-                <tr><td colSpan={5}>
-                  <div className="empty-state"><p>The repository is empty.</p></div>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Select from approved proposals */}
-      {tab === 'select' && (
-        <div className="panel">
-          <div className="panel-header">
-            <h2>Approved Proposals</h2>
-            <p style={{ margin: 0, fontSize: '0.82rem', color: '#718096' }}>
-              Click "Pre-fill" to auto-fill the store form
-            </p>
-          </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Researcher</th>
-                <th>Type</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approved.map(p => (
-                <tr key={p.proposal_id}>
-                  <td>{p.title}</td>
-                  <td>{personName(p)}</td>
-                  <td style={{ fontSize: '0.8rem', color: '#718096' }}>
-                    {PROPOSAL_TYPES[p.proposal_type]}
-                  </td>
-                  <td>
-                    <button className="btn btn-primary btn-sm"
-                      onClick={() => prefill(p)}>
-                      Pre-fill Form
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {approved.length === 0 && (
-                <tr><td colSpan={4}>
-                  <div className="empty-state"><p>No approved proposals available.</p></div>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
-  );
-};
-
 /* ─────────── Main VCRED Dashboard ─────────── */
 const OvcredDashboard = () => {
   const [proposals, setProposals] = useState([]);
@@ -755,7 +475,7 @@ const OvcredDashboard = () => {
         <Route path="rejected"
           element={<FilteredList proposals={proposals} statusFilter="rejected" />} />
         <Route path="repository"
-          element={<StoreToRepository proposals={proposals} />} />
+          element={<RepositoryBrowser endpoint="/repository" />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="external" element={<OfficeExternalPage />} />
         <Route path="notifications"

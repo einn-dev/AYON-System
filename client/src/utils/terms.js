@@ -82,6 +82,11 @@ export const typeChoices = (records = []) => Object.entries(TYPE_LABEL)
   .filter(([k]) => !OLD_TYPES.includes(k) || records.some((r) => r.proposal_type === k));
 export const typeLabel = (t) => TYPE_LABEL[t] || String(t || '').replace(/_/g, ' ');
 
+/* the Submission Type of a Research Repository item */
+export const repoTypeLabel = (r) => (r?.source_type === 'external'
+  ? 'External Research'
+  : (TYPE_LABEL[r?.proposal_type] || 'Research'));
+
 /* grant application statuses */
 export const GRANT_STATUS_LABEL = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
 export const grantStatusLabel = (s) => GRANT_STATUS_LABEL[s] || String(s || '');

@@ -5,7 +5,8 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
 import API    from '../../services/authService';
 import '../../components/Layout.css';
-import { FaBell, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
+import { FaBell, FaBoxArchive, FaCircleCheck, FaClipboardList, FaTableCellsLarge, FaGlobe } from 'react-icons/fa6';
+import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { CollegeExternalPage } from './ExternalShared';
 import NotificationsPage from './NotificationsPage';
 import { EndorsementQueue, EndorsedHistory, EndorserStats } from '../../components/EndorserPages';
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { path: '/coordinator/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
   { path: '/coordinator/endorsed',      label: 'Endorsed', icon: <FaCircleCheck /> },
   { path: '/coordinator/external',       label: 'External Research', icon: <FaGlobe /> },
+  { path: '/coordinator/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/coordinator/notifications', label: 'Notifications',     icon: <FaBell /> },
 ];
 
@@ -102,6 +104,11 @@ const CoordinatorDashboard = () => {
         } />
         <Route path="endorsed"      element={<EndorsedHistory />} />
         <Route path="external"      element={<CollegeExternalPage />} />
+        <Route path="repository"    element={
+          <RepositoryBrowser endpoint="/repository/college"
+            intro="All public research, plus every research and application from your college, including private ones."
+            note="Private items are shown to the researcher who owns them, the college offices of their college and MSIRC. Other researchers cannot see them. Only the owner or the Administrator can make one Public." />
+        } />
         <Route path="notifications" element={<NotificationsPage />} />
       </Routes>
     </Layout>
