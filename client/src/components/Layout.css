@@ -184,7 +184,18 @@ html.ayon-app { font-size: 112.5%; }
   /* wide tables slide sideways inside their box instead of being cut off */
   .panel { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .panel > .data-table { min-width: 640px; }
+  /* tables with five or more columns get more room, so titles and names wrap less */
+  .panel .data-table:has(th:nth-child(5)) { min-width: 780px; }
   .panel > .panel-header { position: sticky; left: 0; }
+  /* a soft shadow on the side that has more table to swipe to */
+  .panel, .am-scroll, .ao-scroll, .table-scroll, .rp-scroll, .ps-scroll {
+    background:
+      linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)) left center / 28px 100% no-repeat local,
+      linear-gradient(to left,  #fff 30%, rgba(255, 255, 255, 0)) right center / 28px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%,    rgba(46, 13, 20, 0.24), transparent) left center / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(46, 13, 20, 0.24), transparent) right center / 14px 100% no-repeat scroll,
+      #fff;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .layout.phone .sidebar { transition: none; }
