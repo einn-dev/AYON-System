@@ -22,6 +22,7 @@ import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { stepOf, stepProblem } from '../../utils/grantForms';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+import MessageToast from '../../components/MessageToast';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -151,7 +152,7 @@ const Submissions = ({ proposals, onRefresh }) => {
         <p>Every research proposal submitted to MSIRC.</p>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       <div className="panel">
         <div className="panel-header">
@@ -341,9 +342,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
       {!selected && <OpenNotice state={hl} where="the validation queue" />}
       <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
 
-      {alert && !selected && (
-        <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
-      )}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {!selected ? (
         <div className="panel">
@@ -399,8 +398,6 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
             onClick={() => setSelected(null)}>
             <FaArrowLeft className="ic" />Back to List
           </button>
-
-          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
           <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 20, alignItems: 'start' }}>
 

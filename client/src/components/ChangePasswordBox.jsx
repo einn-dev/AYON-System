@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import PasswordInput from './PasswordInput';
 import { PasswordStrength, checkNewPassword } from './PasswordStrength';
 import './PasswordPages.css';
+import MessageToast from './MessageToast';
 
 /* "Change password" box inside the My Profile pop-up.
    It has its own button, so the profile's Save Changes is never mixed up with it.
@@ -56,7 +57,7 @@ const ChangePasswordBox = () => {
         computer you left signed in.
       </p>
 
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       <div className="form-group">
         <label>Current Password</label>

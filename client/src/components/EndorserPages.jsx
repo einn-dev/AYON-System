@@ -12,6 +12,7 @@ import { FormChecklist, EMPTY_CHECK } from './GrantForms';
 import { formOf, stepOf, stepProblem } from '../utils/grantForms';
 import StatCard from './StatCard';
 import { ROLE_REDIRECTS } from '../utils/roleRoutes';
+import MessageToast from './MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -155,7 +156,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
     return (
       <>
         <RecordDetails proposalId={viewId} onClose={() => setViewId(null)} />
-        {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
+        <MessageToast message={alert} onClose={() => setAlert(null)} />
         <div className="panel">
           <div className="panel-header">
             <h2>Proposals for Endorsement</h2>
@@ -213,7 +214,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
         <FaArrowLeft className="ic" />Back to List
       </button>
 
-      {alert && <div className={`alert alert-${alert.type}`} role="alert">{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       <div className="endorse-grid detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20 }}>
         <div className="panel">

@@ -3,6 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import { errText, fmtWhen, Pager } from './adminShared';
+import MessageToast from '../../components/MessageToast';
 
 const PAGE_SIZE = 25;
 
@@ -20,7 +21,8 @@ const EmailLogPage = () => {
   const [stats,   setStats]   = useState({ sent_7d: 0, failed_7d: 0 });
   const [page,    setPage]    = useState(1);
   const [loading, setLoading] = useState(true);
-  const [alert,   setAlert]   = useState(null);
+  const [alert,   setAlert]   = useState(null);     // result of an action: a pop-up
+  const [loadErr, setLoadErr] = useState('');       // the list did not load: stays on the page
   const [sending, setSending] = useState(null);     // email_id being resent
 
   const [search,     setSearch]     = useState('');
@@ -42,24 +44,18 @@ const EmailLogPage = () => {
       if (searchTerm) params.q      = searchTerm;
 
       const res = await API.get('/admin/email-logs', { params });
+      setLoadErr('');
       setLogs(res.data.logs || []);
       setTotal(res.data.total || 0);
       if (res.data.stats) setStats(res.data.stats);
     } catch (err) {
-      setAlert({ type: 'error', msg: errText(err, 'Could not load the email log.') });
+      setLoadErr(errText(err, 'Could not load the email log.'));
     } finally {
       setLoading(false);
     }
   }, [page, status, type, searchTerm]);
 
   useEffect(() => { load(); }, [load]);
-
-  // messages disappear by themselves
-  useEffect(() => {
-    if (!alert) return undefined;
-    const t = setTimeout(() => setAlert(null), 7000);
-    return () => clearTimeout(t);
-  }, [alert]);
 
   const resend = async (log) => {
     setSending(log.email_id);
@@ -84,7 +80,13 @@ const EmailLogPage = () => {
         <p>Every email the system tried to send, and whether the mail provider accepted it.</p>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
+      {loadErr && (
+        <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>{loadErr}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={load} disabled={loading}>Try Again</button>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card green">

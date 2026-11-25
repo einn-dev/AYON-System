@@ -5,6 +5,7 @@ import { ROLE_LABEL } from '../utils/terms';
 import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaSignature } from 'react-icons/fa6';
 import './Signature.css';
 import { personName } from '../utils/names';
+import MessageToast from './MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Electronic signatures
@@ -282,7 +283,7 @@ export const MySignature = ({ onSaved }) => {
         Returning or rejecting never signs.
       </p>
 
-      {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {loading ? (
         <p className="sig-hint">Loading your signature…</p>

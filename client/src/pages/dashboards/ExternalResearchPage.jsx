@@ -10,6 +10,7 @@ import { personName } from '../../utils/names';
 import { DocumentsEditor, MAX_SUPPORTING, OTHER } from '../../components/ProposalFiles';
 import { SDGS } from '../../utils/sdgs';
 import { ExternalDetails, SdgChips, peso } from './ExternalShared';
+import MessageToast from '../../components/MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (Researcher): externally funded research, for the
@@ -109,7 +110,7 @@ const ExternalResearchPage = () => {
         <p>For research funded outside MSU. It is stored in the Research Repository as soon as every required field is filled in. No office endorsement.</p>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`} role={alert.type === 'error' ? 'alert' : 'status'}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       <div className="ext-grid">
         {/* Upload Form */}

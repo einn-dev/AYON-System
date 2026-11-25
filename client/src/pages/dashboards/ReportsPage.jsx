@@ -10,6 +10,7 @@ import { STATUS_LABEL, STATUS_ORDER, TYPE_LABEL } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { HBars, Columns, Ring, useTip, TYPE_COLOR, OLD_TYPE_COLOR } from '../../components/ProposalStats';
 import { SDGS } from '../../utils/sdgs';
+import MessageToast from '../../components/MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
@@ -263,7 +264,7 @@ const ReportsPage = () => {
         <p>See the numbers for any period, college or status, then download them as PDF or CSV.</p>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {/* Filters */}
       <div className="rp-filters">

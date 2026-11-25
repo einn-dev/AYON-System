@@ -23,6 +23,7 @@ import { personName } from '../../utils/names';
 import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide, collegeKey } from '../../components/GrantForms';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+import MessageToast from '../../components/MessageToast';
 
 /* approved Internally Funded Research whose Terminal Report was accepted shows as Completed */
 const statusText = (p) => (p?.completed_at ? 'Completed' : statusLabel(p?.status));
@@ -263,7 +264,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
   const proposals = everything.filter(p => kindOf(p.proposal_type) === kind);
   const location = useLocation();
   // show the note from the form once; clear it so a page refresh does not show it again
-  const [fromForm] = useState(location.state?.notice || (location.state?.submitted ? 'Submitted successfully.' : null));
+  const [fromForm, setFromForm] = useState(location.state?.notice || (location.state?.submitted ? 'Submitted successfully.' : null));
   useEffect(() => {
     if (fromForm) window.history.replaceState({}, document.title);
   }, [fromForm]);
@@ -338,8 +339,8 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
         </Link>
       </div>
 
-      {fromForm && !notice && <div className="alert alert-success" role="status">{fromForm}</div>}
-      {notice && <div className={`alert alert-${notice.type}`} role="status">{notice.msg}</div>}
+      <MessageToast message={notice || (fromForm ? { type: 'success', msg: fromForm } : null)}
+        onClose={() => { setNotice(null); setFromForm(null); }} />
 
       {/* filtered by status: the same status on the other page (research vs applications) */}
       {f.status !== 'all' && otherCount > 0 && (
@@ -850,7 +851,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
         ))}
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`} role={alert.type === 'error' ? 'alert' : 'status'}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
       <FormToast toast={toast} onClose={() => setToast(null)} />
 
       <div className="panel">

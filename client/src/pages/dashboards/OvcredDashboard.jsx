@@ -19,6 +19,7 @@ import { statusLabel, statusBadge, TYPE_LABEL, wordFor, isGrantType } from '../.
 import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+import MessageToast from '../../components/MessageToast';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -199,9 +200,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
         <p>Review proposals and applications endorsed by the MSIRC Director and give the final VCRED decision.</p>
       </div>
 
-      {alert && !selected && (
-        <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
-      )}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {!selected ? (
         <div className="panel">
@@ -258,8 +257,6 @@ const ForApproval = ({ proposals, onRefresh }) => {
             onClick={() => { setSelected(null); setAlert(null); }}>
             <FaArrowLeft className="ic" />Back to List
           </button>
-
-          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
           <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
 
@@ -569,7 +566,7 @@ const StoreToRepository = ({ proposals }) => {
         ))}
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {/* Store Form */}
       {tab === 'store' && (

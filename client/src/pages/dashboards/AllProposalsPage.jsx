@@ -9,6 +9,7 @@ import { errText, fmtWhen, Pager } from './adminShared';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import { FaLock, FaXmark } from 'react-icons/fa6';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL, typeChoices } from '../../utils/terms';
+import MessageToast from '../../components/MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Admin → All Proposals
@@ -182,7 +183,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
               </span>
             </div>
 
-            {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+            <MessageToast message={alert} onClose={() => setAlert(null)} />
 
             {decided && (
               <div className="po-warnbox">

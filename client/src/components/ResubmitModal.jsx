@@ -8,6 +8,7 @@ import { GrantFormFields, SlotDocs, slotDocsProblem } from './GrantForms';
 import { formOf, formLabel, fieldsIssues, fieldsWarning, titleProblem as titleRule } from '../utils/grantForms';
 import FormToast, { jumpTo } from './FormToast';
 import { SignConfirm } from './Signature';
+import MessageToast from './MessageToast';
 
 const TITLE_MAX = 255;
 const DESC_MAX  = 10000;
@@ -130,7 +131,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
           <p>{proposal.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
         </div>
 
-        {error && <div className="alert alert-error" role="alert">{error}</div>}
+        <MessageToast message={error ? { type: 'error', msg: error } : null} onClose={() => setError('')} />
         <FormToast toast={toast} onClose={() => setToast(null)} />
 
         <div className="rs-field">

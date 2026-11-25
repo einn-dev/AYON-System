@@ -9,6 +9,7 @@ import { ConfirmBox } from './AdminCatalogShared';
 import { AnnouncementCard, ANN_TYPES, ANN_CHANGED } from '../../components/Announcements';
 import { ROLE_LABEL } from '../../utils/terms';
 import { FaBullhorn, FaEye, FaEyeSlash, FaPen, FaPlus, FaTrashCan } from 'react-icons/fa6';
+import MessageToast from '../../components/MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Administrator: Announcements
@@ -99,7 +100,7 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
         <h3>{item ? 'Edit Announcement' : 'New Announcement'}</h3>
         <p className="am-modal-sub">It shows at the top of the dashboards of the people you choose.</p>
 
-        {error && <div className="alert alert-error" role="alert">{error}</div>}
+        <MessageToast message={error ? { type: 'error', msg: error } : null} onClose={() => setError('')} />
 
         <div className="form-group">
           <label htmlFor="an-title">Title *</label>
@@ -231,7 +232,7 @@ const AdminAnnouncementsPage = () => {
         </button>
       </div>
 
-      {notice && <div className={`alert alert-${notice.type}`} role="status">{notice.msg}</div>}
+      <MessageToast message={notice} onClose={() => setNotice(null)} />
 
       <div className="panel">
         <div className="panel-header">

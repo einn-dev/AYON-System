@@ -10,6 +10,7 @@ import { MySignature, SIGNER_ROLES } from './Signature';
 import { FaCamera, FaTrashCan, FaXmark, FaUser, FaSignature, FaKey } from 'react-icons/fa6';
 import './Account.css';
 import { personName } from '../utils/names';
+import MessageToast from './MessageToast';
 
 /* Contact number: digits only, must start with 09, at most 11 digits. */
 const cleanPhone = (raw) => {
@@ -178,7 +179,7 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
 
           {tab === 'password' && <ChangePasswordBox />}
 
-          {tab === 'profile' && alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+          <MessageToast message={tab === 'profile' ? alert : null} onClose={() => setAlert(null)} />
 
           {tab !== 'profile' ? null : fetching ? (
             <div className="empty-state loading-state" role="status"><p>Loading your profile…</p></div>

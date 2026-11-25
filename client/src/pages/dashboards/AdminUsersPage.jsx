@@ -9,6 +9,7 @@ import {
   LOCKED_STYLE, roleBadge, userStatus, STATUS_META, errText,
 } from './adminShared';
 import { personName, fullLegalName } from '../../utils/names';
+import MessageToast from '../../components/MessageToast';
 
 const EMPTY_ADD = {
   first_name: '', middle_name: '', last_name: '', email: '',
@@ -64,7 +65,7 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h3>Add New User</h3>
         <form onSubmit={submit}>
-          {err && <div className="alert alert-error">{err}</div>}
+          <MessageToast message={err ? { type: 'error', msg: err } : null} onClose={() => setErr('')} />
           <div className="form-row row-3">
             <div className="form-group">
               <label>First Name</label>
@@ -340,7 +341,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
             Create or activate another Administrator first.
           </div>
         )}
-        {err && <div className="alert alert-error">{err}</div>}
+        <MessageToast message={err ? { type: 'error', msg: err } : null} onClose={() => setErr('')} />
 
         <form onSubmit={save}>
           <div className="form-row row-3">
@@ -550,7 +551,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
         <p>Create, edit, and manage every account and its role in one place.</p>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       <div className="stats-grid">
         <div className="stat-card blue">

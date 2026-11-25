@@ -14,6 +14,7 @@ import {
 import './Account.css';
 import './ProfilePage.css';
 import { personName } from '../utils/names';
+import MessageToast from './MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    My Profile: its own page (the "My Profile" item in the menu),
@@ -275,7 +276,7 @@ const ProfilePage = ({ roleLabel }) => {
           </div>
 
           <div className="pp-pad">
-            {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
+            <MessageToast message={alert} onClose={() => setAlert(null)} />
 
             {fetching ? (
               <div className="empty-state loading-state" role="status"><p>Loading your profile…</p></div>

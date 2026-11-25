@@ -7,6 +7,7 @@ import './AdminCatalog.css';
 import { errText, Pager } from './adminShared';
 import { ConfirmBox, cap, fmtDate } from './AdminCatalogShared';
 import { FileButtons } from '../../components/ProposalFiles';
+import MessageToast from '../../components/MessageToast';
 
 const PAGE_SIZE = 25;
 
@@ -70,7 +71,7 @@ const ItemModal = ({ item, onSaved, onClose }) => {
 
         <div className="ac-box">
           <h4>Edit Details</h4>
-          {error && <div className="alert alert-error" role="alert">{error}</div>}
+          <MessageToast message={error ? { type: 'error', msg: error } : null} onClose={() => setError('')} />
           <div className="form-group">
             <label htmlFor="rp-title">Research Title</label>
             <input id="rp-title" value={title} maxLength={255} onChange={(e) => setTitle(e.target.value)} disabled={saving} />
@@ -223,8 +224,14 @@ const AdminRepositoryPage = () => {
         <p>Every stored research output. Control who can see each one, fix its details, or take it out.</p>
       </div>
 
-      {error   && <div className="alert alert-error" role="alert">{error}</div>}
-      {message && <div className="alert alert-success" role="status">{message}</div>}
+      {/* the list did not load: stays on the page; a saved change pops up */}
+      {error && (
+        <div className="alert alert-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
+        </div>
+      )}
+      <MessageToast message={message ? { type: 'success', msg: message } : null} onClose={() => setMessage('')} />
 
       <div className="stats-grid">
         <div className="stat-card blue"><span className="stat-label">Stored Items</span><span className="stat-value">{counts.total}</span></div>

@@ -23,6 +23,7 @@ import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
 import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
+import MessageToast from '../../components/MessageToast';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -211,9 +212,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
         </p>
       </div>
 
-      {alert && !selected && (
-        <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
-      )}
+      <MessageToast message={alert} onClose={() => setAlert(null)} />
 
       {!selected ? (
         <div className="panel">
@@ -271,8 +270,6 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
             onClick={() => { setSelected(null); setAlert(null); }}>
             <FaArrowLeft className="ic" />Back to List
           </button>
-
-          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
           <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 20, alignItems: 'start' }}>
 

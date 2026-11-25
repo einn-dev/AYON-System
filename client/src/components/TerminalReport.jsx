@@ -11,6 +11,7 @@ import { budgetTotals, PLAN_MONTHS } from '../utils/grantForms';
 import { personName } from '../utils/names';
 import './OriginalForm.css';
 import './TerminalReport.css';
+import MessageToast from './MessageToast';
 
 /* ─────────────────────────────────────────────────────────────
    Terminal Report (MSIRC Form No. 007) for approved Internally Funded Research.
@@ -423,7 +424,7 @@ export const TerminalReportsPage = () => {
         <h1>Terminal Reports</h1>
         <p>MSIRC Form No. 007 for finished Internally Funded Research{role === 'college_dean' ? ' from your college' : ''}.</p>
       </div>
-      {msg && <div className={`alert alert-${msg.type}`} role="status">{msg.text}</div>}
+      <MessageToast message={msg} onClose={() => setMsg(null)} />
       <div className="panel">
         <div className="panel-header tr-tabs">
           <button type="button" className={tab === 'waiting' ? 'on' : ''} onClick={() => setTab('waiting')}>Waiting for you <span>{waiting.length}</span></button>
