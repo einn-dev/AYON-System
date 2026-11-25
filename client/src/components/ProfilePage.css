@@ -5,7 +5,7 @@
 
 /* ── Manage menu ── */
 .pp-manage { position: relative; }
-.pp-manage > .btn { display: inline-flex; align-items: center; gap: 2px; background: #fff; }
+.pp-manage > .btn { display: inline-flex; align-items: center; gap: 7px; background: #fff; }
 .pp .btn .ic { margin-right: 6px; }
 .pp-panel .panel-header .btn { white-space: nowrap; flex-shrink: 0; }
 .pp-caret { margin-left: 8px; font-size: 0.7rem; }

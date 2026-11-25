@@ -103,6 +103,7 @@ body {
 }
 .auth-footer a { color: #8d1b2d; font-weight: 600; text-decoration: none; }
 .auth-footer a:hover { text-decoration: underline; }
+.auth-footer a .ic { margin-right: 6px; vertical-align: -2px; }   /* "← Back to Sign In": a space after the arrow */
 
 .loading {
   display: flex; align-items: center; justify-content: center;

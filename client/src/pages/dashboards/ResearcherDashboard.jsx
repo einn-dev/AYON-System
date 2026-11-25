@@ -335,7 +335,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
           <p>{K.sub}</p>
         </div>
         <Link to={`${K.base}/new`} className="btn btn-primary"
-          style={{ textDecoration: 'none', display: 'inline-block', padding: '10px 18px' }}>
+          style={{ textDecoration: 'none', padding: '10px 18px' }}>
           <FaCirclePlus className="ic" />{K.submit}
         </Link>
       </div>
@@ -806,7 +806,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
 
   const back = (
     <Link to={K.base} className="btn btn-outline btn-sm"
-      style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 14 }}>
+      style={{ textDecoration: 'none', marginBottom: 14 }}>
       <FaArrowLeft className="ic" />Back to {K.page}
     </Link>
   );
