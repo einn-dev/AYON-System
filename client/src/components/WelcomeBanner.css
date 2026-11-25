@@ -39,7 +39,8 @@
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: wb-shine 6s linear infinite;
 }
-.wb-wave { display: inline-block; transform-origin: 70% 75%; animation: wb-wave 2.4s ease-in-out 0.4s 2; }
+/* a gold waving hand after the name: waves twice when the page opens */
+.wb-wave { display: inline-block; vertical-align: -0.08em; margin-left: 4px; font-size: 0.95em; color: #ffe7a8; transform-origin: 70% 80%; animation: wb-wave 2.4s ease-in-out 0.4s 2; }
 .wb-sub { margin: 6px 0 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.86); max-width: 720px; line-height: 1.45; }
 .wb-aside { position: relative; }
 .wb-aside .ao-field { color: rgba(255, 255, 255, 0.9); }

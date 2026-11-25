@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL } from '../utils/terms';
 import './WelcomeBanner.css';
+import { PiHandWavingBold } from 'react-icons/pi';
 
 /* ─────────────────────────────────────────────────────────────
    The greeting at the top of every dashboard:
@@ -29,7 +30,7 @@ const WelcomeBanner = ({ text, aside = null }) => {
         </div>
         <h1 className="wb-title">
           Bolos ka{name ? <>, <span className="wb-name">{name}</span></> : ''}!{' '}
-          <span className="wb-wave" aria-hidden="true">👋</span>
+          <PiHandWavingBold className="wb-wave" aria-hidden="true" />
         </h1>
         {text && <p className="wb-sub">{text}</p>}
       </div>
