@@ -10,6 +10,8 @@ const TYPE_LABELS = {
   verification:   'Verification',
   password_reset: 'Password Reset',
   notification:   'Notification',
+  approval:       'Final Approval',
+  rejection:      'Not Approved',
 };
 
 const EmailLogPage = () => {
@@ -112,6 +114,8 @@ const EmailLogPage = () => {
               <option value="verification">Verification</option>
               <option value="password_reset">Password Reset</option>
               <option value="notification">Notification</option>
+              <option value="approval">Final Approval</option>
+              <option value="rejection">Not Approved</option>
             </select>
             {filtersOn && (
               <button className="btn btn-outline btn-sm" onClick={() => {
