@@ -58,22 +58,22 @@ const KINDS = {
   research: {
     base: '/researcher/proposals', page: 'My Research', types: RESEARCH_TYPES,
     sub: 'Research Spotlight and Internally Funded research. Track their status and finish your drafts.',
-    submit: 'Submit Research', one: 'research', search: 'Search research...', typeHead: 'Research Type',
+    submit: 'Submit Research', one: 'research', search: 'Search research…', typeHead: 'Research Type',
     formSub: 'Fill in the form below to submit your research to MSIRC. You can save it as a draft at any step and finish it later.',
     pick: 'Select the type of research you want to submit:', steps: ['Research Type', 'Details', 'Documents and Submit'],
     titleLabel: 'Research Title', titleHint: 'Enter your research title',
-    descLabel: 'Abstract', descHint: 'Briefly describe your research...',
+    descLabel: 'Abstract', descHint: 'Briefly describe your research…',
     docsHint: 'The Main Proposal Document is required to submit. Add up to 4 supporting documents, each with a label.',
     empty: 'Nothing here yet. Click "Submit Research" to get started.',
   },
   grants: {
     base: '/researcher/grants', page: 'Grants and Incentives', types: GRANT_TYPES,
     sub: 'Travel Subsidy, Oral Presentation and Publication Incentive applications. Track their status and finish your drafts.',
-    submit: 'Submit Application', one: 'application', search: 'Search applications...', typeHead: 'Application Type',
+    submit: 'Submit Application', one: 'application', search: 'Search applications…', typeHead: 'Application Type',
     formSub: 'Fill in the form below to apply. You can save it as a draft at any step and finish it later.',
     pick: 'Select what you want to apply for:', steps: ['Application Type', 'Details', 'Documents and Submit'],
     titleLabel: 'Title of the Paper or Article', titleHint: 'Title of the paper you will present, presented, or published',
-    descLabel: 'Details', descHint: 'For example: the conference, place and dates, or the journal, volume and year published...',
+    descLabel: 'Details', descHint: 'For example: the conference, place and dates, or the journal, volume and year published…',
     docsHint: 'Attach each document the form asks for. Those marked * are required to submit.',
     empty: 'No applications yet. Click "Submit Application" to get started.',
   },
@@ -247,7 +247,7 @@ const DeleteDraftModal = ({ proposal, onClose, onDone }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className="btn btn-danger" onClick={go} disabled={saving}>
-            {saving ? 'Deleting...' : 'Yes, Delete It'}
+            {saving ? 'Deleting…' : 'Yes, Delete It'}
           </button>
         </div>
       </div>
@@ -795,7 +795,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
 
   const draftButton = (
     <button type="button" className="btn btn-outline" onClick={saveDraft} disabled={!!busy}>
-      {busy === 'draft' ? 'Saving...' : 'Save as Draft'}
+      {busy === 'draft' ? 'Saving…' : 'Save as Draft'}
     </button>
   );
   const typeLabel = typeText(form.proposal_type);
@@ -1048,7 +1048,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                   <button type="button" className="btn btn-outline" onClick={() => { setAlert(null); setStep(2); }}><FaArrowLeft className="ic" />Back</button>
                   {draftButton}
                   <button type="submit" className="btn btn-success" disabled={!!busy}>
-                    {busy === 'submit' ? 'Submitting...' : <><FaCheck className="ic" />{K.submit}</>}
+                    {busy === 'submit' ? 'Submitting…' : <><FaCheck className="ic" />{K.submit}</>}
                   </button>
                 </div>
               </>
@@ -1094,7 +1094,7 @@ const Repository = () => {
 
       <div className="panel">
         <div className="panel-header">
-          <input className="search-input" placeholder="Search by title or author..."
+          <input className="search-input" placeholder="Search by title or author…"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
 
@@ -1162,7 +1162,7 @@ const ResearcherDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="Researcher">

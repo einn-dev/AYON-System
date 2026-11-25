@@ -100,7 +100,7 @@ const EmailLogPage = () => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search recipient or subject..."
+            <input className="search-input" placeholder="Search recipient or subject…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 150 }}
               value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>

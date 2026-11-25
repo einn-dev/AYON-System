@@ -285,7 +285,7 @@ export const MySignature = ({ onSaved }) => {
       {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
 
       {loading ? (
-        <p className="sig-hint">Loading your signature...</p>
+        <p className="sig-hint">Loading your signature…</p>
       ) : error ? (
         <div className="alert alert-error" role="alert">{error}</div>
       ) : (
@@ -347,7 +347,7 @@ export const MySignature = ({ onSaved }) => {
               <p>Remove your signature? You will need a signature again before you can sign a proposal. Proposals you already signed keep their signature.</p>
               <div className="sig-actions">
                 <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={remove}>
-                  {busy ? 'Removing...' : 'Yes, Remove It'}
+                  {busy ? 'Removing…' : 'Yes, Remove It'}
                 </button>
                 <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => setAskRemove(false)}>Cancel</button>
               </div>
@@ -356,7 +356,7 @@ export const MySignature = ({ onSaved }) => {
             <div className="sig-actions">
               {showEditor && (
                 <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={save}>
-                  {busy ? 'Saving...' : (sig ? 'Save New Signature' : 'Save Signature')}
+                  {busy ? 'Saving…' : (sig ? 'Save New Signature' : 'Save Signature')}
                 </button>
               )}
               {sig && !editing && (
@@ -388,7 +388,7 @@ export const MySignature = ({ onSaved }) => {
 
 /* ── "Your signature + I confirm" box on a signing action ──
    Calls onReady(true) only when a signature is saved AND the box is ticked.
-   `verb` completes the sentence "I, <name> (<role>), ___ this <noun> ..."
+   `verb` completes the sentence "I, <name> (<role>), ___ this <noun> …"
    `noun` is "proposal" (research) or "application" (grants and incentives) */
 /* roleLabel: how the signer is named in the box (the Project Leader on Form 005); id: the tick box */
 export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disabled = false, roleLabel = '', id }) => {
@@ -402,7 +402,7 @@ export const SignConfirm = ({ onReady, verb = 'endorse', noun = 'proposal', disa
     <div className="sig-confirm">
       <span className="sig-label">Your signature</span>
       {loading ? (
-        <div className="sig-box"><span className="sig-pend">Loading...</span></div>
+        <div className="sig-box"><span className="sig-pend">Loading…</span></div>
       ) : error ? (
         <div className="alert alert-error" role="alert">{error}</div>
       ) : sig ? (
@@ -513,7 +513,7 @@ export const ProposalSignatures = ({ proposal }) => {
         {round > 1 && <span className="sig-hint">Round {round}</span>}
       </div>
       {loading ? (
-        <p className="sig-hint">Loading signatures...</p>
+        <p className="sig-hint">Loading signatures…</p>
       ) : failed ? (
         <p className="sig-hint">{failed}</p>
       ) : (

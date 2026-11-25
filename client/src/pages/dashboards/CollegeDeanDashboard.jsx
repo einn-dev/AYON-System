@@ -63,7 +63,7 @@ const CollegeDeanDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="College Dean">

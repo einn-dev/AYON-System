@@ -366,7 +366,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <button className="btn btn-success"
                         disabled={saving || !signReady}
                         onClick={() => handleDecision(selected.proposal_id, 'endorsed')}>
-                        {saving ? 'Processing...' : <><FaPaperPlane className="ic" />Endorse to VCRED</>}
+                        {saving ? 'Processing…' : <><FaPaperPlane className="ic" />Endorse to VCRED</>}
                       </button>
 
                       {/* Return to the researcher (a reason is required) */}
@@ -380,7 +380,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                       <button className="btn btn-danger"
                         disabled={saving}
                         onClick={() => handleDecision(selected.proposal_id, 'rejected')}>
-                        {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
+                        {saving ? 'Processing…' : <><FaXmark className="ic" />Reject</>}
                       </button>
                     </div>
 
@@ -448,7 +448,7 @@ const DirectorDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="MSIRC Director">

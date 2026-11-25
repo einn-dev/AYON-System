@@ -112,7 +112,7 @@ const ResetPasswordPage = () => {
             <PasswordRules value={password} confirm={confirm} />
 
             <button type="submit" className="auth-btn" disabled={busy}>
-              {busy ? 'Saving...' : 'Reset Password'}
+              {busy ? 'Saving…' : 'Reset Password'}
             </button>
 
             <p className="auth-footer" style={{ marginTop: 4 }}>

@@ -122,7 +122,7 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
             {unread > 0 && (
               <button type="button" className="btn btn-outline btn-sm on-spacer"
                 onClick={markAll} disabled={busy}>
-                {busy ? 'Working...' : 'Mark All as Read'}
+                {busy ? 'Working…' : 'Mark All as Read'}
               </button>
             )}
           </div>

@@ -79,7 +79,7 @@ const ForgotPasswordPage = () => {
             </div>
 
             <button type="submit" className="auth-btn" disabled={busy}>
-              {busy ? 'Sending...' : 'Send Reset Link'}
+              {busy ? 'Sending…' : 'Send Reset Link'}
             </button>
 
             <p className="auth-footer" style={{ marginTop: 4 }}>
@@ -99,7 +99,7 @@ const ForgotPasswordPage = () => {
             {error && <p className="auth-error" role="alert" style={{ marginTop: 12, textAlign: 'left' }}>{error}</p>}
 
             <button type="button" className="pw-outline-btn" disabled={busy || wait > 0} onClick={() => send()}>
-              {busy ? 'Sending...' : wait > 0 ? `Send Again in ${wait}s` : 'Send Again'}
+              {busy ? 'Sending…' : wait > 0 ? `Send Again in ${wait}s` : 'Send Again'}
             </button>
 
             <p className="auth-footer"><Link to="/login"><FaArrowLeft className="ic" />Back to Sign In</Link></p>

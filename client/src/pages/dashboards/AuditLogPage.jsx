@@ -266,7 +266,7 @@ const AuditLogPage = () => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search by person..."
+            <input className="search-input" placeholder="Search by person…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 170 }}
               value={action} onChange={e => { setAction(e.target.value); setPage(1); }}>

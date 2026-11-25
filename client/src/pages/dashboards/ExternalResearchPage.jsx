@@ -190,7 +190,7 @@ const ExternalResearchPage = () => {
               </div>
               {problem && !saving && <p className="ext-still">Still needed: {problem}</p>}
               <button type="submit" className="btn btn-success" disabled={saving || !!problem}>
-                {saving ? 'Uploading...' : <><FaUpload className="ic" />Upload and Store to Repository</>}
+                {saving ? 'Uploading…' : <><FaUpload className="ic" />Upload and Store to Repository</>}
               </button>
             </form>
           </div>

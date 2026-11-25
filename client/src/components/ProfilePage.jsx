@@ -367,7 +367,7 @@ const ProfilePage = ({ roleLabel }) => {
 
                 <div className="pp-foot">
                   <button type="button" className="btn btn-outline" onClick={cancelEdit} disabled={saving}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+                  <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
                 </div>
               </form>
             )}

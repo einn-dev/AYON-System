@@ -21,7 +21,7 @@ const ChangePasswordPage = () => {
   const [error,    setError]    = useState('');
   const [busy,     setBusy]     = useState(false);
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
   if (!user)   return <Navigate to="/login" replace />;
   // nothing to change: go to the person's own dashboard
   if (!user.must_change_password) {
@@ -97,7 +97,7 @@ const ChangePasswordPage = () => {
           </div>
 
           <button type="submit" className="auth-btn" disabled={busy}>
-            {busy ? 'Saving...' : 'Save and Continue'}
+            {busy ? 'Saving…' : 'Save and Continue'}
           </button>
 
           <p className="auth-footer" style={{ marginTop: 4 }}>

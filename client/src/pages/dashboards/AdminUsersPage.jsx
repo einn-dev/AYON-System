@@ -574,7 +574,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search by name or email..."
+            <input className="search-input" placeholder="Search by name or email…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 170 }}
               value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>

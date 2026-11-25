@@ -108,7 +108,7 @@ const AllSubmissions = ({ proposals }) => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search by name or title..."
+            <input className="search-input" placeholder="Search by name or title…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
@@ -183,7 +183,7 @@ const Repository = () => {
       </div>
       <div className="panel">
         <div className="panel-header">
-          <input className="search-input" placeholder="Search by title or author..."
+          <input className="search-input" placeholder="Search by title or author…"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         {loading ? (
@@ -253,7 +253,7 @@ const MsricStaffDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="MSIRC Staff">

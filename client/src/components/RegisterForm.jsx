@@ -284,7 +284,7 @@ const RegisterForm = () => {
           {error && <p className="auth-error reg-span-3">{error}</p>}
 
           <button type="submit" className="auth-btn reg-span-3" disabled={loading}>
-            {loading ? 'Creating your account...' : 'Create Researcher Account'}
+            {loading ? 'Creating your account…' : 'Create Researcher Account'}
           </button>
         </form>
 

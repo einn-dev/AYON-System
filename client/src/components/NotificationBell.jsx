@@ -129,7 +129,7 @@ const NotificationBell = ({ role, base, notifPath, unread = 0 }) => {
             <h3>Notifications</h3>
             {newCount > 0 && (
               <button type="button" className="nb-link" onClick={markAll} disabled={busy}>
-                {busy ? 'Working...' : 'Mark All as Read'}
+                {busy ? 'Working…' : 'Mark All as Read'}
               </button>
             )}
           </div>
@@ -142,7 +142,7 @@ const NotificationBell = ({ role, base, notifPath, unread = 0 }) => {
 
           <div className="nb-list">
             {loading && !notifs.length ? (
-              <p className="nb-empty">Loading...</p>
+              <p className="nb-empty">Loading…</p>
             ) : failed ? (
               <div className="nb-empty">
                 Could not load your notifications.

@@ -102,7 +102,7 @@ const ItemModal = ({ item, onSaved, onClose }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Close</button>
           <button type="button" className="btn btn-primary" onClick={save} disabled={saving || !dirty}>
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -259,7 +259,7 @@ const AdminRepositoryPage = () => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search title, author or keywords..."
+            <input className="search-input" placeholder="Search title, author or keywords…"
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <select className="search-input" value={access} onChange={(e) => setAccess(e.target.value)} aria-label="Access">
               <option value="all">All Access</option>

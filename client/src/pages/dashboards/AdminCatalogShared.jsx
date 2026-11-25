@@ -77,7 +77,7 @@ export const ConfirmBox = ({ title, text, reason = false, confirmLabel = 'Confir
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
             onClick={go} disabled={!canSend}>
-            {saving ? 'Working...' : confirmLabel}
+            {saving ? 'Working…' : confirmLabel}
           </button>
         </div>
       </div>

@@ -196,7 +196,7 @@ const ResubmitModal = ({ proposal, onClose, onDone }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className="btn btn-success" onClick={send} disabled={!canSend}>
-            {saving ? 'Resubmitting...' : gform ? 'Resubmit Application' : 'Resubmit Proposal'}
+            {saving ? 'Resubmitting…' : gform ? 'Resubmit Application' : 'Resubmit Proposal'}
           </button>
         </div>
       </div>

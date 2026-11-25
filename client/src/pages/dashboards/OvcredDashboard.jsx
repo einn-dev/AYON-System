@@ -378,7 +378,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     <button className="btn btn-success"
                       disabled={saving || !signReady}
                       onClick={() => handleDecision('approve')}>
-                      {saving ? 'Processing...' : <><FaCheck className="ic" />Grant Final Approval</>}
+                      {saving ? 'Processing…' : <><FaCheck className="ic" />Grant Final Approval</>}
                     </button>
                     <button className="btn btn-outline"
                       disabled={saving}
@@ -388,7 +388,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     <button className="btn btn-danger"
                       disabled={saving}
                       onClick={() => handleDecision('rejected')}>
-                      {saving ? 'Processing...' : <><FaXmark className="ic" />Reject</>}
+                      {saving ? 'Processing…' : <><FaXmark className="ic" />Reject</>}
                     </button>
                   </div>
 
@@ -587,7 +587,7 @@ const StoreToRepository = ({ proposals }) => {
                 <label>Abstract</label>
                 <textarea rows={4} value={form.abstract}
                   onChange={e => setForm({ ...form, abstract: e.target.value })}
-                  placeholder="Enter abstract or description..."
+                  placeholder="Enter abstract or description…"
                   style={{ resize: 'vertical' }} />
               </div>
               <div className="form-row">
@@ -627,7 +627,7 @@ const StoreToRepository = ({ proposals }) => {
                 </select>
               </div>
               <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Storing...' : <><FaBoxArchive className="ic" />Store to Repository</>}
+                {saving ? 'Storing…' : <><FaBoxArchive className="ic" />Store to Repository</>}
               </button>
             </form>
           </div>
@@ -743,7 +743,7 @@ const OvcredDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="VCRED">

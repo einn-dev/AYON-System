@@ -425,7 +425,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false, issue
             {wide && f.hint && <p className="gf-field-hint">{f.hint}</p>}
             {f.type === 'select' ? (
               <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled} {...bad}>
-                <option value="">Choose...</option>
+                <option value="">Choose…</option>
                 {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             ) : f.type === 'agenda' ? (

@@ -157,7 +157,7 @@ const Submissions = ({ proposals, onRefresh }) => {
         <div className="panel-header">
           <div className="toolbar">
             <input className="search-input"
-              placeholder="Search by name or title..."
+              placeholder="Search by name or title…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" style={{ minWidth: 160 }}
               value={filter} onChange={e => setFilter(e.target.value)}>
@@ -502,7 +502,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   <label>Remarks</label>
                   <textarea rows={3} value={remarks}
                     onChange={e => setRemarks(e.target.value)}
-                    placeholder={`Add remarks for this ${wordFor(selected).p}...`}
+                    placeholder={`Add remarks for this ${wordFor(selected).p}…`}
                     style={{ resize: 'vertical' }} />
                   <span style={{ fontSize: '0.78rem', color: '#8a7a7d' }}>
                     If you return this {wordFor(selected).p}, these remarks are sent to the researcher as the reason.
@@ -520,7 +520,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                     onClick={handleForward}
                     disabled={saving || !allComplete || !signReady}
                     style={{ opacity: allComplete && signReady ? 1 : 0.5 }}>
-                    {saving ? 'Forwarding...' : <><FaPaperPlane className="ic" />Validate and Forward</>}
+                    {saving ? 'Forwarding…' : <><FaPaperPlane className="ic" />Validate and Forward</>}
                   </button>
                   {(!allComplete || !signReady) && (
                     <p style={{ fontSize: '0.75rem', color: '#718096', textAlign: 'center', margin: 0 }}>
@@ -623,7 +623,7 @@ const SpecialAssistantDashboard = () => {
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
   useLiveRefresh(fetchProposals);          // reloads by itself when something new happens
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading…</div>;
 
   return (
     <Layout navItems={NAV_ITEMS} role="MSIRC Special Assistant">

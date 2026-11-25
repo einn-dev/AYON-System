@@ -74,7 +74,7 @@ const ResendVerification = ({ email: presetEmail = '', askForEmail = false }) =>
           opacity: disabled ? 0.55 : 1,
         }}
       >
-        {busy ? 'Sending...' : wait > 0 ? `Resend available in ${wait}s` : 'Resend verification email'}
+        {busy ? 'Sending…' : wait > 0 ? `Resend available in ${wait}s` : 'Resend verification email'}
       </button>
       {status && (
         <p className={status.type === 'success' ? 'auth-success' : 'auth-error'}

@@ -34,7 +34,7 @@ const statusText = statusLabel;
 /* Is it this role's turn on this proposal? */
 export const isMyTurn = (p, role) => p.status === 'for_endorsement' && p.endorsement_stage === role;
 
-/* The next college role for the "Endorsing sends it to ..." note: the first one in the order
+/* The next college role for the "Endorsing sends it to …" note: the first one in the order
    that has not endorsed yet in this round (a role with no account is skipped by the server) */
 const nextLabel = (role, p) => {
   const round = roundOf(p);
@@ -300,7 +300,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                 <button className="btn btn-success" disabled={saving || !signReady} onClick={() => send('endorsed')}
                   title={signReady ? undefined : 'Tick the box under your signature first'}>
-                  {saving ? 'Processing...' : <><FaCheck className="ic" />Endorse and Sign</>}
+                  {saving ? 'Processing…' : <><FaCheck className="ic" />Endorse and Sign</>}
                 </button>
                 <button className="btn btn-warning" disabled={saving}
                   onClick={() => (noteOk ? setConfirming(true) : send('returned'))}>
@@ -315,7 +315,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                 </p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-warning btn-sm" disabled={saving} onClick={() => send('returned')}>
-                    {saving ? 'Returning...' : 'Yes, Return It'}
+                    {saving ? 'Returning…' : 'Yes, Return It'}
                   </button>
                   <button className="btn btn-outline btn-sm" disabled={saving} onClick={() => setConfirming(false)}>
                     Cancel
@@ -358,7 +358,7 @@ export const EndorsedHistory = () => {
       <div className="panel">
         <div className="panel-header">
           <div className="toolbar">
-            <input className="search-input" placeholder="Search by title or researcher..."
+            <input className="search-input" placeholder="Search by title or researcher…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <select className="search-input" aria-label="Your action" value={show} onChange={e => setShow(e.target.value)}>
               <option value="all">Endorsed and returned</option>

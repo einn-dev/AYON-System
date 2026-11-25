@@ -170,7 +170,7 @@ const LoginForm = () => {
 
           <button type="submit" className={`auth-btn${loading ? ' is-loading' : ''}`} disabled={loading}>
             {loading && <span className="as-spin" aria-hidden="true" />}
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

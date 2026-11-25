@@ -146,7 +146,7 @@ export const CollegeExternalPage = () => {
           <h2>Externally Funded Research</h2>
           <span className="badge badge-blue">{shown.length}</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
-            <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder..."
+            <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder…"
               aria-label="Search external research" style={{ minWidth: 220 }} />
             <select className="search-input" value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Filter by department">
               <option value="">All departments</option>
@@ -268,7 +268,7 @@ export const OfficeExternalPage = () => {
           </button>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 20px 14px' }}>
-          <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder..."
+          <input type="search" className="search-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, leader, funder…"
             aria-label="Search external research" style={{ minWidth: 220, flex: '1 1 220px' }} />
           <select className="search-input" value={college} onChange={(e) => setCollege(e.target.value)} aria-label="Filter by college">
             <option value="">All colleges</option>

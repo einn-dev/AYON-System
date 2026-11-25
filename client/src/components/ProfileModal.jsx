@@ -277,7 +277,7 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
               <div className="pm-foot">
                 <button type="button" className="btn btn-outline" onClick={onClose}>Close</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
             </form>

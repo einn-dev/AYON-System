@@ -168,7 +168,7 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="button" className="btn btn-primary" onClick={save} disabled={saving}>
-            {saving ? 'Saving...' : (item ? 'Save Changes' : 'Post Announcement')}
+            {saving ? 'Saving…' : (item ? 'Save Changes' : 'Post Announcement')}
           </button>
         </div>
       </div>

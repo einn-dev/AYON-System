@@ -80,7 +80,7 @@ const ChangePasswordBox = () => {
 
       <div className="pw-box-actions">
         <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={update}>
-          {busy ? 'Updating...' : 'Update Password'}
+          {busy ? 'Updating…' : 'Update Password'}
         </button>
         <span className="pw-box-hint">
           You stay signed in on this device. Other devices will be signed out.

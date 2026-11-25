@@ -94,10 +94,10 @@ export const FileButtons = ({ path, name, label = 'document', small = true }) =>
   return (
     <span className="pf-btns">
       <button type="button" className={`btn btn-outline ${small ? 'btn-sm' : ''}`} onClick={view} disabled={!!busy} aria-label={`View ${label} in a new tab`}>
-        {busy === 'view' ? 'Opening...' : <>View <FaArrowUpRightFromSquare className="ic-r" /></>}
+        {busy === 'view' ? 'Opening…' : <>View <FaArrowUpRightFromSquare className="ic-r" /></>}
       </button>
       <button type="button" className={`btn btn-outline ${small ? 'btn-sm' : ''}`} onClick={download} disabled={!!busy} aria-label={`Download ${label}`}>
-        <FaDownload className="ic" />{busy === 'download' ? 'Preparing...' : 'Download'}
+        <FaDownload className="ic" />{busy === 'download' ? 'Preparing…' : 'Download'}
       </button>
       {err && <span role="alert" style={{ flexBasis: '100%', color: '#c53030', fontSize: '0.78rem' }}>{err}</span>}
     </span>

@@ -312,7 +312,7 @@ export const TerminalReportForm = ({ proposal, report, onClose, onDone }) => {
         {error && <div className="alert alert-error" role="alert">{error}</div>}
         <div className="modal-footer">
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Submitting...' : 'Submit Terminal Report'}</button>
+          <button type="button" className="btn btn-primary" onClick={submit} disabled={saving}>{saving ? 'Submitting…' : 'Submit Terminal Report'}</button>
         </div>
       </div>
     </div>,
@@ -472,8 +472,8 @@ export const TerminalReportsPage = () => {
                 {A.sign && <SignConfirm key={sel.report_id} onReady={setSignReady} verb="endorse" noun="terminal report" disabled={!!busy} />}
                 {err && <div className="alert alert-error" role="alert">{err}</div>}
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-warning" disabled={!!busy} onClick={() => act('return')}>{busy === 'return' ? 'Returning...' : 'Return to Researcher'}</button>
-                  <button type="button" className="btn btn-success" disabled={!!busy} onClick={() => act('approve')}>{busy === 'approve' ? 'Saving...' : A.verb}</button>
+                  <button type="button" className="btn btn-warning" disabled={!!busy} onClick={() => act('return')}>{busy === 'return' ? 'Returning…' : 'Return to Researcher'}</button>
+                  <button type="button" className="btn btn-success" disabled={!!busy} onClick={() => act('approve')}>{busy === 'approve' ? 'Saving…' : A.verb}</button>
                 </div>
               </div>
             )}

@@ -46,7 +46,7 @@ const VerifyEmailPage = () => {
 
         {state === 'loading' && (
           <>
-            <h2>Verifying Your Email...</h2>
+            <h2>Verifying Your Email…</h2>
             <p style={{ color: '#8a7a7d', fontSize: '0.9rem' }}>Please wait a moment.</p>
           </>
         )}
