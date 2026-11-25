@@ -34,6 +34,7 @@ export const notifTarget = (n, role) => {
   if (isRepoNews(n) && role === 'msric_staff') return '/msric-staff/repository';
   if (isGrantAlert(n) && role !== 'researcher') return `${base}/grants`;
   if (isTerminalNews(n) && TERMINAL_ROLES.includes(role)) return `${base}/terminal-reports`;
+  if (isTerminalNews(n) && role === 'researcher') return n.proposal_id ? `${base}/terminal-reports?open=${n.proposal_id}` : `${base}/terminal-reports`;
   if (!n.proposal_id || !OPEN_ON[role]) return '';
   return `${base}/${OPEN_ON[role]}?open=${n.proposal_id}`;
 };

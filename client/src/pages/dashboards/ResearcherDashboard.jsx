@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import TerminalReportBox from '../../components/TerminalReport';
+import { TerminalReportLink, MyTerminalReportsPage } from '../../components/TerminalReport';
 import { Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -15,7 +15,7 @@ import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaFlagCheckered, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from 'react-icons/fa6';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import FormToast, { jumpTo } from '../../components/FormToast';
@@ -34,6 +34,7 @@ const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
   { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines /> },
   { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
+  { path: '/researcher/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
   { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
@@ -512,8 +513,8 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
               </div>
             )}
             <ProposalFiles proposal={selected} />
-            {/* approved Internally Funded Research: the Terminal Report (MSIRC Form No. 007) */}
-            <TerminalReportBox proposal={selected} />
+            {/* approved Internally Funded Research: where its Terminal Report stands, with a link to its page */}
+            <TerminalReportLink proposal={selected} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 24px', marginBottom: 16 }}>
               {[
                 { label: K.typeHead, value: typeText(selected.proposal_type) },
@@ -1177,6 +1178,7 @@ const ResearcherDashboard = () => {
         <Route path="grants"     element={<MyProposals key="grants" kind="grants" proposals={proposals} onRefresh={fetchProposals} />} />
         <Route path="grants/new" element={<SubmitProposal key="g-new" kind="grants" onRefresh={fetchProposals} proposals={proposals} />} />
         <Route path="grants/:id/edit" element={<SubmitProposal key="g-edit" kind="grants" onRefresh={fetchProposals} proposals={proposals} />} />
+        <Route path="terminal-reports" element={<MyTerminalReportsPage proposals={proposals} onRefresh={fetchProposals} />} />
         <Route path="external"   element={<ExternalResearchPage />} />
         <Route path="repository" element={<Repository />} />
         <Route path="notifications" element={<NotificationsPage />} />

@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaFileLines, FaXmark, FaCloudArrowUp, FaCheck, FaRotateLeft, FaFlagCheckered, FaCircleCheck, FaFilePdf, FaFileWord,
+  FaArrowLeft, FaArrowRight,
 } from 'react-icons/fa6';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -370,6 +372,134 @@ export const TerminalReportBox = ({ proposal }) => {
       )}
       {form && <TerminalReportForm proposal={proposal} report={report} onClose={() => setForm(false)} onDone={() => { setForm(false); load(); }} />}
     </section>
+  );
+};
+
+/* ── the researcher: a short line in View Details that leads to the Terminal Reports page ── */
+const BADGE = { for_dean: 'badge-amber', for_validation: 'badge-amber', for_director: 'badge-amber', returned: 'badge-red', accepted: 'badge-green' };
+const SHORT = { for_dean: 'With the College Dean', for_validation: 'With the Special Assistant', for_director: 'With the MSIRC Director', returned: 'Returned for changes', accepted: 'Accepted · Completed' };
+const reportBadge = (r) => (r ? <span className={`badge ${BADGE[r.status] || 'badge-gray'}`}>{SHORT[r.status] || r.status}</span>
+  : <span className="badge badge-gray">Not submitted yet</span>);
+
+export const TerminalReportLink = ({ proposal, base = '/researcher/terminal-reports' }) => {
+  const [report, setReport] = useState(undefined);
+  useEffect(() => {
+    if (!canHaveTerminalReport(proposal)) return undefined;
+    let alive = true;
+    API.get(`/proposals/${proposal.proposal_id}/terminal-report`)
+      .then((res) => { if (alive) setReport(res.data?.report || null); })
+      .catch(() => { if (alive) setReport(null); });
+    return () => { alive = false; };
+  }, [proposal]);
+  if (!canHaveTerminalReport(proposal) || report === undefined) return null;
+  return (
+    <div className={`tr-link ${report?.status === 'accepted' ? 'is-done' : ''}`}>
+      <FaFlagCheckered className="tr-box-ic" aria-hidden="true" />
+      <div className="tr-link-text">
+        <span className="tr-cap">Terminal Report (MSIRC Form No. 007)</span>
+        {reportBadge(report)}
+      </div>
+      <Link className="btn btn-outline btn-sm" to={`${base}?open=${proposal.proposal_id}`}>
+        {!report ? 'Submit it' : report.status === 'returned' ? 'Fix it' : 'View it'}<FaArrowRight className="ic" />
+      </Link>
+    </div>
+  );
+};
+
+/* ── the researcher: Terminal Reports page ──
+   Every approved Internally Funded Research of the researcher, with where its
+   Terminal Report stands. Opening one shows the report, its route and the form.
+   ?open=<proposal id> opens it directly (from View Details or a notification). */
+export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const projects = useMemo(() => proposals.filter(canHaveTerminalReport)
+    .sort((a, b) => new Date(b.decided_at || b.submitted_at || 0) - new Date(a.decided_at || a.submitted_at || 0)), [proposals]);
+  const [reports, setReports] = useState(null);       // proposal_id -> report or null
+  const [openId, setOpenId] = useState(null);
+
+  const loadAll = useCallback(async () => {
+    const pairs = await Promise.all(projects.map((p) => API.get(`/proposals/${p.proposal_id}/terminal-report`)
+      .then((res) => [p.proposal_id, res.data?.report || null]).catch(() => [p.proposal_id, null])));
+    setReports(Object.fromEntries(pairs));
+  }, [projects]);
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  /* ?open=<id> */
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('open');
+    if (id) { setOpenId(Number(id)); navigate(location.pathname, { replace: true }); }
+  }, [location.search, location.pathname, navigate]);
+
+  const opened = projects.find((p) => p.proposal_id === openId);
+  const back = () => { setOpenId(null); loadAll(); if (onRefresh) onRefresh(); };
+
+  if (opened) {
+    return (
+      <>
+        <button type="button" className="btn btn-outline btn-sm" style={{ marginBottom: 16 }} onClick={back}>
+          <FaArrowLeft className="ic" />Back to Terminal Reports
+        </button>
+        <div className="panel tr-page-panel">
+          <div className="panel-header"><h2 style={{ overflowWrap: 'anywhere' }}>{opened.title}</h2></div>
+          <div style={{ padding: '16px 20px 4px' }}>
+            <TerminalReportBox proposal={opened} />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const counts = { all: projects.length, todo: 0, moving: 0, done: 0 };
+  projects.forEach((p) => {
+    const r = reports?.[p.proposal_id];
+    if (!r || r.status === 'returned') counts.todo += 1;
+    else if (r.status === 'accepted') counts.done += 1;
+    else counts.moving += 1;
+  });
+
+  return (
+    <>
+      <div className="page-header">
+        <h1>Terminal Reports</h1>
+        <p>When an approved Internally Funded Research project ends, submit its Terminal Report (MSIRC Form No. 007) here.
+          It goes to your College Dean, the MSIRC Special Assistant and the MSIRC Director. Once accepted, the research is Completed.</p>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Your Approved Internally Funded Research</h2>
+          <span className="badge badge-amber">{counts.todo ? `${counts.todo} to submit or fix` : `${counts.all}`}</span>
+        </div>
+        <table className="data-table">
+          <thead><tr><th>#</th><th>Title</th><th>Approved</th><th>Terminal Report</th><th>Action</th></tr></thead>
+          <tbody>
+            {reports && projects.map((p, i) => {
+              const r = reports[p.proposal_id];
+              const label = !r ? 'Submit' : r.status === 'returned' ? 'Fix and Resubmit' : 'View';
+              return (
+                <tr key={p.proposal_id}>
+                  <td style={{ color: '#8a7a7d' }}>{i + 1}</td>
+                  <td style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{p.title}</td>
+                  <td style={{ color: '#718096', whiteSpace: 'nowrap' }}>{p.decided_at ? short(p.decided_at) : '—'}</td>
+                  <td>{reportBadge(r)}</td>
+                  <td>
+                    <button type="button" className={`btn btn-sm ${!r || r.status === 'returned' ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => setOpenId(p.proposal_id)}>{label}</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {reports && projects.length === 0 && (
+              <tr><td colSpan={5}><div className="empty-state">
+                <p>No approved Internally Funded Research yet. When one of yours is approved, its Terminal Report is submitted here.</p>
+              </div></td></tr>
+            )}
+            {!reports && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 };
 
