@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark, FaMagnifyingGlass, FaChevronDown } from 'react-icons/fa6';
+import { FaCheck, FaFileLines, FaArrowUpFromBracket, FaTrashCan, FaPlus, FaXmark, FaMagnifyingGlass, FaChevronDown } from '../utils/icons';
 import { ROLE_LABEL } from '../utils/terms';
 import {
   GRANT_FORMS, formOf, formLabel, stepOf, shown, requiredDocs, AGENDA, LONG, PLAN_MONTHS, BUDGET_MAX, budgetTotals, wordsIn, MOOE_GROUPS, groupOf, mooeGroups,

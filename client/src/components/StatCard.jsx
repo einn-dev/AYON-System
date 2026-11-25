@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowRight } from 'react-icons/fa6';
+import { FaArrowRight } from '../utils/icons';
 
 /* ─────────────────────────────────────────────────────────────
    A number card on a dashboard.

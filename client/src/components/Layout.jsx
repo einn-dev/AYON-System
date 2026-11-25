@@ -12,11 +12,11 @@ import ProfilePage from './ProfilePage';
 import AnnouncementBanner from './Announcements';
 import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
-import { FaBars, FaRightFromBracket, FaXmark, FaCircleUser } from 'react-icons/fa6';
+import { FaBars, FaRightFromBracket, FaXmark, FaCircleUser } from '../utils/icons';
 import { personName } from '../utils/names';
 import { OPEN_PROFILE } from './Signature';
 import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
-import { FaBell, FaXmark as FaClose } from 'react-icons/fa6';
+import { FaBell, FaXmark as FaClose } from '../utils/icons';
 import { COLLAPSE_MENU } from './StatCard';
 
 /* phones and small tablets: the menu slides in from the left instead of taking up the screen */

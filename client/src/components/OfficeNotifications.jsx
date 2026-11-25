@@ -4,7 +4,7 @@ import API from '../services/authService';
 import './Layout.css';
 import './OfficeNotifications.css';
 import { useLiveRefresh } from '../utils/liveRefresh';
-import { FaBell, FaCircleCheck, FaCircleXmark, FaChevronRight, FaClipboardList, FaPaperPlane, FaSignature } from 'react-icons/fa6';
+import { FaBell, FaCircleCheck, FaCircleXmark, FaChevronRight, FaClipboardList, FaPaperPlane, FaSignature } from '../utils/icons';
 
 /* Notifications page for the MSIRC Special Assistant, MSIRC Director, VCRED and MSIRC Staff.
      queuePath:   where "Open" goes (their queue), for example "/director/for-review"

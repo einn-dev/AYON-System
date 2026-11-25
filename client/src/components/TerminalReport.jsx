@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaFileLines, FaXmark, FaCloudArrowUp, FaCheck, FaRotateLeft, FaFlagCheckered, FaCircleCheck, FaFilePdf, FaFileWord,
   FaArrowRight,
-} from 'react-icons/fa6';
+} from '../utils/icons';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { SignConfirm } from './Signature';

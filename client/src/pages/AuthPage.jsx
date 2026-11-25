@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa6';
+import { FaArrowLeft } from '../utils/icons';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import AuthBackdrop from '../components/AuthBackdrop';

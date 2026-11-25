@@ -7,7 +7,7 @@ import { checkAvatarFile, prepareAvatar, AVATAR_MAX_MB } from '../utils/avatar';
 import Avatar from './Avatar';
 import ChangePasswordBox from './ChangePasswordBox';
 import { MySignature, SIGNER_ROLES } from './Signature';
-import { FaCamera, FaTrashCan, FaXmark, FaUser, FaSignature, FaKey } from 'react-icons/fa6';
+import { FaCamera, FaTrashCan, FaXmark, FaUser, FaSignature, FaKey } from '../utils/icons';
 import './Account.css';
 import { personName } from '../utils/names';
 import MessageToast from './MessageToast';

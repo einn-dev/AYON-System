@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL, STATUS_LABEL, statusBadge } from '../utils/terms';
 import { CONTACT, FAQ, STATUS_HELP, WHO_SIGNS, guidesFor } from '../data/helpContent';
-import { FaPrint, FaLocationDot, FaEnvelope, FaPhone, FaClock } from 'react-icons/fa6';
+import { FaPrint, FaLocationDot, FaEnvelope, FaPhone, FaClock } from '../utils/icons';
 import '../components/TopBar.css';
 
 /* ─────────────────────────────────────────────────────────────

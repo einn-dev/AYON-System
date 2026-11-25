@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FaCircleExclamation, FaCircleCheck, FaCircleInfo, FaXmark } from 'react-icons/fa6';
+import { FaCircleExclamation, FaCircleCheck, FaCircleInfo, FaXmark } from '../utils/icons';
 import './FormToast.css';
 
 /* ─────────────────────────────────────────────────────────────

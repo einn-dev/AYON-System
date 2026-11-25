@@ -5,7 +5,7 @@ import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import AuthBackdrop from '../components/AuthBackdrop';
 import '../components/PasswordPages.css';
-import { FaArrowLeft, FaEnvelope } from 'react-icons/fa6';
+import { FaArrowLeft, FaEnvelope } from '../utils/icons';
 
 const WAIT_SECONDS = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import API from '../services/authService';
 import {
   FaBell, FaCircleCheck, FaCircleXmark, FaClipboardList, FaPaperPlane, FaSignature, FaArrowRight,
-} from 'react-icons/fa6';
+} from '../utils/icons';
 import './NotificationBell.css';
 import { LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
 import { notifTarget, timeAgo, fullTime } from '../utils/notifLinks';

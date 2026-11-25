@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/authService';
 import ProposalTracker, { COLLEGE_CHAIN, roundOf, whereNow } from './ProposalTracker';
-import { FaArrowLeft, FaCheck, FaRotateLeft } from 'react-icons/fa6';
+import { FaArrowLeft, FaCheck, FaRotateLeft } from '../utils/icons';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL, wordFor } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';

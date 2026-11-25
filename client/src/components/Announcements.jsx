@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import API from '../services/authService';
-import { FaBell, FaCircleInfo, FaTriangleExclamation, FaXmark } from 'react-icons/fa6';
+import { FaBell, FaCircleInfo, FaTriangleExclamation, FaXmark } from '../utils/icons';
 import './Announcements.css';
 
 /* ─────────────────────────────────────────────────────────────

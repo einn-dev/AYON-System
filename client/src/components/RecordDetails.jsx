@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaLock } from 'react-icons/fa6';
+import { FaLock } from '../utils/icons';
 import API from '../services/authService';
 import ProposalTracker from './ProposalTracker';
 import { ProposalSignatures } from './Signature';

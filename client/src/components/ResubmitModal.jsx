@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaXmark } from 'react-icons/fa6';
+import { FaXmark } from '../utils/icons';
 import API from '../services/authService';
 import './Resubmit.css';
 import { DocumentsEditor, docsFromFiles, docsProblem, docsChanges, appendDocs, filesOf } from './ProposalFiles';

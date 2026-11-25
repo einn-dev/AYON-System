@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL } from '../utils/terms';
-import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaSignature } from 'react-icons/fa6';
+import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaSignature } from '../utils/icons';
 import './Signature.css';
 import { personName } from '../utils/names';
 import MessageToast from './MessageToast';

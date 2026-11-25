@@ -5,7 +5,7 @@ import PasswordInput from './PasswordInput';
 import ResendVerification from './ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import { COLLEGES, getDepartments } from '../data/Colleges';
-import { FaArrowLeft, FaEnvelopeCircleCheck } from 'react-icons/fa6';
+import { FaArrowLeft, FaEnvelopeCircleCheck } from '../utils/icons';
 
 const EMPTY_FORM = {
   first_name: '', middle_name: '', last_name: '', email: '',

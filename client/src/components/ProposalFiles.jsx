@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare, FaDownload } from 'react-icons/fa6';
+import { FaCirclePlus, FaFileLines, FaArrowUpRightFromSquare, FaDownload } from '../utils/icons';
 import './ProposalFiles.css';
 import API from '../services/authService';
 import { GrantFormView, mainDocLabel } from './GrantForms';

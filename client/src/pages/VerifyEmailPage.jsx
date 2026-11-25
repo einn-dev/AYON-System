@@ -4,7 +4,7 @@ import API from '../services/authService';
 import ResendVerification from '../components/ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
-import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from '../utils/icons';
 
 const linkButton = {
   display: 'block', textDecoration: 'none', textAlign: 'center', marginTop: 20,

@@ -11,7 +11,7 @@ import { ProposalFiles, FileButtons } from './ProposalFiles';
 import {
   FaMagnifyingGlass, FaCircleQuestion, FaXmark, FaFileLines, FaBoxArchive,
   FaUser, FaArrowRight, FaBookOpen, FaBars,
-} from 'react-icons/fa6';
+} from '../utils/icons';
 import './TopBar.css';
 import NotificationBell from './NotificationBell';
 

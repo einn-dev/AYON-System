@@ -4,7 +4,7 @@ import {
   FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaChevronDown, FaCloudArrowUp,
   FaClipboardCheck, FaHandHoldingDollar, FaMagnifyingGlassChart, FaUserGraduate,
   FaBuildingColumns, FaUserCheck, FaUserTie, FaStamp, FaDatabase, FaArrowUp, FaChartColumn, FaEnvelope, FaPhone, FaLocationDot, FaClock, FaCopy, FaFlask, FaGlobe,
-} from 'react-icons/fa6';
+} from '../utils/icons';
 import logo from '../assets/ayon-logo.png';
 import msircLogo from '../assets/msirc-emblem.png';
 import { CONTACT } from '../data/helpContent';

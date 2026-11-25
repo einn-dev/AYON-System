@@ -8,7 +8,7 @@ import logo from '../assets/ayon-logo.png';
 import './AuthPages.css';
 import AuthBackdrop from '../components/AuthBackdrop';
 import '../components/PasswordPages.css';
-import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaArrowLeft, FaCircleCheck, FaTriangleExclamation } from '../utils/icons';
 
 const NEW_LINK_MESSAGES = ['RESET_LINK_INVALID', 'RESET_LINK_EXPIRED'];
 

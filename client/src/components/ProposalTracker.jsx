@@ -1,7 +1,7 @@
 import React from 'react';
 import './ProposalTracker.css';
 import { ROLE_LABEL, statusLabel } from '../utils/terms';
-import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from 'react-icons/fa6';
+import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from '../utils/icons';
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:

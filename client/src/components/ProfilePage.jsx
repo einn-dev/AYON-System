@@ -10,7 +10,7 @@ import { MySignature, SIGNER_ROLES } from './Signature';
 import {
   FaCamera, FaTrashCan, FaUser, FaSignature, FaKey, FaPen, FaChevronDown, FaEnvelope,
   FaPhone, FaBuildingColumns, FaSitemap, FaShieldHalved, FaCalendar,
-} from 'react-icons/fa6';
+} from '../utils/icons';
 import './Account.css';
 import './ProfilePage.css';
 import { personName } from '../utils/names';
