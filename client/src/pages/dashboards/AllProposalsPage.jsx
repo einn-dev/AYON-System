@@ -196,7 +196,7 @@ const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {
             )}
 
             <div className="po-field">
-              <label htmlFor="po-target">Move to</label>
+              <label htmlFor="po-target">Move To</label>
               <select id="po-target" value={target} onChange={e => setTarget(e.target.value)}>
                 {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -358,7 +358,7 @@ const AllProposalsPage = () => {
         {error && (
           <div className="alert alert-error" style={{ margin: 16 }}>
             {error}{' '}
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => { setLoading(true); load(); }}>Try again</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => { setLoading(true); load(); }}>Try Again</button>
           </div>
         )}
 

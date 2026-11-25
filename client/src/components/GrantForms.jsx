@@ -763,9 +763,9 @@ export const GrantFormView = ({ proposal }) => {
         {facts.length > 0 && <small>{facts.join(' · ')}</small>}
       </div>
       <div className="gf-fcard-btns">
-        {paper && <button type="button" className="btn btn-primary btn-sm" onClick={show('form')}>Form view</button>}
+        {paper && <button type="button" className="btn btn-primary btn-sm" onClick={show('form')}>Form View</button>}
         <button type="button" className={`btn btn-sm ${paper ? 'btn-outline' : 'btn-primary'}`} onClick={show('list')}>
-          {paper ? 'List view' : 'View form'}
+          {paper ? 'List View' : 'View Form'}
         </button>
       </div>
       {open && (
@@ -811,8 +811,8 @@ const FormPanel = ({ proposal, form, view, paper, onView, onClose }) => {
           </div>
           {paper && (
             <div className="gf-viewbar" role="group" aria-label="How to show the form">
-              <button type="button" className={view === 'form' ? 'on' : ''} aria-pressed={view === 'form'} onClick={() => onView('form')}>Form view</button>
-              <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => onView('list')}>List view</button>
+              <button type="button" className={view === 'form' ? 'on' : ''} aria-pressed={view === 'form'} onClick={() => onView('form')}>Form View</button>
+              <button type="button" className={view === 'list' ? 'on' : ''} aria-pressed={view === 'list'} onClick={() => onView('list')}>List View</button>
             </div>
           )}
           <button type="button" className="btn-close" ref={closeRef} onClick={onClose} aria-label="Close the form"><FaXmark /></button>

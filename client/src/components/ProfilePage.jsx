@@ -204,15 +204,15 @@ const ProfilePage = ({ roleLabel }) => {
           </button>
           {menu && (
             <div className="pp-menu" role="menu">
-              <button type="button" role="menuitem" onClick={startEdit}><FaUser />Edit profile</button>
-              <button type="button" role="menuitem" onClick={pickPhoto}><FaCamera />Change photo</button>
+              <button type="button" role="menuitem" onClick={startEdit}><FaUser />Edit Profile</button>
+              <button type="button" role="menuitem" onClick={pickPhoto}><FaCamera />Change Photo</button>
               {signs && (
                 <button type="button" role="menuitem" onClick={() => { setMenu(false); setTab('signature'); }}>
                   <FaSignature />Digital signature
                 </button>
               )}
               <button type="button" role="menuitem" onClick={() => { setMenu(false); setTab('password'); }}>
-                <FaKey />Change password
+                <FaKey />Change Password
               </button>
             </div>
           )}

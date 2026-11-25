@@ -133,7 +133,7 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
         ) : failed ? (
           <div className="empty-state error-state" role="alert">
             <p>Could not load your notifications.</p>
-            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try again</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
           </div>
         ) : shown.length === 0 ? (
           <div className="empty-state">

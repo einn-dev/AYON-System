@@ -298,7 +298,7 @@ const ReportsPage = () => {
           </select>
         </div>
         <div className="rp-f">
-          <label htmlFor="rp-type">Proposal type</label>
+          <label htmlFor="rp-type">Proposal Type</label>
           <select id="rp-type" value={filters.type} onChange={set('type')}>
             <option value="">All Types</option>
             {TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
@@ -384,7 +384,7 @@ const ReportsPage = () => {
               <div><span>Colleges</span><b>{ext.colleges}</b></div>
             </div>
             <div className="rp-ext-col">
-              <h4>By college</h4>
+              <h4>By College</h4>
               {ext.total
                 ? <HBars rows={ext.by_college.map(c => ({ name: c.name, count: c.count }))} total={ext.total} bind={bind} color={EXT_COLOR} />
                 : <div className="ps-empty">No external research in these filters.</div>}

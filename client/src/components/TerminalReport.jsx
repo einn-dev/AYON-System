@@ -158,7 +158,7 @@ const ReportCard = ({ proposal, report }) => {
         <small>{[f.months && `${f.months} months`, f.amount && peso(f.amount)].filter(Boolean).join(' · ')}</small>
       </div>
       <div className="gf-fcard-btns">
-        <button type="button" className="btn btn-primary btn-sm" onClick={() => setOpen(true)}>Form view</button>
+        <button type="button" className="btn btn-primary btn-sm" onClick={() => setOpen(true)}>Form View</button>
       </div>
       {open && createPortal(
         <div className="gf-panel-back" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>

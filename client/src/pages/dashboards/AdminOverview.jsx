@@ -13,10 +13,10 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 
 const RANGES = [
-  { value: 'all',  label: 'All time'     },
-  { value: 'year', label: 'This year'    },
-  { value: '90',   label: 'Last 90 days' },
-  { value: '30',   label: 'Last 30 days' },
+  { value: 'all',  label: 'All Time'     },
+  { value: 'year', label: 'This Year'    },
+  { value: '90',   label: 'Last 90 Days' },
+  { value: '30',   label: 'Last 30 Days' },
 ];
 
 const STATUS_LABELS = STATUS_LABEL;
@@ -113,7 +113,7 @@ const AdminOverview = ({ users }) => {
       {error && (
         <div className="alert alert-error">
           {error}{' '}
-          <button className="btn btn-outline btn-sm" onClick={load}>Try again</button>
+          <button className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
         </div>
       )}
 

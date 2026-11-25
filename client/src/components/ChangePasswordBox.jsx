@@ -50,7 +50,7 @@ const ChangePasswordBox = () => {
 
   return (
     <div className="pw-box" onKeyDown={onKeyDown}>
-      <h4>Change password</h4>
+      <h4>Change Password</h4>
       <p className="pw-box-sub">
         Enter your current password first. We ask so nobody can change it from a
         computer you left signed in.

@@ -348,7 +348,7 @@ const ProposalStats = ({ proposals = [], groupBy = 'college', title = 'Submissio
               </tbody>
               <tfoot>
                 <tr>
-                  <th scope="row">All types</th>
+                  <th scope="row">All Types</th>
                   {tableYears.map(y => <td key={y}>{all.filter(p => yearOf(p) === y).length + external.filter(x => extYear(x) === y).length}</td>)}
                   <td className="ps-sum">{all.length + external.length}</td>
                 </tr>

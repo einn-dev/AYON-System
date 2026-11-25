@@ -129,7 +129,7 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
         </div>
 
         <div className="form-group">
-          <label>Shown to</label>
+          <label>Shown To</label>
           <label className="ann-check">
             <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} disabled={saving} /> Everyone
           </label>
@@ -147,11 +147,11 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
 
         <div className="ann-dates">
           <div className="form-group">
-            <label htmlFor="an-from">Show from *</label>
+            <label htmlFor="an-from">Show From *</label>
             <input id="an-from" type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} disabled={saving} />
           </div>
           <div className="form-group">
-            <label htmlFor="an-until">Show until</label>
+            <label htmlFor="an-until">Show Until</label>
             <input id="an-until" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} disabled={saving} />
             <div className="ann-hint">Leave empty to show it until you hide it.</div>
           </div>

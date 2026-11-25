@@ -345,17 +345,17 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
         <form onSubmit={save}>
           <div className="form-row row-3">
             <div className="form-group">
-              <label>First name</label>
+              <label>First Name</label>
               <input required value={form.first_name} maxLength={50}
                 onChange={e => setForm({ ...form, first_name: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Middle name</label>
+              <label>Middle Name</label>
               <input value={form.middle_name} maxLength={50}
                 onChange={e => setForm({ ...form, middle_name: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Last name</label>
+              <label>Last Name</label>
               <input required value={form.last_name} maxLength={50}
                 onChange={e => setForm({ ...form, last_name: e.target.value })} />
             </div>
