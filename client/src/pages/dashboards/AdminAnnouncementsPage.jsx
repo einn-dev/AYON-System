@@ -261,7 +261,7 @@ const AdminAnnouncementsPage = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5}><div className="empty-state"><p>Loading...</p></div></td></tr>
+              <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>
             ) : failed ? (
               <tr><td colSpan={5}><div className="empty-state"><p>{failed}</p></div></td></tr>
             ) : shown.length === 0 ? (

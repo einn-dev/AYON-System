@@ -278,7 +278,7 @@ const ProfilePage = ({ roleLabel }) => {
             {alert && <div className={`alert alert-${alert.type}`} role="status">{alert.msg}</div>}
 
             {fetching ? (
-              <div className="empty-state"><p>Loading your profile...</p></div>
+              <div className="empty-state loading-state" role="status"><p>Loading your profile…</p></div>
             ) : !editing ? (
               <div className="pp-grid">
                 <Field icon={<FaUser />} label="Full name">{personName(saved)}</Field>

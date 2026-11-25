@@ -337,7 +337,7 @@ const AuditLogPage = () => {
                 </td></tr>
               )}
               {loading && logs.length === 0 && (
-                <tr><td colSpan={5}><div className="empty-state"><p>Loading…</p></div></td></tr>
+                <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>
               )}
             </tbody>
           </table>

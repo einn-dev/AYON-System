@@ -187,7 +187,7 @@ const Repository = () => {
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : (
           <table className="data-table">
             <thead>

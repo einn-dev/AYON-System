@@ -363,7 +363,7 @@ const AllProposalsPage = () => {
         )}
 
         {loading ? (
-          <div className="empty-state"><p>Loading proposals…</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading proposals…</p></div>
         ) : (
           <div className="am-scroll">
             <table className="data-table" style={{ minWidth: 860 }}>

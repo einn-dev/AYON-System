@@ -371,8 +371,29 @@ html.ayon-app { font-size: 112.5%; }
 @media (max-width: 560px) { .form-row.row-3 { grid-template-columns: 1fr; gap: 0; } }
 
 /* ── Misc ── */
-.empty-state { text-align: center; padding: 48px 20px; color: #b3a6a9; }
-.empty-state p { font-size: 0.9rem; margin-top: 8px; }
+/* ── Empty, loading and error states inside a panel ──
+   empty-state                 nothing to show (an inbox icon on top)
+   empty-state loading-state   still loading (a small spinner instead)
+   empty-state error-state     could not load (a warning icon)          */
+.empty-state { text-align: center; padding: 40px 20px; color: #6b5e61; }
+.empty-state::before {
+  content: ""; display: block; width: 52px; height: 52px; margin: 0 auto 4px;
+  border-radius: 50%; background: #f6eff0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23b08a90' d='M121 32C91.6 32 66 52 58.9 80.5L1.9 308.4C.6 313.5 0 318.7 0 323.9L0 416c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-92.1c0-5.2-.6-10.4-1.9-15.5l-57-227.9C446 52 420.4 32 391 32L121 32zm0 64l270 0 48 192-51.2 0c-12.1 0-23.2 6.8-28.6 17.7l-14.3 28.6c-5.4 10.8-16.5 17.7-28.6 17.7l-120.4 0c-12.1 0-23.2-6.8-28.6-17.7l-14.3-28.6c-5.4-10.8-16.5-17.7-28.6-17.7L73 288 121 96z'/%3E%3C/svg%3E") center / 22px no-repeat;
+}
+.empty-state:has(svg)::before { display: none; }   /* it already has its own icon */
+.empty-state p > svg { color: #b08a90; }
+.empty-state p { font-size: 0.9rem; margin: 8px auto 0; max-width: 460px; line-height: 1.55; }
+.empty-state .btn { margin-top: 14px; }
+
+.empty-state.loading-state { color: #8a7a7d; }
+.empty-state.loading-state::before {
+  width: 28px; height: 28px; margin-bottom: 2px; background: none;
+  border: 3px solid #ecdadd; border-top-color: #8d1b2d;
+  animation: ayon-spin 0.8s linear infinite;
+}
+.empty-state.error-state::before { background: #fff5f5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23c53030' d='M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480L40 480c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24l0 112c0 13.3 10.7 24 24 24s24-10.7 24-24l0-112c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z'/%3E%3C/svg%3E") center / 22px no-repeat; }
+
+@keyframes ayon-spin { to { transform: rotate(360deg); } }
 
 .modal-overlay {
   position: fixed; inset: 0;
@@ -408,9 +429,19 @@ html.ayon-app { font-size: 112.5%; }
 }
 .search-input:focus { border-color: #8d1b2d; background: #fff; }
 
-.loading {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; font-size: 1.1rem; color: #6b5e61;
+/* the whole page while a dashboard opens (div. so it wins over older .loading rules) */
+div.loading {
+  display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center;
+  min-height: 100vh; font-size: 0.9rem; color: #8a7a7d; background: #faf7f7;
+}
+div.loading::after { display: none; }   /* the spinner replaces the moving dots */
+div.loading::before {
+  content: ""; width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid #ecdadd; border-top-color: #8d1b2d;
+  animation: ayon-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  div.loading::before, .empty-state.loading-state::before { animation-duration: 2.4s; }
 }
 
 /* ── "Something new" message, bottom right (live updates, Layout.jsx) ── */

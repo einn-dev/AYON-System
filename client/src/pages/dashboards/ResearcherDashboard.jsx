@@ -809,7 +809,7 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
     </Link>
   );
 
-  if (loading) return <>{back}<div className="empty-state"><p>Loading your draft...</p></div></>;
+  if (loading) return <>{back}<div className="empty-state loading-state" role="status"><p>Loading your draft…</p></div></>;
   if (blocked) return <>{back}<div className="alert alert-error" role="alert">{blocked}</div></>;
 
   return (
@@ -1099,7 +1099,7 @@ const Repository = () => {
         </div>
 
         {loading ? (
-          <div className="empty-state"><p>Loading repository...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading repository…</p></div>
         ) : filtered.length === 0 ? (
           <div className="empty-state"><p>No research outputs found.</p></div>
         ) : (

@@ -321,7 +321,7 @@ const AdminRepositoryPage = () => {
                 </td></tr>
               )}
               {loading && (
-                <tr><td colSpan={5}><div className="empty-state"><p>Loading the repository...</p></div></td></tr>
+                <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading the repository…</p></div></td></tr>
               )}
             </tbody>
           </table>

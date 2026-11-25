@@ -155,7 +155,7 @@ export const CollegeExternalPage = () => {
           </div>
         </div>
         {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : shown.length === 0 ? (
           <div className="empty-state"><p>{items.length ? 'Nothing matches your search.' : 'No externally funded research from your college yet.'}</p></div>
         ) : (
@@ -284,7 +284,7 @@ export const OfficeExternalPage = () => {
           </select>
         </div>
         {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : shown.length === 0 ? (
           <div className="empty-state"><p>{items.length ? 'Nothing matches your filters.' : 'No externally funded research yet.'}</p></div>
         ) : (

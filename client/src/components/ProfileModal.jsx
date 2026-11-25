@@ -181,7 +181,7 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
           {tab === 'profile' && alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
           {tab !== 'profile' ? null : fetching ? (
-            <div className="empty-state"><p>Loading your profile...</p></div>
+            <div className="empty-state loading-state" role="status"><p>Loading your profile…</p></div>
           ) : (
             <form onSubmit={handleSave} autoComplete="off">
               {/* ── profile picture ── */}

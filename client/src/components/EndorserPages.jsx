@@ -368,9 +368,9 @@ export const EndorsedHistory = () => {
           </div>
         </div>
         {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : failed ? (
-          <div className="empty-state"><p>Could not load your endorsements. Please refresh the page.</p></div>
+          <div className="empty-state error-state" role="alert"><p>Could not load your endorsements. Please refresh the page.</p></div>
         ) : (
           <table className="data-table">
             <thead>

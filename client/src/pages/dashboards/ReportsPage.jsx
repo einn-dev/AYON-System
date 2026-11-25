@@ -334,7 +334,7 @@ const ReportsPage = () => {
       <div className="rp-row rp-row-path">
         <div className="panel rp-panel">
           <div className="panel-header"><h2>Who Has Them Now</h2><small>open proposals, by step</small></div>
-          {summary ? <Path waiting={summary.waiting} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
+          {summary ? <Path waiting={summary.waiting} bind={bind} /> : <div className="empty-state loading-state" role="status"><p>Loading…</p></div>}
         </div>
         <div className="panel rp-panel rp-rate">
           <div className="panel-header"><h2>Approval Rate</h2><small>approved ÷ decided</small></div>
@@ -354,7 +354,7 @@ const ReportsPage = () => {
         <div className="panel rp-panel">
           <div className="panel-header"><h2>By Type</h2><small>{t ? `${plural(t.total, 'submission')}${ext?.total ? ` · ${ext.total} external` : ''}` : ''}</small></div>
           <div className="rp-pad">
-            {summary ? <HBars rows={typeRows} total={typeTotal} bind={bind} /> : <div className="empty-state"><p>Loading…</p></div>}
+            {summary ? <HBars rows={typeRows} total={typeTotal} bind={bind} /> : <div className="empty-state loading-state" role="status"><p>Loading…</p></div>}
           </div>
         </div>
         <div className="panel rp-panel">
@@ -376,7 +376,7 @@ const ReportsPage = () => {
           <h2>External Research</h2>
           <small>externally funded, uploaded to the Research Repository · period and college filters</small>
         </div>
-        {!ext ? <div className="empty-state"><p>Loading…</p></div> : (
+        {!ext ? <div className="empty-state loading-state" role="status"><p>Loading…</p></div> : (
           <div className="rp-ext-body">
             <div className="rp-ext-nums">
               <div><span>Projects</span><b>{ext.total}</b></div>

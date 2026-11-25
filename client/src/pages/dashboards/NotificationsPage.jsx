@@ -90,7 +90,7 @@ const NotificationsPage = () => {
         </div>
 
         {loading ? (
-          <div className="empty-state"><p>Loading notifications...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading notifications…</p></div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <p style={{ fontSize: '2rem', margin: 0 }}><FaBell /></p>

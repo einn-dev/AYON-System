@@ -46,7 +46,7 @@ const RecordDetails = ({ proposalId, onClose }) => {
         {failed ? (
           <div className="alert alert-error" role="alert">{failed}</div>
         ) : !p ? (
-          <div className="empty-state"><p>Loading...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : (
           <>
             <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>

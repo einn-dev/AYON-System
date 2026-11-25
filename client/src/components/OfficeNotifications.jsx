@@ -129,11 +129,11 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
         </div>
 
         {loading ? (
-          <div className="empty-state"><p>Loading notifications...</p></div>
+          <div className="empty-state loading-state" role="status"><p>Loading notifications…</p></div>
         ) : failed ? (
-          <div className="empty-state">
+          <div className="empty-state error-state" role="alert">
             <p>Could not load your notifications.</p>
-            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try Again</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={load}>Try again</button>
           </div>
         ) : shown.length === 0 ? (
           <div className="empty-state">

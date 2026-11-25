@@ -445,7 +445,7 @@ export const TerminalReportsPage = () => {
               {rows && list.length === 0 && (
                 <tr><td colSpan={5}><div className="empty-state"><p>{tab === 'waiting' ? 'No terminal reports are waiting for you.' : 'Nothing here yet.'}</p></div></td></tr>
               )}
-              {!rows && <tr><td colSpan={5}><div className="empty-state"><p>Loading...</p></div></td></tr>}
+              {!rows && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}
             </tbody>
           </table>
         </div>
