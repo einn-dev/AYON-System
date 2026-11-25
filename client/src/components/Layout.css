@@ -376,6 +376,31 @@ html.ayon-app { font-size: 112.5%; }
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus { border-color: #8d1b2d; background: #fff; }
+/* ── Fields: the same look on every form, filter and pop-up ──
+   rest: light fill · hover: darker border · typing: white with a maroon glow
+   disabled: greyed out · invalid after the person leaves it: red, like the MSIRC forms */
+:is(.form-group, .rs-field, .po-field, .rp-f, .ao-field, .ps-field, .on-toolbar, .tr-modal) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
+.search-input {
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+:is(.form-group, .rs-field, .po-field, .rp-f, .ao-field, .ps-field, .on-toolbar, .tr-modal) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):hover:not(:disabled):not(:focus),
+.search-input:hover:not(:disabled):not(:focus) { border-color: #cdb8bb; }
+:is(.form-group, .rs-field, .po-field, .rp-f, .ao-field, .ps-field, .on-toolbar, .tr-modal) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus,
+.search-input:focus {
+  border-color: #8d1b2d; background: #fff; outline: none;
+  box-shadow: 0 0 0 3px rgba(141, 27, 45, 0.12);
+}
+:is(.form-group, .rs-field, .po-field, .rp-f, .ao-field, .ps-field, .on-toolbar, .tr-modal) :is(input, select, textarea):disabled,
+.search-input:disabled { background: #f3eeee; color: #9a8b8e; cursor: not-allowed; }
+:is(.form-group, .rs-field, .po-field, .rp-f, .tr-modal) :is(input, textarea)::placeholder,
+.search-input::placeholder { color: #a8999c; }
+:is(.form-group, .rs-field, .po-field, .tr-modal) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):user-invalid {
+  border-color: #b3261e; background: #fff8f7;
+}
+:is(.form-group, .rs-field, .po-field, .tr-modal) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):user-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.14);
+}
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 /* first, middle and last name side by side */
 .form-row.row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
