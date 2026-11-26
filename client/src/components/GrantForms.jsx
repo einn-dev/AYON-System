@@ -421,7 +421,7 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false, issue
         const bad = own ? { 'aria-invalid': true, 'aria-describedby': `${id}-err` } : {};
         return (
           <div key={f.k} className={`form-group${full ? ' gf-wide' : ''}${own ? ' gf-has-err' : ''}`}>
-            <label htmlFor={id}>{f.label}{f.required && <span className="gf-req"> *</span>}</label>
+            <label htmlFor={id}>{f.label}{f.required ? <span className="gf-req"> *</span> : f.optional && <em className="gf-opt"> (optional)</em>}</label>
             {wide && f.hint && <p className="gf-field-hint">{f.hint}</p>}
             {f.type === 'select' ? (
               <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled} {...bad}>

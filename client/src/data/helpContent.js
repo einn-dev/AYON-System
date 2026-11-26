@@ -87,7 +87,7 @@ export const GUIDES = {
       steps: [
         'Go to **My Research** and click **Submit Research**. My Research is for **Research Spotlight** and **Internally Funded Research**. Externally funded research goes on **External Research** instead (see below).',
         'Choose the type, then click **Next**.',
-        '**Research Spotlight:** read the guidelines at the top, then fill in the abstract (300 words at most), keywords, research cluster, Oral or Poster, the authors and the presenting author. The title can have at most 15 words.',
+        '**Research Spotlight:** read the guidelines at the top, then fill in the abstract (300 words at most), keywords (optional), research cluster, Oral or Poster, the authors and the presenting author. The title can have at most 15 words.',
         '**Internally Funded Research:** fill in Form 005 section by section: proponents, executive summary (300 words at most), introduction, objectives, significance, expected output, R&D priority area, literature, methodology, references, the 5-month work plan, the budget and duties. The budget adds up by itself and cannot be over ₱50,000.00.',
         'Attach the documents. Each type lists what it needs; those marked * are required. PDF, DOC or DOCX, up to 10 MB each.',
         'Check the summary and click **Submit Research**. It goes first to your **College Chairperson**.',

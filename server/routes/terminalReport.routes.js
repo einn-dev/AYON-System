@@ -163,7 +163,6 @@ const readForm = (raw) => {
   if (words(f.abstract) > ABSTRACT_MAX_WORDS) {
     return { error: `The abstract is ${words(f.abstract)} words. Please keep it to ${ABSTRACT_MAX_WORDS} words or fewer.` };
   }
-  if (!f.keywords) return { error: 'Please enter the keywords.' };
   return { f };
 };
 

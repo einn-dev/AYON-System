@@ -462,7 +462,7 @@ const SpotForm = ({ ctx }) => {
         {d.presenter_contact && <p className="ofs-aff">Email: {d.presenter_contact}</p>}
         <p className="ofs-h">ABSTRACT</p>
         <p className="ofs-abs">{d.abstract}</p>
-        <p className="ofs-kw"><b>Keywords:</b> {d.keywords}</p>
+        {d.keywords && <p className="ofs-kw"><b>Keywords:</b> {d.keywords}</p>}
         <p className="ofs-kw"><b>Research Cluster:</b> {d.cluster} &nbsp;·&nbsp; <b>Type of Presentation:</b> {d.presentation}</p>
         <p className="of5-small">The full extended abstract is attached as a document.</p>
       </div>

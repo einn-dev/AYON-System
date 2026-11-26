@@ -238,7 +238,6 @@ export const TerminalReportForm = ({ proposal, report, onClose, onDone }) => {
     if (!f.site.trim()) return 'Please enter the implementation site(s).';
     if (!f.abstract.trim()) return 'Please write the abstract.';
     if (wc > ABSTRACT_MAX_WORDS) return `The abstract is ${wc} words. Please keep it to ${ABSTRACT_MAX_WORDS} words or fewer.`;
-    if (!f.keywords.trim()) return 'Please enter the keywords.';
     if (!hasFile) return 'Please upload the full terminal report.';
     if (!signed) return 'Please confirm your signature as Project Leader.';
     return '';
@@ -296,7 +295,7 @@ export const TerminalReportForm = ({ proposal, report, onClose, onDone }) => {
         </div>
         <div className="form-group"><label htmlFor="tr-abs">Abstract <span className={`tr-count ${wc > ABSTRACT_MAX_WORDS ? 'bad' : ''}`}>{wc} / {ABSTRACT_MAX_WORDS} words</span></label>
           <textarea id="tr-abs" rows={6} value={f.abstract} onChange={set('abstract')} /></div>
-        <div className="form-group"><label htmlFor="tr-kw">Keywords</label>
+        <div className="form-group"><label htmlFor="tr-kw">Keywords <em style={{ fontWeight: 400, fontStyle: 'normal', color: '#8a7a7d' }}>(optional)</em></label>
           <input id="tr-kw" value={f.keywords} placeholder="e.g. water quality, early warning, Lake Lanao" onChange={set('keywords')} /></div>
 
         <div className="form-group">

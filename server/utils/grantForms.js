@@ -85,7 +85,7 @@ const GRANT_FORMS = {
     ],
     fields: [
       { k: 'abstract',  label: 'Abstract', type: 'textarea', maxWords: 300, rows: 6, required: true, hint: 'Not more than 300 words.' },
-      { k: 'keywords',  label: 'Keywords', required: true, hint: '3 to 5 keywords, separated by commas' },
+      { k: 'keywords',  label: 'Keywords', optional: true, hint: '3 to 5 keywords, separated by commas' },
       { k: 'cluster',   label: 'Research Cluster', type: 'select', required: true,
         options: ['Pure and Applied Sciences', 'Social Sciences, Humanities and Education'] },
       { k: 'presentation', label: 'Type of Presentation', type: 'select', required: true, options: ['Oral', 'Poster'] },
