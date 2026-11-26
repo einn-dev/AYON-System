@@ -893,13 +893,13 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                         onClick={pick}
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
                         style={{
-                          border: `2px solid ${on ? '#1a3a5c' : '#e8edf2'}`,
+                          border: `2px solid ${on ? '#8d1b2d' : '#e8edf2'}`,
                           borderRadius: 10, padding: '16px',
                           cursor: locked ? 'not-allowed' : 'pointer', transition: 'border-color 0.2s',
-                          background: locked ? '#f7f7f8' : on ? '#f0f6ff' : '#fff',
+                          background: locked ? '#f7f7f8' : on ? '#fbf1f2' : '#fff',
                           opacity: locked ? 0.65 : 1,
                         }}>
-                        <p style={{ fontWeight: 600, color: '#1a3a5c', margin: '0 0 4px', fontSize: '0.9rem' }}>{typeText(t)}</p>
+                        <p style={{ fontWeight: 700, color: locked ? '#5f5357' : '#7a1626', margin: '0 0 6px', fontSize: '1.08rem', lineHeight: 1.3 }}>{typeText(t)}</p>
                         <p style={{ color: '#718096', margin: 0, fontSize: '0.78rem', lineHeight: 1.4 }}>{TYPE_NOTE[t]}</p>
                         {locked && <p style={{ color: '#9b2c2c', margin: '6px 0 0', fontSize: '0.76rem', fontWeight: 600 }}>No approved Research Spotlight yet</p>}
                       </div>
@@ -919,10 +919,10 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                           cursor: locked ? 'not-allowed' : 'pointer', transition: 'border-color 0.2s',
                           background: locked ? '#f7f7f8' : '#fff', opacity: locked ? 0.65 : 1,
                         }}>
-                        <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.9rem' }}>
+                        <p style={{ fontWeight: 700, color: locked ? '#5f5357' : '#7a1626', margin: 0, fontSize: '1.08rem', lineHeight: 1.3 }}>
                           Terminal Report
                         </p>
-                        <p style={{ color: '#4a5568', margin: '0 0 4px', fontSize: '0.76rem', fontWeight: 600 }}>(Internally Funded Research)</p>
+                        <p style={{ color: '#6b5e61', margin: '2px 0 6px', fontSize: '0.8rem', fontWeight: 600 }}>(Internally Funded Research)</p>
                         <p style={{ color: '#718096', margin: 0, fontSize: '0.78rem', lineHeight: 1.4 }}>
                           The final report (Form 007) of an approved Internally Funded Research, submitted when the project ends.
                         </p>
