@@ -1,4 +1,5 @@
-import React from 'react';
+import './styles';          // all stylesheets first, in a fixed order
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute   from './components/ProtectedRoute';
@@ -12,24 +13,30 @@ import ResetPasswordPage  from './pages/ResetPasswordPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import VerifyEmailPage    from './pages/VerifyEmailPage';
 
-import ResearcherDashboard      from './pages/dashboards/ResearcherDashboard';
-import MsricStaffDashboard      from './pages/dashboards/MsricStaffDashboard';
-import CoordinatorDashboard     from './pages/dashboards/CoordinatorDashboard';
-import ChairpersonDashboard     from './pages/dashboards/ChairpersonDashboard';
-import CollegeDeanDashboard     from './pages/dashboards/CollegeDeanDashboard';
-import SpecialAssistantDashboard from './pages/dashboards/SpecialAssistantDashboard';
-import DirectorDashboard        from './pages/dashboards/DirectorDashboard';
-import OvcredDashboard          from './pages/dashboards/OvcredDashboard';
 import LandingPage from './pages/LandingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
-import AdminDashboard           from './pages/dashboards/AdminDashboard';
+
+import lazyPage from './utils/lazyPage';
+
+/* Each role's pages are their own download. A user gets only their own role's pages after
+   signing in, so the login page opens faster. */
+const ResearcherDashboard       = lazyPage(() => import('./pages/dashboards/ResearcherDashboard'));
+const MsricStaffDashboard       = lazyPage(() => import('./pages/dashboards/MsricStaffDashboard'));
+const CoordinatorDashboard      = lazyPage(() => import('./pages/dashboards/CoordinatorDashboard'));
+const ChairpersonDashboard      = lazyPage(() => import('./pages/dashboards/ChairpersonDashboard'));
+const CollegeDeanDashboard      = lazyPage(() => import('./pages/dashboards/CollegeDeanDashboard'));
+const SpecialAssistantDashboard = lazyPage(() => import('./pages/dashboards/SpecialAssistantDashboard'));
+const DirectorDashboard         = lazyPage(() => import('./pages/dashboards/DirectorDashboard'));
+const OvcredDashboard           = lazyPage(() => import('./pages/dashboards/OvcredDashboard'));
+const AdminDashboard            = lazyPage(() => import('./pages/dashboards/AdminDashboard'));
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <PageTitle />
+        <Suspense fallback={<div className="loading">Loading…</div>}>
         <Routes>
           {/* Public Routes */}
           <Route path="/"           element={<Navigate to="/home" replace />} />
@@ -110,6 +117,7 @@ function App() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </Suspense>
       </Router>
     </AuthProvider>
   );
