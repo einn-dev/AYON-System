@@ -11,6 +11,7 @@ import { personName } from '../../utils/names';
 import { HBars, Columns, Ring, useTip, TYPE_COLOR, OLD_TYPE_COLOR } from '../../components/ProposalStats';
 import { SDGS } from '../../utils/sdgs';
 import MessageToast from '../../components/MessageToast';
+import { dateTimeText } from '../../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    Reports: pick the filters, see the numbers, download the same
@@ -493,7 +494,7 @@ const ReportsPage = () => {
                   </div>
                   <div className="rp-hist-meta">
                     <span>{r.users ? personName(r.users) : '—'}</span>
-                    <span>{r.generated_at ? new Date(r.generated_at).toLocaleString() : '—'}</span>
+                    <span>{r.generated_at ? dateTimeText(r.generated_at) : '—'}</span>
                   </div>
                 </li>
               );

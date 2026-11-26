@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import API from '../services/authService';
 import { FileButtons } from './ProposalFiles';
 import { repoTypeLabel } from '../utils/terms';
+import { dateText } from '../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    The Research Repository list, the same on every office page:
@@ -12,7 +13,7 @@ import { repoTypeLabel } from '../utils/terms';
    only its owner or the Administrator can make it Public.
    ───────────────────────────────────────────────────────────── */
 const ACCESS_BADGE = { public: 'badge-green', private: 'badge-amber' };
-const fmt = (d) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
+const fmt = (d) => (d ? dateText(d) : '—');
 
 const RepositoryBrowser = ({ endpoint = '/repository', intro, note }) => {
   const [items, setItems] = useState(null);

@@ -10,6 +10,7 @@ import { ProposalFiles } from '../../components/ProposalFiles';
 import { FaLock, FaXmark } from '../../utils/icons';
 import { STATUS_LABEL, statusBadge, TYPE_LABEL, typeChoices } from '../../utils/terms';
 import MessageToast from '../../components/MessageToast';
+import { dateText } from '../../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    Admin → All Proposals
@@ -46,7 +47,7 @@ const REASON_MAX = 500;
 const isOpen    = (p) => p.status !== 'approved' && p.status !== 'rejected';
 const waitClass = (d) => (d >= 14 ? 'hot' : d >= 7 ? 'warm' : '');
 const daysText  = (d) => (d === 0 ? 'Today' : `${d} day${d === 1 ? '' : 's'}`);
-const dateOnly  = (v) => (v ? new Date(v).toLocaleDateString() : '—');
+const dateOnly  = (v) => (v ? dateText(v) : '—');
 
 /* ═════════════ the pop-up for one proposal ═════════════ */
 const ProposalModal = ({ proposal, officeCounts, onClose, onChanged }) => {

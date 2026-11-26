@@ -6,6 +6,7 @@ import { ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
 import { personName } from '../utils/names';
 import { TYPE_LABEL, statusLabel, statusBadge, wordFor } from '../utils/terms';
+import { dateText } from '../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    <RecordDetails proposalId={id} onClose={fn} />
@@ -67,7 +68,7 @@ const RecordDetails = ({ proposalId, onClose }) => {
                 { label: 'College', value: p.college || '—' },
                 { label: 'Department', value: p.department || '—' },
                 { label: 'Type', value: TYPE_LABEL[p.proposal_type] || p.proposal_type },
-                { label: 'Date Submitted', value: p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—' },
+                { label: 'Date Submitted', value: p.submitted_at ? dateText(p.submitted_at) : '—' },
               ].map((r) => (
                 <div key={r.label}>
                   <p style={{ fontSize: '0.72rem', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>{r.label}</p>

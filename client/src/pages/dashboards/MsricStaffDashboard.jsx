@@ -14,6 +14,7 @@ import { personName } from '../../utils/names';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
+import { dateText } from '../../utils/dates';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -69,7 +70,7 @@ const Overview = ({ proposals }) => {
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
-                  {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                  {p.submitted_at ? dateText(p.submitted_at) : '—'}
                 </td>
               </tr>
             ))}
@@ -145,7 +146,7 @@ const AllSubmissions = ({ proposals }) => {
                   </span>
                 </td>
                 <td style={{ color: '#718096' }}>
-                  {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                  {p.submitted_at ? dateText(p.submitted_at) : '—'}
                 </td>
               </tr>
             ))}

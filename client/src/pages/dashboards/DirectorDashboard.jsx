@@ -24,6 +24,7 @@ import { formOf, stepOf, stepProblem } from '../../utils/grantForms';
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
+import { dateText } from '../../utils/dates';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -89,7 +90,7 @@ const Overview = ({ proposals }) => {
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
                   <td style={{ color: '#718096' }}>
-                    {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                    {p.submitted_at ? dateText(p.submitted_at) : '—'}
                   </td>
                   <td>
                     <span className={`badge ${statusBadge(p.status)}`}>
@@ -244,7 +245,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
                   <td style={{ color: '#718096' }}>
-                    {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                    {p.submitted_at ? dateText(p.submitted_at) : '—'}
                   </td>
                   <td>
                     <button className="btn btn-primary btn-sm"
@@ -318,7 +319,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                     { label: 'College',      value: selected.college || '—' },
                     { label: 'Department',   value: selected.department || '—' },
                     { label: 'Type',value: PROPOSAL_TYPES[selected.proposal_type] || selected.proposal_type },
-                    { label: 'Date Submitted',value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
+                    { label: 'Date Submitted',value: selected.submitted_at ? dateText(selected.submitted_at) : '—' },
                   ].map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '0.72rem', color: '#718096',

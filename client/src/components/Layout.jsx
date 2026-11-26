@@ -72,6 +72,19 @@ const Layout = ({ children, navItems, role }) => {
     return () => window.removeEventListener(OPEN_PROFILE, open);
   }, []);
 
+  /* the browser tab title: the page you are on ("For Review · AYON") */
+  useEffect(() => {
+    const path = location.pathname.replace(/\/+$/, '');
+    const hit = [...menuItems].sort((a, b) => b.path.length - a.path.length)
+      .find((i) => path === i.path || path.startsWith(`${i.path}/`));
+    const label = /\/proposals\/new$/.test(path) ? 'Submit Research'
+      : /\/grants\/new$/.test(path) ? 'Submit Application'
+      : /\/(proposals|grants)\/\d+\/edit$/.test(path) ? 'Edit Draft'
+      : hit ? hit.label : (/\/help$/.test(path) ? 'Help' : role);
+    document.title = label ? `${label} · AYON` : 'AYON · MSIRC';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   /* close the menu after moving to another page */
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 

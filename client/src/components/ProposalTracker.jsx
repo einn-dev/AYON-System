@@ -2,6 +2,7 @@ import React from 'react';
 import './ProposalTracker.css';
 import { ROLE_LABEL, statusLabel } from '../utils/terms';
 import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from '../utils/icons';
+import { dateText } from '../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:
@@ -107,7 +108,7 @@ const buildSteps = (p) => {
 const MARK = { done: <FaCheck />, now: <FaCircle style={{ fontSize: '0.45rem' }} />, skip: <FaMinus />, returned: <FaExclamation />, rejected: <FaXmark />, unreached: <FaMinus /> };
 const NOTE = { skip: 'Not Needed', returned: 'Returned', now: 'Current', unreached: 'Not Reached' };
 
-const fmt = (d) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+const fmt = (d) => (d ? dateText(d) : '');
 
 const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, compact = false }) => {
   if (!proposal) return null;

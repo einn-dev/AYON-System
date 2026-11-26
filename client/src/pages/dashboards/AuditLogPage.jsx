@@ -4,6 +4,7 @@ import '../../components/Layout.css';
 import './AdminModule.css';
 import { ROLE_LABELS, errText, fmtWhen, startOfDay, Pager } from './adminShared';
 import { STATUS_LABEL, ROLE_LABEL } from '../../utils/terms';
+import { dateTimeText } from '../../utils/dates';
 
 const PAGE_SIZE = 25;
 
@@ -212,7 +213,7 @@ const AuditLogPage = () => {
       const rows = res.data.logs || [];
       const head = ['When', 'Who', 'Who (role)', 'Action', 'Target', 'Details', 'IP address'];
       const body = rows.map(l => [
-        new Date(l.created_at).toLocaleString('en-US'),
+        dateTimeText(l.created_at),
         l.actor_name || '',
         l.actor_role ? roleName(l.actor_role) : '',
         (ACTIONS[l.action] || {}).label || l.action,
@@ -309,7 +310,7 @@ const AuditLogPage = () => {
                 return (
                   <tr key={l.audit_id}>
                     <td className="am-muted" style={{ whiteSpace: 'nowrap' }}
-                      title={new Date(l.created_at).toLocaleString('en-US')}>
+                      title={dateTimeText(l.created_at)}>
                       {fmtWhen(l.created_at)}
                     </td>
                     <td>

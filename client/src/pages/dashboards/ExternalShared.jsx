@@ -6,6 +6,7 @@ import { personName } from '../../utils/names';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import { SDGS, sdgList } from '../../utils/sdgs';
 import './External.css';
+import { dateText } from '../../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (externally funded research, Repository only)
@@ -19,7 +20,7 @@ import './External.css';
 
 export const peso   = (v) => (v === null || v === undefined || v === '' ? '—'
   : `₱${Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-export const day    = (v) => (v ? new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
+export const day    = (v) => (v ? dateText(v) : '—');
 const month = (v) => (v ? new Date(v).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '');
 export const period = (a, b) => (a || b ? `${month(a) || '?'} – ${month(b) || '?'}` : '—');
 

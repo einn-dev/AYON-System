@@ -13,6 +13,7 @@ import { formOf, stepOf, stepProblem } from '../utils/grantForms';
 import StatCard from './StatCard';
 import { ROLE_REDIRECTS } from '../utils/roleRoutes';
 import MessageToast from './MessageToast';
+import { dateText } from '../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -46,7 +47,7 @@ const nextLabel = (role, p) => {
   return next ? ROLE_LABEL[next] : 'MSIRC Special Assistant';
 };
 
-const fmt = (d) => (d ? new Date(d).toLocaleDateString() : '—');
+const fmt = (d) => (d ? dateText(d) : '—');
 
 /* My own endorsements (endorsed and returned), newest first */
 const useMyEndorsements = () => {

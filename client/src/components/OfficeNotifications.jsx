@@ -5,6 +5,7 @@ import './Layout.css';
 import './OfficeNotifications.css';
 import { useLiveRefresh } from '../utils/liveRefresh';
 import { FaBell, FaCircleCheck, FaCircleXmark, FaChevronRight, FaClipboardList, FaPaperPlane, FaSignature } from '../utils/icons';
+import { dateTimeText } from '../utils/dates';
 
 /* Notifications page for the MSIRC Special Assistant, MSIRC Director, VCRED and MSIRC Staff.
      queuePath:   where "Open" goes (their queue), for example "/director/for-review"
@@ -156,7 +157,7 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
               <div className="on-body">
                 <strong>{n.title}</strong>
                 <p>{n.message}</p>
-                <small>{n.date_sent ? new Date(n.date_sent).toLocaleString() : ''}</small>
+                <small>{n.date_sent ? dateTimeText(n.date_sent) : ''}</small>
               </div>
               <div className="on-act">
                 {!n.is_read && <span className="badge badge-blue">New</span>}

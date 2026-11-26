@@ -24,6 +24,7 @@ import { GrantFormFields, SlotDocs, slotDocsProblem, slotDocsSummary, FormGuide,
 import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
+import { dateText, dateTimeText } from '../../utils/dates';
 
 /* approved Internally Funded Research whose Terminal Report was accepted shows as Completed */
 const statusText = (p) => (p?.completed_at ? 'Completed' : statusLabel(p?.status));
@@ -487,7 +488,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                   Rejected{selected.decided_by_role ? ` by the ${ROLE_LABEL[selected.decided_by_role] || 'office'}` : ''}
                 </strong>
                 {selected.decided_at && (
-                  <small>{new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</small>
+                  <small>{dateText(selected.decided_at)}</small>
                 )}
                 <p>{selected.decision_reason || 'No written reason was saved. Please check your Notifications, or contact MSIRC.'}</p>
               </div>
@@ -498,7 +499,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
                   Returned for Revision{selected.returned_by_role ? ` by the ${ROLE_LABEL[selected.returned_by_role] || 'office'}` : ''}
                 </strong>
                 {selected.returned_at && (
-                  <small>{new Date(selected.returned_at).toLocaleString()}</small>
+                  <small>{dateTimeText(selected.returned_at)}</small>
                 )}
                 <p>{selected.return_reason || 'The office did not leave a written reason. Please check your Notifications, or contact MSIRC.'}</p>
                 <small style={{ marginTop: 8 }}>
@@ -519,10 +520,10 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
               {[
                 { label: K.typeHead, value: typeText(selected.proposal_type) },
                 { label: 'Status',      value: statusText(selected) },
-                { label: 'Date Submitted', value: selected.submitted_at ? new Date(selected.submitted_at).toLocaleDateString() : 'Not yet submitted' },
+                { label: 'Date Submitted', value: selected.submitted_at ? dateText(selected.submitted_at) : 'Not yet submitted' },
                 { label: 'Proposal ID', value: `#${selected.proposal_id}` },
                 ...(['approved', 'rejected'].includes(selected.status) && selected.decided_at
-                  ? [{ label: 'Decided On', value: new Date(selected.decided_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }]
+                  ? [{ label: 'Decided On', value: dateText(selected.decided_at) }]
                   : []),
                 ...(Number(selected.revision_count) > 0
                   ? [{ label: 'Revisions Sent', value: String(selected.revision_count) }]
@@ -1134,7 +1135,7 @@ const MyRepositoryItems = ({ onChanged }) => {
                       {r.access_type === 'public' ? 'Public' : 'Private'}
                     </span>
                   </td>
-                  <td style={{ color: '#718096', whiteSpace: 'nowrap' }}>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
+                  <td style={{ color: '#718096', whiteSpace: 'nowrap' }}>{r.store_date ? dateText(r.store_date) : '—'}</td>
                   <td>
                     {external ? (
                       <span style={{ color: '#8a7a7d', fontSize: '0.8rem' }}>Always private</span>
@@ -1245,7 +1246,7 @@ const Repository = () => {
                       {r.access_type === 'public' ? 'Public' : 'Private'}
                     </span>
                   </td>
-                  <td>{r.store_date ? new Date(r.store_date).toLocaleDateString() : '—'}</td>
+                  <td>{r.store_date ? dateText(r.store_date) : '—'}</td>
                   <td>
                     {r.file_path ? (
                       <FileButtons path={r.file_path} label={r.title} />

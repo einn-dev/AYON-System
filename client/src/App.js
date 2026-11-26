@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute   from './components/ProtectedRoute';
+import PageTitle        from './components/PageTitle';
 
 import LoginPage        from './pages/LoginPage';
 import RegisterPage     from './pages/RegisterPage';
@@ -28,6 +29,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <PageTitle />
         <Routes>
           {/* Public Routes */}
           <Route path="/"           element={<Navigate to="/home" replace />} />

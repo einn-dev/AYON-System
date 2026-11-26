@@ -21,6 +21,7 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
+import { dateText } from '../../utils/dates';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -85,7 +86,7 @@ const Overview = ({ proposals }) => {
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
                   <td style={{ color: '#718096' }}>
-                    {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                    {p.submitted_at ? dateText(p.submitted_at) : '—'}
                   </td>
                   <td>
                     <span className={`badge ${statusBadge(p.status)}`}>
@@ -291,7 +292,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     { label: 'Department',    value: selected.department || '—' },
                     { label: 'Type', value: PROPOSAL_TYPES[selected.proposal_type] },
                     { label: 'Date Submitted',value: selected.submitted_at
-                      ? new Date(selected.submitted_at).toLocaleDateString() : '—' },
+                      ? dateText(selected.submitted_at) : '—' },
                   ].map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '0.72rem', color: '#718096',
@@ -422,7 +423,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
                 </td>
                 <td>{p.college || '—'}</td>
                 <td style={{ color: '#718096' }}>
-                  {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString() : '—'}
+                  {p.submitted_at ? dateText(p.submitted_at) : '—'}
                 </td>
                 <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button></td>
               </tr>

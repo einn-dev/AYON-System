@@ -11,6 +11,7 @@ import { DocumentsEditor, MAX_SUPPORTING, OTHER } from '../../components/Proposa
 import { SDGS } from '../../utils/sdgs';
 import { ExternalDetails, SdgChips, peso } from './ExternalShared';
 import MessageToast from '../../components/MessageToast';
+import { dateText } from '../../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (Researcher): externally funded research, for the
@@ -215,7 +216,7 @@ const ExternalResearchPage = () => {
                   {items.map(x => (
                     <tr key={x.external_id}>
                       <td><strong>{x.title}</strong><br /><small style={{ color: '#718096' }}>
-                        {x.external_agency || '—'} · Private · Uploaded {x.uploaded_at ? new Date(x.uploaded_at).toLocaleDateString() : '—'}</small>
+                        {x.external_agency || '—'} · Private · Uploaded {x.uploaded_at ? dateText(x.uploaded_at) : '—'}</small>
                         <SdgChips value={x.sdgs} small /></td>
                       <td style={{ whiteSpace: 'nowrap' }}>{peso(x.funding_amount)}</td>
                       <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpen(x)}>View</button></td>
