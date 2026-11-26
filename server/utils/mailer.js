@@ -72,6 +72,28 @@ const sendViaBrevo = async ({ to, subject, html }) => {
 
 /* Writes one row to email_logs. If the newer columns (error_message, email_type)
    are not in the database yet, it retries without them so logging never breaks. */
+/* Tells every active Admin that an email did not send, so they can open the Email Log
+   and follow up. At most one notice every 10 minutes: if the email service is down,
+   every email fails, and the Email Log already lists each one. Never throws. */
+const ADMIN_NOTICE_GAP_MS = 10 * 60 * 1000;
+let lastAdminNotice = 0;
+const tellAdminsEmailFailed = async ({ to, subject }) => {
+  const now = Date.now();
+  if (now - lastAdminNotice < ADMIN_NOTICE_GAP_MS) return;
+  lastAdminNotice = now;
+  try {
+    const { notifyRole } = require('./roleNotify');   // required here to avoid a require loop
+    await notifyRole('admin', {
+      notif_type: 'general',
+      title: 'An email failed to send',
+      message: `The email "${String(subject || '').slice(0, 120)}" to ${to} did not send. `
+             + 'Open the Email Log to see why. Other emails that fail in the next 10 minutes are listed there too.',
+    });
+  } catch (err) {
+    console.error('Admin email-failure notice failed:', err.message || err);
+  }
+};
+
 const writeEmailLog = async (row) => {
   try {
     const { error } = await supabase.from('email_logs').insert(row);
@@ -116,6 +138,7 @@ const sendEmail = async ({ to, subject, html, notif_id = null, sensitive = false
       body: logBody, status: 'failed',
       error_message: String(err.message || 'Unknown error').slice(0, 500),
     });
+    await tellAdminsEmailFailed({ to, subject });
     return false;
   }
 };

@@ -13,6 +13,11 @@ export const isRepoNews   = (n) => /^new research in the repository/i.test(n.tit
 /* Terminal Report (Form 007) notices: offices open their Terminal Reports page */
 export const isTerminalNews = (n) => /terminal report/i.test(n.title || '');
 const TERMINAL_ROLES = ['college_dean', 'special_assistant', 'msric_director'];
+/* Administrator notices */
+export const isEmailFail  = (n) => /^an email failed to send/i.test(n.title || '');
+export const isNewAccount = (n) => /^new account verified/i.test(n.title || '');
+/* the email address inside a "New account verified" notice, to find that account */
+const emailIn = (n) => (String(n.message || '').match(/\(([^()\s]+@[^()\s]+)\)/) || [])[1] || '';
 
 /* the page (under each role's address) that opens a record with ?open=<id> */
 const OPEN_ON = {
@@ -31,6 +36,11 @@ const OPEN_ON = {
 export const notifTarget = (n, role) => {
   const base = ROLE_REDIRECTS[role];
   if (!base || !n) return '';
+  if (role === 'admin' && isEmailFail(n))  return '/admin/emails';
+  if (role === 'admin' && isNewAccount(n)) {
+    const email = emailIn(n);
+    return email ? `/admin/users?q=${encodeURIComponent(email)}` : '/admin/users';
+  }
   if (isRepoNews(n) && role === 'msric_staff') return '/msric-staff/repository';
   if (isGrantAlert(n) && role !== 'researcher') return `${base}/grants`;
   if (isTerminalNews(n) && TERMINAL_ROLES.includes(role)) return `${base}/terminal-reports`;

@@ -2,6 +2,8 @@ const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
+const { notifyRole } = require('../utils/roleNotify');
+const { personName } = require('../utils/names');
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
 } = require('../utils/verification');
@@ -149,7 +151,7 @@ const verifyEmail = async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('user_id, email_verified, verification_expires')
+      .select('user_id, email, first_name, middle_name, last_name, email_verified, verification_expires')
       .eq('verification_token_hash', hashToken(token))
       .maybeSingle();
 
@@ -179,6 +181,13 @@ const verifyEmail = async (req, res) => {
       .eq('user_id', user.user_id);
 
     if (updErr) throw updErr;
+
+    /* tell the Admin a new account is ready (never blocks the verification) */
+    await notifyRole('admin', {
+      notif_type: 'general',
+      title: 'New account verified',
+      message: `${personName(user) || 'A new researcher'} (${user.email}) verified their email and can now sign in as a Researcher.`,
+    });
 
     return res.status(200).json({ message: 'Your email has been verified. You can now sign in.' });
   } catch (err) {

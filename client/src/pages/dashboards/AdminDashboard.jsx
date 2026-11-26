@@ -14,7 +14,10 @@ import EmailLogPage from './EmailLogPage';
 import AdminRepositoryPage from './AdminRepositoryPage';
 import AdminGrantsPage from './AdminGrantsPage';
 import AdminAnnouncementsPage from './AdminAnnouncementsPage';
-import { FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLines, FaGlobe, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from '../../utils/icons';
+import OfficeNotifications from '../../components/OfficeNotifications';
+import { useLiveRefresh } from '../../utils/liveRefresh';
+import { notifTarget, isEmailFail, isNewAccount } from '../../utils/notifLinks';
+import { FaBell, FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLines, FaGlobe, FaHandHoldingDollar, FaShieldHalved, FaTableCellsLarge, FaUsers } from '../../utils/icons';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard',  label: 'Dashboard',             icon: <FaTableCellsLarge /> },
@@ -27,7 +30,17 @@ const NAV_ITEMS = [
   { path: '/admin/reports',    label: 'Reports',               icon: <FaChartColumn /> },
   { path: '/admin/audit',      label: 'Audit Log',             icon: <FaShieldHalved /> },
   { path: '/admin/emails',     label: 'Email Log',             icon: <FaEnvelope /> },
+  { path: '/admin/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
+
+/* the Administrator's notices: new verified accounts and emails that did not send */
+const ADMIN_FILTERS = [
+  ['all',      'All Notifications', () => true],
+  ['unread',   'Unread Only',       (n) => !n.is_read],
+  ['accounts', 'New Accounts',      isNewAccount],
+  ['emails',   'Failed Emails',     isEmailFail],
+];
+const adminTarget = (n) => notifTarget(n, 'admin');
 
 /* ─────────── Main Admin Dashboard ─────────── */
 const AdminDashboard = () => {
@@ -47,6 +60,7 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useLiveRefresh(fetchUsers);              // a newly verified account shows up without a reload
 
   if (loading) return <div className="loading">Loading…</div>;
 
@@ -67,6 +81,10 @@ const AdminDashboard = () => {
         <Route path="announcements" element={<AdminAnnouncementsPage />} />
         <Route path="audit"     element={<AuditLogPage />} />
         <Route path="emails"    element={<EmailLogPage />} />
+        <Route path="notifications" element={
+          <OfficeNotifications queuePath="/admin/proposals" filters={ADMIN_FILTERS} targetOf={adminTarget}
+            intro="New accounts that are ready to use, and emails that did not send." />
+        } />
         <Route path="reports"   element={<ReportsPage />} />
       </Routes>
     </Layout>

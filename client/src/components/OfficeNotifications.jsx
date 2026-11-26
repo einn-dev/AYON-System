@@ -11,7 +11,8 @@ import { dateTimeText } from '../utils/dates';
      queuePath:   where "Open" goes (their queue), for example "/director/for-review"
      openLabel:   the link text at the right of each row (default "Open")
      filters:     the filter list, [value, label, test(n)] (default: the office filters)
-     repoPath:    where a "New research in the Repository" notice opens (optional)       */
+     repoPath:    where a "New research in the Repository" notice opens (optional)
+     targetOf:    (n) => the page a notice opens, or '' (optional; used by the Administrator) */
 
 const ICONS = {
   submission:  <FaPaperPlane />,
@@ -38,7 +39,7 @@ const OFFICE_FILTERS = [
 /* tells the sidebar to refresh its unread count */
 const announce = () => { try { window.dispatchEvent(new Event('ayon:notifs-changed')); } catch { /* ignore */ } };
 
-const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = OFFICE_FILTERS, repoPath }) => {
+const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = OFFICE_FILTERS, repoPath, targetOf }) => {
   const navigate = useNavigate();
   const [notifs,  setNotifs]  = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +94,8 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
 
   const openIt = async (n) => {
     if (!n.is_read) await markRead(n.notif_id);
+    const to = targetOf ? targetOf(n) : '';
+    if (to) { navigate(to); return; }
     if (isRepoNews(n) && repoPath) { navigate(repoPath); return; }
     if (isTerminalNews(n) && terminalPath) { navigate(terminalPath); return; }
     navigate(isGrantAlert(n) ? grantsPath : `${queuePath}?open=${n.proposal_id}`);
@@ -144,13 +147,13 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
         ) : (
           shown.map((n) => {
             /* like the college pages: clicking the notification itself opens what it is about */
-            const opens = !!n.proposal_id || (!!repoPath && isRepoNews(n));
+            const opens = !!n.proposal_id || (!!repoPath && isRepoNews(n)) || !!(targetOf && targetOf(n));
             const click = () => (opens ? openIt(n) : (!n.is_read && markRead(n.notif_id)));
             return (
             <div key={n.notif_id} className={`on-item${n.is_read ? '' : ' unread'}${opens ? ' opens' : ''}`}
               onClick={click}
               {...(opens ? {
-                role: 'button', tabIndex: 0, title: n.proposal_id ? 'Open this proposal' : 'Open the Research Repository',
+                role: 'button', tabIndex: 0, title: n.proposal_id ? 'Open this proposal' : (targetOf && targetOf(n)) ? 'Open' : 'Open the Research Repository',
                 onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); click(); } },
               } : {})}>
               <div className="on-ico" aria-hidden="true">{ICONS[n.notif_type] || <FaBell />}</div>
