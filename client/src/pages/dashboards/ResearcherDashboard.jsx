@@ -25,6 +25,7 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
 import { dateText, dateTimeText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 /* approved Internally Funded Research whose Terminal Report was accepted shows as Completed */
 const statusText = (p) => (p?.completed_at ? 'Completed' : statusLabel(p?.status));
@@ -308,6 +309,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
       const d = String(dateOf(a) || '').localeCompare(String(dateOf(b) || ''));
       return f.sort === 'old' ? d : -d;
     });
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
   const filtering = JSON.stringify(f) !== JSON.stringify(EMPTY_FILTERS);
   const otherKind = kind === 'grants' ? 'research' : 'grants';
   const otherCount = f.status === 'all' ? 0 : everything.filter(p => kindOf(p.proposal_type) === otherKind
@@ -416,9 +418,9 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, i) => (
+            {pager.rows.map((p, i) => (
               <tr key={p.proposal_id} data-pid={p.proposal_id}>
-                <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                 <td>
                   <strong><TitleOf p={p} /></strong>
                   {p.spotlight_title && (
@@ -473,6 +475,7 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
             )}
           </tbody>
         </table>
+        {pager.bar}
         </div>
       </div>
 
@@ -1103,6 +1106,8 @@ const MyRepositoryItems = ({ onChanged }) => {
     }
   };
 
+  const pager = usePaged(items);   // 10 rows a page, Previous / Next under the table
+
   if (items && items.length === 0 && !failed) return null;     // nothing of theirs stored yet
 
   return (
@@ -1124,7 +1129,7 @@ const MyRepositoryItems = ({ onChanged }) => {
         <table className="data-table">
           <thead><tr><th>Research Title</th><th>Submission Type</th><th>Access</th><th>Date Stored</th><th>Change Access</th></tr></thead>
           <tbody>
-            {items.map((r) => {
+            {pager.rows.map((r) => {
               const external = r.source_type === 'external';
               return (
                 <tr key={r.repo_id}>
@@ -1152,6 +1157,7 @@ const MyRepositoryItems = ({ onChanged }) => {
           </tbody>
         </table>
       )}
+      {items && items.length > 0 && pager.bar}
       <div className="am-legend" style={{ padding: '10px 20px', borderTop: '1px solid #efe5e6', fontSize: '0.8rem', color: '#8a7a7d' }}>
         Public: anyone who opens the Research Repository can find and open it. Private: only you, your college offices and MSIRC can see it.
       </div>
@@ -1201,6 +1207,7 @@ const Repository = () => {
     r.title?.toLowerCase().includes(search.toLowerCase()) ||
     r.author?.toLowerCase().includes(search.toLowerCase())
   );
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -1235,7 +1242,7 @@ const Repository = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => (
+              {pager.rows.map(r => (
                 <tr key={r.repo_id}>
                   <td><strong>{r.title}</strong></td>
                   <td style={{ fontSize: '0.82rem', color: '#5e5155' }}>{repoTypeLabel(r)}</td>
@@ -1257,6 +1264,7 @@ const Repository = () => {
             </tbody>
           </table>
         )}
+        {pager.bar}
       </div>
     </>
   );

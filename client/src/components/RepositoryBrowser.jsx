@@ -3,6 +3,7 @@ import API from '../services/authService';
 import { FileButtons } from './ProposalFiles';
 import { repoTypeLabel } from '../utils/terms';
 import { dateText } from '../utils/dates';
+import { usePaged } from './Pager';
 
 /* ─────────────────────────────────────────────────────────────
    The Research Repository list, the same on every office page:
@@ -42,6 +43,7 @@ const RepositoryBrowser = ({ endpoint = '/repository', intro, note }) => {
       (access === 'all' || r.access_type === access) &&
       (!q || `${r.title} ${r.author || ''} ${r.college || ''} ${r.keywords || ''}`.toLowerCase().includes(q)));
   }, [items, search, type, access]);
+  const pager = usePaged(shown);   // 10 rows a page, Previous / Next under the table
   const filtersOn = !!(search.trim() || type !== 'all' || access !== 'all');
 
   return (
@@ -84,7 +86,7 @@ const RepositoryBrowser = ({ endpoint = '/repository', intro, note }) => {
             <tr><th>Research Title</th><th>Submission Type</th><th>Access</th><th>Date Stored</th><th>File</th></tr>
           </thead>
           <tbody>
-            {items && shown.map((r) => (
+            {items && pager.rows.map((r) => (
               <tr key={r.repo_id}>
                 <td>
                   <div style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{r.title}</div>
@@ -107,6 +109,7 @@ const RepositoryBrowser = ({ endpoint = '/repository', intro, note }) => {
             {!items && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}
           </tbody>
         </table>
+        {pager.bar}
         <div className="am-legend" style={{ padding: '10px 20px', borderTop: '1px solid #efe5e6', fontSize: '0.8rem', color: '#8a7a7d' }}>
           {note || 'Approved submissions are stored automatically as Private. Only the researcher who owns it, or the Administrator, can make it Public.'}
         </div>

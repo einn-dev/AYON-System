@@ -25,6 +25,7 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -123,6 +124,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the MSIRC Director's step on an MSIRC form
   const filtered = proposals.filter(p => p.status === statusFilter);
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its review screen when it waits for you, otherwise read-only */
   const [viewId, setViewId] = useState(null);
   const hl = useOpenHighlight(proposals.length > 0, {
@@ -233,9 +235,9 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p, i) => (
+              {pager.rows.map((p, i) => (
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
-                  <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                  <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                   <td>
                     <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
@@ -262,6 +264,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
               )}
             </tbody>
           </table>
+          {pager.bar}
         </div>
       ) : (
         /* ── Detail / Decision Panel ── */

@@ -10,7 +10,7 @@ import { FileButtons } from '../../components/ProposalFiles';
 import MessageToast from '../../components/MessageToast';
 import { repoTypeLabel } from '../../utils/terms';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const ACCESS_BADGE = { public: 'badge-green', private: 'badge-amber' };
 

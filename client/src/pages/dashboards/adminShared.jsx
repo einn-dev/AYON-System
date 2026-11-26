@@ -92,7 +92,7 @@ export const fmtWhen = (iso) => {
 
 /* ── "Showing 1–25 of 120   [Previous] [Next]" ── */
 export const Pager = ({ page, pageSize, total, onPage }) => {
-  if (!total) return null;
+  if (!total || total <= pageSize) return null;      // everything fits on one page: no bar
   const from  = (page - 1) * pageSize + 1;
   const to    = Math.min(total, page * pageSize);
   const last  = Math.max(1, Math.ceil(total / pageSize));

@@ -10,6 +10,7 @@ import { AnnouncementCard, ANN_TYPES, ANN_CHANGED } from '../../components/Annou
 import { ROLE_LABEL } from '../../utils/terms';
 import { FaBullhorn, FaEye, FaEyeSlash, FaPen, FaPlus, FaTrashCan } from '../../utils/icons';
 import MessageToast from '../../components/MessageToast';
+import { usePaged } from '../../components/Pager';
 
 /* ─────────────────────────────────────────────────────────────
    Administrator: Announcements
@@ -219,6 +220,7 @@ const AdminAnnouncementsPage = () => {
 
   const shown = items.filter(a => !filter
     || (filter === 'ended' ? ['ended', 'hidden'].includes(a.state) : a.state === filter));
+  const pager = usePaged(shown);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -272,7 +274,7 @@ const AdminAnnouncementsPage = () => {
                   <p>{items.length ? 'No announcements match this filter.' : 'No announcements yet. Post one with "New Announcement".'}</p>
                 </div>
               </td></tr>
-            ) : shown.map(a => {
+            ) : pager.rows.map(a => {
               const st = STATE[a.state] || STATE.ended;
               const t  = ANN_TYPES[a.ann_type] || ANN_TYPES.info;
               return (
@@ -312,6 +314,7 @@ const AdminAnnouncementsPage = () => {
             })}
           </tbody>
         </table>
+        {pager.bar}
       </div>
 
       {editing && (

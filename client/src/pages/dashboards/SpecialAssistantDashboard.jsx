@@ -24,6 +24,7 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 /* Files are stored as full web addresses; older records may hold a server path */
 
@@ -137,6 +138,7 @@ const Submissions = ({ proposals, onRefresh }) => {
         .toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
 
   /* the reason box calls this; it throws on failure so the box stays open with the message */
   const confirmReturn = async (reason) => {
@@ -182,9 +184,9 @@ const Submissions = ({ proposals, onRefresh }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, i) => (
+            {pager.rows.map((p, i) => (
               <tr key={p.proposal_id}>
-                <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                 <td>
                   <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
@@ -224,6 +226,7 @@ const Submissions = ({ proposals, onRefresh }) => {
             )}
           </tbody>
         </table>
+        {pager.bar}
       </div>
 
       {returning && (
@@ -246,6 +249,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the MSIRC Special Assistant's step on an MSIRC form
 
   const pending = proposals.filter(p => p.status === 'submitted');
+  const pager = usePaged(pending);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its validation screen when it is waiting, otherwise read-only */
   const [viewId, setViewId] = useState(null);
   const hl = useOpenHighlight(proposals.length > 0 && !selected, {
@@ -362,7 +366,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               </tr>
             </thead>
             <tbody>
-              {pending.map(p => (
+              {pager.rows.map(p => (
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
                   <td>
                     <strong>{personName(p)}</strong>
@@ -390,6 +394,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
               )}
             </tbody>
           </table>
+          {pager.bar}
         </div>
       ) : (
         /* Validation Panel */
@@ -547,6 +552,7 @@ const Forwarded = ({ proposals }) => {
   const forwarded = proposals.filter(p =>
     ['under_review','endorsed','approved','rejected'].includes(p.status)
   );
+  const pager = usePaged(forwarded);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -568,7 +574,7 @@ const Forwarded = ({ proposals }) => {
             </tr>
           </thead>
           <tbody>
-            {forwarded.map(p => (
+            {pager.rows.map(p => (
               <tr key={p.proposal_id}>
                 <td>
                   <strong>{personName(p)}</strong>
@@ -596,6 +602,7 @@ const Forwarded = ({ proposals }) => {
             )}
           </tbody>
         </table>
+        {pager.bar}
       </div>
       <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>

@@ -1,0 +1,12 @@
+/* Previous / Next under a long table (Pager.jsx) */
+.pg-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid #efe5e6;
+  font-size: 0.82rem; color: #6b5e61;
+  position: sticky; left: 0;                 /* stays in view when the table scrolls sideways */
+}
+.pg-btns { display: flex; align-items: center; gap: 10px; }
+.pg-page { color: #8a7a7d; }
+@media (max-width: 560px) { .pg-bar { justify-content: center; text-align: center; } }

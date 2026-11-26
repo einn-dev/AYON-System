@@ -15,6 +15,7 @@ import StatCard from '../../components/StatCard';
 import WelcomeBanner from '../../components/WelcomeBanner';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 
@@ -99,6 +100,7 @@ const AllSubmissions = ({ proposals }) => {
       .toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -129,9 +131,9 @@ const AllSubmissions = ({ proposals }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, i) => (
+            {pager.rows.map((p, i) => (
               <tr key={p.proposal_id} data-pid={p.proposal_id}>
-                <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                 <td>
                   <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.college || '—'}</div>
@@ -157,6 +159,7 @@ const AllSubmissions = ({ proposals }) => {
             )}
           </tbody>
         </table>
+        {pager.bar}
       </div>
     </>
   );

@@ -6,7 +6,7 @@ import { ROLE_LABELS, errText, fmtWhen, startOfDay, Pager } from './adminShared'
 import { STATUS_LABEL, ROLE_LABEL } from '../../utils/terms';
 import { dateTimeText } from '../../utils/dates';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 /* What each kind of action is called, and the badge color it gets */
 const ACTIONS = {

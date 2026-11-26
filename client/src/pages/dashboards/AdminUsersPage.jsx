@@ -10,6 +10,7 @@ import {
 } from './adminShared';
 import { personName, fullLegalName } from '../../utils/names';
 import MessageToast from '../../components/MessageToast';
+import { usePaged } from '../../components/Pager';
 
 const EMPTY_ADD = {
   first_name: '', middle_name: '', last_name: '', email: '',
@@ -528,6 +529,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
     const matchStatus = statusFilter === 'all' || userStatus(u) === statusFilter;
     return matchSearch && matchRole && matchStatus;
   });
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
 
   const isSelf      = (u) => String(u.user_id) === String(currentUserId);
   const isLastAdmin = (u) => u.role_type === 'admin' && u.is_active && activeAdmins <= 1;
@@ -610,7 +612,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u, i) => {
+              {pager.rows.map((u, i) => {
                 const st   = userStatus(u);
                 const meta = STATUS_META[st];
                 const self = isSelf(u);
@@ -621,7 +623,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
 
                 return (
                   <tr key={u.user_id}>
-                    <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                    <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                     <td>
                       <strong>{fullLegalName(u)}</strong>
                       {self && <span className="am-you">YOU</span>}
@@ -659,6 +661,7 @@ const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
               )}
             </tbody>
           </table>
+          {pager.bar}
         </div>
 
         <div className="am-legend">

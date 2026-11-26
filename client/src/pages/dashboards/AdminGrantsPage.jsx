@@ -10,7 +10,7 @@ import { STATUS_LABEL, STATUS_ORDER, statusBadge, TYPE_LABEL, GRANT_TYPES as APP
 import { GRANT_FORMS, FORMS_OF_TYPE, awardOf } from '../../utils/grantForms';
 import { whereNow } from '../../components/ProposalTracker';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const money = (v) => (v === null || v === undefined || v === ''
   ? '—'

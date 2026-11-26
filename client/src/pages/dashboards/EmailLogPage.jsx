@@ -5,7 +5,7 @@ import './AdminModule.css';
 import { errText, fmtWhen, Pager } from './adminShared';
 import MessageToast from '../../components/MessageToast';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const TYPE_LABELS = {
   verification:   'Verification',

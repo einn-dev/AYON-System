@@ -19,7 +19,7 @@ import { dateText } from '../../utils/dates';
    the office it is waiting on. The Admin can never approve, reject or endorse.
    ───────────────────────────────────────────────────────────── */
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const PROPOSAL_TYPES = TYPE_LABEL;
 const STATUS_LABELS  = STATUS_LABEL;

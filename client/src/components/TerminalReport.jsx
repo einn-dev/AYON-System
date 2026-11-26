@@ -14,6 +14,7 @@ import { personName } from '../utils/names';
 import './OriginalForm.css';
 import './TerminalReport.css';
 import MessageToast from './MessageToast';
+import { usePaged } from './Pager';
 
 /* ─────────────────────────────────────────────────────────────
    Terminal Report (MSIRC Form No. 007) for approved Internally Funded Research.
@@ -415,6 +416,7 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
   const navigate = useNavigate();
   const projects = useMemo(() => proposals.filter(canHaveTerminalReport)
     .sort((a, b) => new Date(b.decided_at || b.submitted_at || 0) - new Date(a.decided_at || a.submitted_at || 0)), [proposals]);
+  const pager = usePaged(projects);   // 10 rows a page, Previous / Next under the table
   const [reports, setReports] = useState(null);       // proposal_id -> report or null
   const [openId, setOpenId] = useState(null);         // View: the pop-up with the route and history
   const [formId, setFormId] = useState(null);         // Submit / Fix and Resubmit: straight to Form 007
@@ -472,12 +474,12 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
         <table className="data-table">
           <thead><tr><th>#</th><th>Title</th><th>Approved</th><th>Terminal Report</th><th>Action</th></tr></thead>
           <tbody>
-            {reports && projects.map((p, i) => {
+            {reports && pager.rows.map((p, i) => {
               const r = reports[p.proposal_id];
               const label = !r ? 'Submit' : r.status === 'returned' ? 'Fix and Resubmit' : 'View';
               return (
                 <tr key={p.proposal_id}>
-                  <td style={{ color: '#8a7a7d' }}>{i + 1}</td>
+                  <td style={{ color: '#8a7a7d' }}>{pager.offset + i + 1}</td>
                   <td style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{p.title}</td>
                   <td style={{ color: '#718096', whiteSpace: 'nowrap' }}>{p.decided_at ? short(p.decided_at) : '—'}</td>
                   <td>{reportBadge(r)}</td>
@@ -496,6 +498,7 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
             {!reports && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}
           </tbody>
         </table>
+        {pager.bar}
       </div>
 
       {/* Submit / Fix and Resubmit: Form 007 right away */}
@@ -551,6 +554,7 @@ export const TerminalReportsPage = () => {
   const waiting = useMemo(() => (rows || []).filter((r) => r.status === mine), [rows, mine]);
   const others = useMemo(() => (rows || []).filter((r) => r.status !== mine), [rows, mine]);
   const list = tab === 'waiting' ? waiting : others;
+  const pager = usePaged(list);   // 10 rows a page, Previous / Next under the table
 
   const open = (r) => { setSel(r); setNote(''); setErr(''); setSignReady(false); };
   const act = async (decision) => {
@@ -583,7 +587,7 @@ export const TerminalReportsPage = () => {
           <table className="data-table">
             <thead><tr><th>Research</th><th>Researcher</th><th>Submitted</th><th>Status</th><th /></tr></thead>
             <tbody>
-              {list.map((r) => (
+              {pager.rows.map((r) => (
                 <tr key={r.report_id}>
                   <td><b>{r.title}</b></td>
                   <td>{personName(r) || '—'}<br /><small className="tr-muted">{r.college}</small></td>
@@ -598,6 +602,7 @@ export const TerminalReportsPage = () => {
               {!rows && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}
             </tbody>
           </table>
+          {pager.bar}
         </div>
       </div>
 

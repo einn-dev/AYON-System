@@ -7,6 +7,7 @@ import { useLiveRefresh } from '../../utils/liveRefresh';
 import { SDGS, sdgList } from '../../utils/sdgs';
 import './External.css';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (externally funded research, Repository only)
@@ -130,6 +131,7 @@ export const CollegeExternalPage = () => {
   const needle = q.trim().toLowerCase();
   const shown = items.filter((x) => (!dept || x.department === dept)
     && (!needle || [x.title, x.project_leader, x.researchers, x.external_agency, personName(x), x.keywords].some((v) => String(v || '').toLowerCase().includes(needle))));
+  const pager = usePaged(shown);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -166,7 +168,7 @@ export const CollegeExternalPage = () => {
                 <tr><th style={{ minWidth: 220 }}>Title</th><th>Researcher</th><th style={{ minWidth: 150 }}>Department</th><th>Funder</th><th>Amount</th><th>Period</th><th>Action</th></tr>
               </thead>
               <tbody>
-                {shown.map((x) => (
+                {pager.rows.map((x) => (
                   <tr key={x.external_id}>
                     <td><strong>{x.title}</strong></td>
                     <td>{personName(x) || '—'}</td>
@@ -179,6 +181,7 @@ export const CollegeExternalPage = () => {
                 ))}
               </tbody>
             </table>
+            {pager.bar}
           </div>
         )}
       </div>
@@ -220,6 +223,7 @@ export const OfficeExternalPage = () => {
     && (!sdg || sdgList(x.sdgs).includes(Number(sdg)))
     && (!needle || [x.title, x.project_leader, x.researchers, x.external_agency, personName(x), x.keywords, x.department]
       .some((v) => String(v || '').toLowerCase().includes(needle))));
+  const pager = usePaged(shown);   // 10 rows a page, Previous / Next under the table
 
   const total = shown.reduce((sum, x) => sum + (Number(x.funding_amount) || 0), 0);
   const collegeCount = new Set(shown.map((x) => x.college).filter(Boolean)).size;
@@ -295,7 +299,7 @@ export const OfficeExternalPage = () => {
                 <tr><th style={{ minWidth: 220 }}>Title</th><th>Project Leader</th><th style={{ minWidth: 150 }}>College</th><th>Funder</th><th>Amount</th><th>SDGs</th><th>Period</th><th>Action</th></tr>
               </thead>
               <tbody>
-                {shown.map((x) => (
+                {pager.rows.map((x) => (
                   <tr key={x.external_id}>
                     <td><strong>{x.title}</strong></td>
                     <td>{x.project_leader || personName(x) || '—'}</td>
@@ -309,6 +313,7 @@ export const OfficeExternalPage = () => {
                 ))}
               </tbody>
             </table>
+            {pager.bar}
           </div>
         )}
       </div>

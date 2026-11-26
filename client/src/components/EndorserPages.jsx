@@ -14,6 +14,7 @@ import StatCard from './StatCard';
 import { ROLE_REDIRECTS } from '../utils/roleRoutes';
 import MessageToast from './MessageToast';
 import { dateText } from '../utils/dates';
+import { usePaged } from './Pager';
 
 /* ─────────────────────────────────────────────────────────────
    Shared pages for the college endorsers
@@ -100,6 +101,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
   const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // this step of the MSIRC form (Grants and Incentives)
 
   const queue = proposals.filter(p => isMyTurn(p, role));
+  const pager = usePaged(queue);   // 10 rows a page, Previous / Next under the table
   const clean = note.trim();
   const noteOk = clean.length >= NOTE_MIN && clean.length <= NOTE_MAX;
 
@@ -171,9 +173,9 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               </tr>
             </thead>
             <tbody>
-              {queue.map((p, i) => (
+              {pager.rows.map((p, i) => (
                 <tr key={p.proposal_id}>
-                  <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                  <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                   <td>
                     <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>
@@ -204,6 +206,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               )}
             </tbody>
           </table>
+          {pager.bar}
         </div>
       </>
     );
@@ -350,6 +353,7 @@ export const EndorsedHistory = () => {
     `${e.title || ''} ${e.researcher || ''}`.toLowerCase().includes(search.toLowerCase())
     && (show === 'all' || (show === 'endorsed' ? e.endorse_status === 'endorsed' : e.endorse_status !== 'endorsed'))
   );
+  const pager = usePaged(shown);   // 10 rows a page, Previous / Next under the table
 
   return (
     <>
@@ -379,7 +383,7 @@ export const EndorsedHistory = () => {
               <tr><th>Researcher</th><th>Title</th><th>Your Action</th><th>Your Remarks</th><th>Current Status</th><th>Action</th></tr>
             </thead>
             <tbody>
-              {shown.map(e => (
+              {pager.rows.map(e => (
                 <tr key={e.endorsement_id}>
                   <td><strong>{e.researcher || '—'}</strong></td>
                   <td style={{ maxWidth: 220 }}>
@@ -414,6 +418,7 @@ export const EndorsedHistory = () => {
             </tbody>
           </table>
         )}
+        {pager.bar}
       </div>
       <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>

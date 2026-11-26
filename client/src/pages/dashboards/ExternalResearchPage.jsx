@@ -12,6 +12,7 @@ import { SDGS } from '../../utils/sdgs';
 import { ExternalDetails, SdgChips, peso } from './ExternalShared';
 import MessageToast from '../../components/MessageToast';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 /* ─────────────────────────────────────────────────────────────
    External Research (Researcher): externally funded research, for the
@@ -59,6 +60,7 @@ const Req = () => <span style={{ color: '#c53030' }} aria-hidden="true"> *</span
 const ExternalResearchPage = () => {
   const { user } = useAuth() || {};
   const [items,  setItems]  = useState([]);
+  const pager = usePaged(items);   // 10 rows a page, Previous / Next under the table
   const [alert,  setAlert]  = useState(null);
   const [saving, setSaving] = useState(false);
   const [docs,   setDocs]   = useState(EMPTY_DOCS);
@@ -213,7 +215,7 @@ const ExternalResearchPage = () => {
                   <tr><th style={{ minWidth: 200 }}>Title of Project</th><th>Amount</th><th>Action</th></tr>
                 </thead>
                 <tbody>
-                  {items.map(x => (
+                  {pager.rows.map(x => (
                     <tr key={x.external_id}>
                       <td><strong>{x.title}</strong><br /><small style={{ color: '#718096' }}>
                         {x.external_agency || '—'} · Private · Uploaded {x.uploaded_at ? dateText(x.uploaded_at) : '—'}</small>
@@ -224,6 +226,7 @@ const ExternalResearchPage = () => {
                   ))}
                 </tbody>
               </table>
+              {pager.bar}
             </div>
           )}
         </div>

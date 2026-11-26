@@ -22,6 +22,7 @@ import WelcomeBanner from '../../components/WelcomeBanner';
 import MessageToast from '../../components/MessageToast';
 import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { dateText } from '../../utils/dates';
+import { usePaged } from '../../components/Pager';
 
 
 const PROPOSAL_TYPES = TYPE_LABEL;
@@ -118,6 +119,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const endorsed = proposals.filter(p => p.status === 'endorsed');
+  const pager = usePaged(endorsed);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its approval screen when it waits for you, otherwise read-only */
   const [viewId, setViewId] = useState(null);
   const hl = useOpenHighlight(proposals.length > 0, {
@@ -206,9 +208,9 @@ const ForApproval = ({ proposals, onRefresh }) => {
               </tr>
             </thead>
             <tbody>
-              {endorsed.map((p, i) => (
+              {pager.rows.map((p, i) => (
                 <tr key={p.proposal_id} data-pid={p.proposal_id}>
-                  <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                  <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                   <td>
                     <strong>{personName(p)}</strong>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
@@ -235,6 +237,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
               )}
             </tbody>
           </table>
+          {pager.bar}
         </div>
       ) : (
         <div>
@@ -378,6 +381,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
 const FilteredList = ({ proposals, statusFilter }) => {
   const [openId, setOpenId] = useState(null);         // the record opened in the read-only window
   const filtered = proposals.filter(p => p.status === statusFilter);
+  const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
   const title    = statusFilter === 'approved' ? 'Approved' : 'Rejected';
 
   return (
@@ -410,9 +414,9 @@ const FilteredList = ({ proposals, statusFilter }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, i) => (
+            {pager.rows.map((p, i) => (
               <tr key={p.proposal_id}>
-                <td style={{ color: '#a0aec0' }}>{i + 1}</td>
+                <td style={{ color: '#a0aec0' }}>{pager.offset + i + 1}</td>
                 <td>
                   <strong>{personName(p)}</strong>
                   <div style={{ fontSize: '0.75rem', color: '#718096' }}>{p.department || '—'}</div>
@@ -435,6 +439,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
             )}
           </tbody>
         </table>
+        {pager.bar}
       </div>
       <RecordDetails proposalId={openId} onClose={() => setOpenId(null)} />
     </>
