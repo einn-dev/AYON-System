@@ -16,7 +16,7 @@ import '../../components/ProposalFiles.css';
 import ProposalTracker, { whereNow } from '../../components/ProposalTracker';
 import { ProposalSignatures, SignConfirm } from '../../components/Signature';
 import { ProposalFiles, FileButtons, DocumentsEditor, docsFromFiles, docsProblem, appendDocs, docsSummary } from '../../components/ProposalFiles';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaFlagCheckered, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from '../../utils/icons';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBoxArchive, FaCheck, FaCircleCheck, FaCirclePlus, FaFileLines, FaGlobe, FaHandHoldingDollar, FaTableCellsLarge, FaTriangleExclamation } from '../../utils/icons';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, ROLE_LABEL, TYPE_LABEL, RESEARCH_TYPES, GRANT_TYPES, isGrantType, repoTypeLabel } from '../../utils/terms';
 import { GRANT_FORMS, FORMS_OF_TYPE, formLabel, fieldsIssues, fieldsWarning, titleProblem } from '../../utils/grantForms';
 import FormToast, { jumpTo } from '../../components/FormToast';
@@ -37,7 +37,6 @@ const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
   { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines /> },
   { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
-  { path: '/researcher/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
   { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
   { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
@@ -577,6 +576,8 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
   const spotlights = proposals
     .filter(p => p.proposal_type === 'research_spotlight' && p.status === 'approved')
     .sort((x, y) => String(x.title || '').localeCompare(String(y.title || ''), undefined, { sensitivity: 'base' }));   // A to Z
+  /* the Terminal Report card opens once one of the researcher's Internally Funded Research is approved */
+  const approvedInternal = proposals.filter(p => p.proposal_type === 'internally_funded' && p.status === 'approved').length;
   const navigate = useNavigate();
   const location = useLocation();
   const { id: draftParam } = useParams();
@@ -904,6 +905,31 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
                       </div>
                     );
                   })}
+                  {/* Terminal Report (Form 007): only for an approved Internally Funded Research.
+                      It opens the Terminal Reports page, where each approved project has its Submit button. */}
+                  {K === KINDS.research && (() => {
+                    const locked = approvedInternal === 0;
+                    const go = () => { if (!locked) navigate('/researcher/terminal-reports'); };
+                    return (
+                      <div role="button" tabIndex={locked ? -1 : 0} data-type="terminal_report"
+                        aria-disabled={locked} onClick={go}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }}
+                        style={{
+                          border: '2px solid #e8edf2', borderRadius: 10, padding: '16px',
+                          cursor: locked ? 'not-allowed' : 'pointer', transition: 'border-color 0.2s',
+                          background: locked ? '#f7f7f8' : '#fff', opacity: locked ? 0.65 : 1,
+                        }}>
+                        <p style={{ fontWeight: 600, color: '#1a3a5c', margin: 0, fontSize: '0.9rem' }}>
+                          Terminal Report
+                        </p>
+                        <p style={{ color: '#4a5568', margin: '0 0 4px', fontSize: '0.76rem', fontWeight: 600 }}>(Internally Funded Research)</p>
+                        <p style={{ color: '#718096', margin: 0, fontSize: '0.78rem', lineHeight: 1.4 }}>
+                          The final report (Form 007) of an approved Internally Funded Research, submitted when the project ends.
+                        </p>
+                        {locked && <p style={{ color: '#9b2c2c', margin: '6px 0 0', fontSize: '0.76rem', fontWeight: 600 }}>No approved Internally Funded Research yet</p>}
+                      </div>
+                    );
+                  })()}
                 </div>
                 {K === KINDS.research && (
                   <p style={{ fontSize: '0.82rem', color: '#4a5568', margin: '10px 0 0' }}>

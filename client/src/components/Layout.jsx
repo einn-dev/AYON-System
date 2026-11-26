@@ -80,6 +80,7 @@ const Layout = ({ children, navItems, role }) => {
     const label = /\/proposals\/new$/.test(path) ? 'Submit Research'
       : /\/grants\/new$/.test(path) ? 'Submit Application'
       : /\/(proposals|grants)\/\d+\/edit$/.test(path) ? 'Edit Draft'
+      : /\/terminal-reports$/.test(path) ? 'Terminal Reports'
       : hit ? hit.label : (/\/help$/.test(path) ? 'Help' : role);
     document.title = label ? `${label} · AYON` : 'AYON · MSIRC';
     // eslint-disable-next-line react-hooks/exhaustive-deps

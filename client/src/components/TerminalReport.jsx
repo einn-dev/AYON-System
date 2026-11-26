@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaFileLines, FaXmark, FaCloudArrowUp, FaCheck, FaRotateLeft, FaFlagCheckered, FaCircleCheck, FaFilePdf, FaFileWord,
-  FaArrowRight,
+  FaArrowRight, FaArrowLeft,
 } from '../utils/icons';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -459,6 +459,10 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
 
   return (
     <>
+      {/* opened from the Terminal Report card on Submit Research (it has no sidebar tab) */}
+      <Link to="/researcher/proposals" className="btn btn-outline btn-sm" style={{ textDecoration: 'none', marginBottom: 14 }}>
+        <FaArrowLeft className="ic" />Back to My Research
+      </Link>
       <div className="page-header">
         <h1>Terminal Reports</h1>
         <p>When an approved Internally Funded Research project ends, submit its Terminal Report (MSIRC Form No. 007) here.
