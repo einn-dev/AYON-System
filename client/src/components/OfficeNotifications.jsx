@@ -141,7 +141,7 @@ const OfficeNotifications = ({ queuePath, intro, openLabel = 'Open', filters = O
           </div>
         ) : shown.length === 0 ? (
           <div className="empty-state">
-            <p style={{ fontSize: '2rem', margin: 0 }}><FaBell /></p>
+            <p style={{ fontSize: '2rem', margin: '0 auto' }}><FaBell /></p>
             <p>{filter === 'all' ? 'No notifications yet.' : 'Nothing matches this filter.'}</p>
           </div>
         ) : (

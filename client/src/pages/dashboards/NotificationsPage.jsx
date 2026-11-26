@@ -93,7 +93,7 @@ const NotificationsPage = () => {
           <div className="empty-state loading-state" role="status"><p>Loading notifications…</p></div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p style={{ fontSize: '2rem', margin: 0 }}><FaBell /></p>
+            <p style={{ fontSize: '2rem', margin: '0 auto' }}><FaBell /></p>
             <p>No notifications {filter !== 'all' ? 'matching this filter' : 'yet'}.</p>
           </div>
         ) : (
