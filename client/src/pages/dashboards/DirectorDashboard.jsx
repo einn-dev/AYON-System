@@ -16,7 +16,8 @@ import ProposalTracker from '../../components/ProposalTracker';
 import { SignConfirm, ProposalSignatures } from '../../components/Signature';
 import { ProposalFiles } from '../../components/ProposalFiles';
 import ReportsPage from './ReportsPage';
-import { FaArrowLeft, FaBell, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from '../../utils/icons';
+import RepositoryBrowser from '../../components/RepositoryBrowser';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaChartColumn, FaCircleCheck, FaCircleXmark, FaClipboardList, FaGlobe, FaPaperPlane, FaRotateLeft, FaTableCellsLarge, FaXmark } from '../../utils/icons';
 import { statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import { personName } from '../../utils/names';
 import { FormChecklist, EMPTY_CHECK } from '../../components/GrantForms';
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark /> },
   { path: '/director/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/director/external',   label: 'External Research', icon: <FaGlobe /> },
+  { path: '/director/repository',    label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
   { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
 ];
@@ -468,6 +470,7 @@ const DirectorDashboard = () => {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="terminal-reports" element={<TerminalReportsPage />} />
         <Route path="external" element={<OfficeExternalPage />} />
+        <Route path="repository" element={<RepositoryBrowser endpoint="/repository" />} />
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
             intro="Proposals the MSIRC Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />

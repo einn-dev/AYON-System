@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
+import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -11,7 +12,7 @@ import '../../components/Layout.css';
 import ReturnReasonModal, { REASON_MIN } from '../../components/ReturnReasonModal';
 import OfficeNotifications from '../../components/OfficeNotifications';
 import { useOpenHighlight, OpenNotice } from '../../components/OpenHighlight';
-import { FaArrowLeft, FaBell, FaCheck, FaClipboardCheck, FaGlobe, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from '../../utils/icons';
+import { FaArrowLeft, FaBell, FaBoxArchive, FaCheck, FaClipboardCheck, FaGlobe, FaInbox, FaPaperPlane, FaRotateLeft, FaTableCellsLarge } from '../../utils/icons';
 import { STATUS_LABEL, STATUS_ORDER, statusLabel, statusBadge, TYPE_LABEL, wordFor } from '../../utils/terms';
 import ProposalTracker from '../../components/ProposalTracker';
 import RecordDetails from '../../components/RecordDetails';
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { path: '/special-assistant/submissions',   label: 'All Submissions',       icon: <FaInbox /> },
   { path: '/special-assistant/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
   { path: '/special-assistant/external',   label: 'External Research', icon: <FaGlobe /> },
+  { path: '/special-assistant/repository', label: 'Research Repository', icon: <FaBoxArchive /> },
   { path: '/special-assistant/notifications', label: 'Notifications',       icon: <FaBell /> },
 ];
 
@@ -640,6 +642,7 @@ const SpecialAssistantDashboard = () => {
         <Route path="forwarded"    element={<Forwarded proposals={proposals} />} />
         <Route path="terminal-reports" element={<TerminalReportsPage />} />
         <Route path="external" element={<OfficeExternalPage />} />
+        <Route path="repository" element={<RepositoryBrowser endpoint="/repository" />} />
         <Route path="notifications" element={
           <OfficeNotifications queuePath="/special-assistant/validate"
             intro="New and resubmitted proposals waiting for you to validate, and reminders from the MSIRC Administrator." />} />
