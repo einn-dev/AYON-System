@@ -371,6 +371,13 @@ const deleteDraft = async (req, res) => {
       return res.status(409).json({ message: 'This proposal was already submitted, so it is no longer a draft.', code: 'NOT_DRAFT' });
     }
     await supabase.from('proposal_files').delete().eq('proposal_id', draft.proposal_id);
+    await logAudit(req, {
+      action:     'draft_deleted',
+      targetType: 'proposal',
+      targetId:   draft.proposal_id,
+      targetName: draft.title || 'Untitled draft',
+      details:    { type: draft.proposal_type || null, files: files.length },
+    });
     await removeKeys([
       ...files.map(f => f.storage_key || keyFromPath(f.file_path)),
       ...(files.length ? [] : [keyFromPath(draft.file_path)]),
@@ -716,6 +723,14 @@ const updateProposalStatus = async (req, res) => {
       storeApproved(proposal.proposal_id);               // into the Research Repository, as private
     } else if (status === 'rejected' && proposal.status !== 'rejected') {
       sendRejectionNotice(proposal, req.user.role, reason);   // a formal notice and email, like the approval
+      /* a rejection has no signature, so it gets its own audit line (approvals are logged as signatures) */
+      await logAudit(req, {
+        action:     'proposal_rejected',
+        targetType: 'proposal',
+        targetId:   Number(id),
+        targetName: proposal.title,
+        details:    { role: req.user.role, from: proposal.status, reason },
+      });
     } else {
       await supabase.from('notifications').insert({
         user_id:     proposal.user_id,

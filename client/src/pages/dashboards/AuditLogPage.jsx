@@ -3,7 +3,7 @@ import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
 import { ROLE_LABELS, errText, fmtWhen, startOfDay, Pager } from './adminShared';
-import { STATUS_LABEL, ROLE_LABEL } from '../../utils/terms';
+import { STATUS_LABEL, ROLE_LABEL, typeLabel } from '../../utils/terms';
 import { dateTimeText } from '../../utils/dates';
 
 const PAGE_SIZE = 10;
@@ -22,6 +22,15 @@ const ACTIONS = {
   proposal_endorsed:  { label: 'Proposal Endorsed',   badge: 'badge-green'  },
   proposal_resubmitted: { label: 'Proposal Resubmitted', badge: 'badge-blue' },
   proposal_signed:    { label: 'Proposal Signed',     badge: 'badge-green'  },
+  proposal_rejected:  { label: 'Proposal Rejected',   badge: 'badge-red'    },
+  draft_deleted:      { label: 'Draft Deleted',       badge: 'badge-gray'   },
+  external_uploaded:  { label: 'External Research Uploaded', badge: 'badge-blue' },
+  terminal_report_submitted:      { label: 'Terminal Report Submitted',   badge: 'badge-blue'   },
+  terminal_report_resubmitted:    { label: 'Terminal Report Resubmitted', badge: 'badge-blue'   },
+  terminal_report_for_validation: { label: 'Terminal Report Endorsed',    badge: 'badge-green'  },
+  terminal_report_for_director:   { label: 'Terminal Report Validated',   badge: 'badge-green'  },
+  terminal_report_accepted:       { label: 'Terminal Report Accepted',    badge: 'badge-green'  },
+  terminal_report_returned:       { label: 'Terminal Report Returned',    badge: 'badge-red'    },
   signature_saved:    { label: 'Signature Saved',     badge: 'badge-blue'   },
   signature_replaced: { label: 'Signature Replaced',  badge: 'badge-blue'   },
   signature_removed:  { label: 'Signature Removed',   badge: 'badge-gray'   },
@@ -89,6 +98,17 @@ const detailsText = (log) => {
       return `Shown to: ${d.shown_to || 'everyone'}${d.type ? ` · ${d.type}` : ''}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
     case 'announcement_updated':
       return `${Array.isArray(d.changed) && d.changed.length ? `Changed: ${d.changed.map(c => c.replace(/_/g, ' ')).join(', ')}` : 'No changes'}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
+    case 'proposal_rejected':
+      return `Rejected by the ${ROLE_LABEL[d.role] || d.role || 'office'}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
+    case 'draft_deleted':
+      return `Deleted by the researcher${d.type ? ` · ${typeLabel(d.type)}` : ''}${Number(d.files) > 0 ? ` · ${d.files} file${Number(d.files) === 1 ? '' : 's'} removed` : ''}`;
+    case 'external_uploaded':
+      return `Stored in the Repository as Private${d.agency ? ` · Funded by: ${d.agency}` : ''}`;
+    case 'terminal_report_for_validation':
+    case 'terminal_report_for_director':
+    case 'terminal_report_accepted':
+    case 'terminal_report_returned':
+      return d.remarks ? `Remarks: ${d.remarks}` : '';
     case 'proposal_signed':
       return `Signed as ${d.signed_as || ROLE_LABEL[d.role] || d.role || '—'}${d.step ? ` · ${d.step}` : ''}${Number(d.round) > 1 ? ` · round ${d.round}` : ''}`;
     case 'signature_saved':

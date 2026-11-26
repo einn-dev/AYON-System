@@ -6,6 +6,7 @@ const { contentProblem } = require('../utils/proposalFiles');
 const { notifyUser } = require('../utils/notify');
 const { notifyStaff } = require('../utils/roleNotify');
 const { personName } = require('../utils/names');
+const { logAudit } = require('../utils/audit');
 const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
 
 /* ─────────────────────────────────────────────────────────────
@@ -185,6 +186,14 @@ router.post('/', verifyToken, authorizeRoles('researcher'), uploadFiles, async (
       notif_type: 'submission',
       title:      'External Research Stored',
       message:    `Your externally funded research "${f.title}" was stored in the Research Repository. It is private: only you, your college and the MSIRC offices can see it.`,
+    });
+
+    await logAudit(req, {
+      action:     'external_uploaded',
+      targetType: 'external',
+      targetId:   row.external_id,
+      targetName: f.title,
+      details:    { agency: f.external_agency || null, files: 1 + extra.length },
     });
 
     return res.status(201).json({
