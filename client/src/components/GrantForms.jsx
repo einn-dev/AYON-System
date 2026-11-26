@@ -308,6 +308,66 @@ const agendaLabel = (v) => {
   return `${rest.join(': ')}  (${area.split('. ')[0]})`;
 };
 
+/* ── A list you can also type into (Research Cluster) ──
+   Pick one of the choices, or type your own straight into the same box.
+   Whatever is in the box is the answer. */
+const PickOrType = ({ id, value, options, label, onChange, disabled, bad }) => {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const inputRef = useRef(null);
+  const typed = value.trim().toLowerCase();
+  const exact = options.some((o) => o.toLowerCase() === typed);
+  /* while typing, show the choices that match; an exact choice or an empty box shows them all */
+  const items = !typed || exact ? options : options.filter((o) => o.toLowerCase().includes(typed));
+  const pick = (v) => { onChange(v); setOpen(false); setActive(-1); };
+  const onKey = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive(Math.min(active + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(Math.max(active - 1, 0)); }
+    else if (e.key === 'Enter') { if (open && items[active]) { e.preventDefault(); pick(items[active]); } else setOpen(false); }
+    else if (e.key === 'Escape') { setOpen(false); }
+  };
+  return (
+    <div className="gf-ag">
+      <div className={`gf-ag-box gf-pt-box${disabled ? ' off' : ''}`}>
+        <input id={id} ref={inputRef} type="text" role="combobox" autoComplete="off" disabled={disabled} maxLength={100}
+          aria-expanded={open} aria-controls={`${id}-list`} aria-autocomplete="list"
+          placeholder={`Choose or type a ${label.toLowerCase()}`} value={value}
+          onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
+          onChange={(e) => { onChange(e.target.value); setActive(-1); setOpen(true); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={onKey} {...bad} />
+        {value && !disabled && (
+          <button type="button" className="gf-ag-btn" aria-label={`Clear the ${label.toLowerCase()}`}
+            onMouseDown={(e) => e.preventDefault()} onClick={() => { onChange(''); inputRef.current?.focus(); }}>
+            <FaXmark />
+          </button>
+        )}
+        <button type="button" className="gf-ag-btn" aria-label={`Show the ${label.toLowerCase()} choices`} disabled={disabled}
+          onMouseDown={(e) => { e.preventDefault(); if (open) setOpen(false); else { setOpen(true); inputRef.current?.focus(); } }}>
+          <FaChevronDown />
+        </button>
+      </div>
+      {open && !disabled && (
+        <div className="gf-ag-list" id={`${id}-list`} role="listbox">
+          {items.map((o, i) => (
+            <div key={o} role="option" aria-selected={o === value}
+              className={`gf-ag-opt gf-pt-opt${i === active ? ' active' : ''}${o === value ? ' chosen' : ''}`}
+              onMouseDown={(e) => { e.preventDefault(); pick(o); }} onMouseEnter={() => setActive(i)}>
+              {o}{o === value && <FaCheck className="ic-r" aria-hidden="true" />}
+            </div>
+          ))}
+          {typed && !exact && (
+            <div className="gf-ag-none">
+              "{value.trim()}" is not in the list. It will be saved as you typed it{items.length ? ', or pick a choice above' : ''}.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AgendaPicker = ({ id, value, onChange, disabled }) => {
   const [text, setText] = useState(agendaLabel(value));
   const [open, setOpen] = useState(false);
@@ -423,7 +483,10 @@ export const GrantFormFields = ({ form, value, onChange, disabled = false, issue
           <div key={f.k} className={`form-group${full ? ' gf-wide' : ''}${own ? ' gf-has-err' : ''}`}>
             <label htmlFor={id}>{f.label}{f.required ? <span className="gf-req"> *</span> : f.optional && <em className="gf-opt"> (optional)</em>}</label>
             {wide && f.hint && <p className="gf-field-hint">{f.hint}</p>}
-            {f.type === 'select' ? (
+            {f.type === 'select' && f.typeOwn ? (
+              <PickOrType id={id} value={value[f.k] || ''} options={f.options} label={f.label} disabled={disabled} bad={bad}
+                onChange={(v) => onChange({ ...value, [f.k]: v })} />
+            ) : f.type === 'select' ? (
               <select id={id} value={value[f.k] || ''} onChange={set(f.k)} disabled={disabled} {...bad}>
                 <option value="">Choose…</option>
                 {f.options.map((o) => <option key={o} value={o}>{o}</option>)}

@@ -87,7 +87,8 @@ const GRANT_FORMS = {
       { k: 'abstract',  label: 'Abstract', type: 'textarea', maxWords: 300, rows: 6, required: true, hint: 'Not more than 300 words.' },
       { k: 'keywords',  label: 'Keywords', optional: true, hint: '3 to 5 keywords, separated by commas' },
       { k: 'cluster',   label: 'Research Cluster', type: 'select', required: true,
-        options: ['Pure and Applied Sciences', 'Social Sciences, Humanities and Education'] },
+        options: ['Pure and Applied Sciences', 'Social Sciences, Humanities and Education'],
+        typeOwn: true },   // pick one, or type a cluster that is not listed
       { k: 'presentation', label: 'Type of Presentation', type: 'select', required: true, options: ['Oral', 'Poster'] },
       { k: 'authors',   label: 'Author(s)', type: 'people', required: true,
         hint: 'Name and affiliation (department and college) of each author. The first one is the main author.' },
@@ -509,6 +510,10 @@ const fieldProblem = (f, raw) => {
   }
   if (f.type === 'agenda') return AGENDA_OPTIONS.includes(v) ? '' : `Please choose "${f.label}".`;
   if (v.length > 200) return `"${f.label}" must be 200 characters or fewer.`;
+  /* a list you can also type into: any answer of up to 100 characters */
+  if (f.type === 'select' && f.typeOwn && !f.options.includes(v)) {
+    return v.length > 100 ? `"${f.label}" must be 100 characters or fewer.` : '';
+  }
   if (f.type === 'select' && !f.options.includes(v)) return `Please choose "${f.label}".`;
   if (f.type === 'date' && Number.isNaN(Date.parse(v))) return `"${f.label}" is not a valid date.`;
   if (f.type === 'year' && !/^(19|20)\d{2}$/.test(v)) return `"${f.label}" must be a year, for example 2026.`;
