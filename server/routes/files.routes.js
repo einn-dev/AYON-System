@@ -2,6 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const supabase = require('../config/supabase');
 const { verifyToken } = require('../middleware/authMiddleware');
+const { logAudit } = require('../utils/audit');
 
 /* ─────────────────────────────────────────────────────────────
    Private files.
@@ -124,22 +125,73 @@ const mayOpen = async (me, path) => {
   const repo = await supabase.from('repository')
     .select('repo_id, proposal_id, external_id, access_type, college').eq('file_path', path);
   if (repo.error) throw repo.error;
-  for (const item of repo.data || []) if (await mayRepository(me, item)) return true;
-  if (!me) return false;                                   // not signed in: public repository only
+  for (const item of repo.data || []) {
+    if (await mayRepository(me, item)) {
+      return item.access_type === 'public' ? { kind: 'public' } : { kind: 'repository', item };
+    }
+  }
+  if (!me) return null;                                    // not signed in: public repository only
 
   const pf = await one('proposal_files', 'proposal_id', 'file_path', path);
-  if (pf && await mayProposal(me, pf.proposal_id)) return true;
+  if (pf && await mayProposal(me, pf.proposal_id)) return { kind: 'proposal', id: pf.proposal_id };
   const rp = await one('research_proposals', 'proposal_id', 'file_path', path);
-  if (rp && await mayProposal(me, rp.proposal_id)) return true;
+  if (rp && await mayProposal(me, rp.proposal_id)) return { kind: 'proposal', id: rp.proposal_id };
 
-  const tr = await one('terminal_reports', 'report_id, user_id', 'file_path', path).catch(() => null);
-  if (tr && await mayTerminal(me, tr)) return true;
+  const tr = await one('terminal_reports', 'report_id, user_id, proposal_id', 'file_path', path).catch(() => null);
+  if (tr && await mayTerminal(me, tr)) return { kind: 'terminal_report', id: tr.proposal_id, owner: tr.user_id };
 
   const xf = await one('external_files', 'external_id', 'file_path', path);
-  if (xf && await mayExternal(me, xf.external_id)) return true;
+  if (xf && await mayExternal(me, xf.external_id)) return { kind: 'external', id: xf.external_id };
   const xr = await one('externally_funded', 'external_id', 'file_path', path);
-  if (xr && await mayExternal(me, xr.external_id)) return true;
-  return false;
+  if (xr && await mayExternal(me, xr.external_id)) return { kind: 'external', id: xr.external_id };
+  return null;
+};
+
+/* ── Audit Log: who opened a private file ──
+   Logged: a signed-in person opening a file that is not public and not their own.
+   Not logged: public Repository files, profile pictures, and a person's own files.
+   The same person opening the same file again within 30 minutes is logged once
+   (viewing and then downloading it is one visit).                                    */
+const SEEN_FOR_MS = 30 * 60 * 1000;
+const seen = new Map();                                   // "user|path" -> time
+const recordOf = async (hit) => {
+  if (hit.kind === 'repository') {
+    const r = await one('repository', 'repo_id, title, proposal_id, external_id', 'repo_id', hit.item.repo_id);
+    let owner = null;
+    if (r?.proposal_id) owner = (await one('research_proposals', 'user_id', 'proposal_id', r.proposal_id))?.user_id;
+    else if (r?.external_id) owner = (await one('externally_funded', 'user_id', 'external_id', r.external_id))?.user_id;
+    return { type: 'repository', id: hit.item.repo_id, title: r?.title, owner };
+  }
+  if (hit.kind === 'proposal' || hit.kind === 'terminal_report') {
+    const p = await one('research_proposals', 'proposal_id, title, user_id', 'proposal_id', hit.id);
+    return { type: hit.kind === 'proposal' ? 'proposal' : 'terminal_report', id: hit.id, title: p?.title, owner: hit.owner || p?.user_id };
+  }
+  if (hit.kind === 'external') {
+    const x = await one('externally_funded', 'external_id, title, user_id', 'external_id', hit.id);
+    return { type: 'external', id: hit.id, title: x?.title, owner: x?.user_id };
+  }
+  return null;
+};
+const logFileOpened = async (req, hit, path, fileName) => {
+  try {
+    if (!req.user || !hit || hit.kind === 'public') return;
+    const key = `${req.user.user_id}|${path}`;
+    const now = Date.now();
+    if (now - (seen.get(key) || 0) < SEEN_FOR_MS) return;
+    const rec = await recordOf(hit);
+    if (!rec || Number(rec.owner) === Number(req.user.user_id)) return;   // their own file
+    seen.set(key, now);
+    if (seen.size > 5000) for (const [k, t] of seen) if (now - t >= SEEN_FOR_MS) seen.delete(k);
+    await logAudit(req, {
+      action:     'file_opened',
+      targetType: rec.type,
+      targetId:   rec.id,
+      targetName: rec.title || 'Untitled',
+      details:    { kind: rec.type, file: fileName || null, download: !!fileName },
+    });
+  } catch (err) {
+    console.error('File audit error:', err.message || err);   // never blocks opening the file
+  }
 };
 
 /* ── GET a short-lived link to a file ── */
@@ -149,7 +201,8 @@ router.get('/link', optionalAuth, async (req, res) => {
 
   const key = keyOf(path);
   try {
-    if (!(await mayOpen(req.user, path))) {
+    const hit = await mayOpen(req.user, path);
+    if (!hit) {
       return res.status(req.user ? 403 : 401).json({
         message: req.user ? 'You cannot open this file.' : 'Please sign in to open this file.',
         code: 'FILE_NOT_ALLOWED',
@@ -161,6 +214,7 @@ router.get('/link', optionalAuth, async (req, res) => {
     const { data, error } = await bucket()
       .createSignedUrl(key, LINK_MINUTES * 60, download ? { download } : undefined);
     if (error || !data?.signedUrl) throw error || new Error('No signed link');
+    logFileOpened(req, hit, path, download);               // not awaited: never slows the file down
     res.set('Cache-Control', 'no-store');
     return res.json({ url: data.signedUrl, expires_in: LINK_MINUTES * 60 });
   } catch (err) {

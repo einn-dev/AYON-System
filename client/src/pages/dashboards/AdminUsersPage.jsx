@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import API from '../../services/authService';
 import '../../components/Layout.css';
 import './AdminModule.css';
@@ -491,7 +492,11 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
 
 /* ───────────────── The page ───────────────── */
 const AdminUsersPage = ({ users, currentUserId, onRefresh }) => {
-  const [search,       setSearch]       = useState('');
+  /* "?q=…" fills the search box, for example when a "New account verified" notice opens this page */
+  const location = useLocation();
+  const asked = new URLSearchParams(location.search).get('q') || '';
+  const [search,       setSearch]       = useState(asked);
+  useEffect(() => { if (asked) setSearch(asked); }, [asked]);
   const [roleFilter,   setRoleFilter]   = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAdd,      setShowAdd]      = useState(false);

@@ -51,6 +51,13 @@ const ACTIONS = {
   grant_decided:      { label: 'Grant Decision',      badge: 'badge-purple' },
   login_success:      { label: 'Login',               badge: 'badge-green'  },
   login_failed:       { label: 'Login Failed',        badge: 'badge-red'    },
+  logout:             { label: 'Logout',              badge: 'badge-gray'   },
+  file_opened:        { label: 'Private File Opened', badge: 'badge-purple' },
+};
+
+/* what kind of record a private file belongs to */
+const FILE_KINDS = {
+  proposal: 'Proposal document', terminal_report: 'Terminal Report', external: 'External research', repository: 'Repository item',
 };
 
 const FIELD_LABELS = {
@@ -98,6 +105,8 @@ const detailsText = (log) => {
       return `Shown to: ${d.shown_to || 'everyone'}${d.type ? ` · ${d.type}` : ''}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
     case 'announcement_updated':
       return `${Array.isArray(d.changed) && d.changed.length ? `Changed: ${d.changed.map(c => c.replace(/_/g, ' ')).join(', ')}` : 'No changes'}${Number(d.notified) > 0 ? ` · notified ${d.notified}` : ''}`;
+    case 'file_opened':
+      return `${FILE_KINDS[d.kind] || 'File'} · ${d.download ? `Downloaded${d.file ? ` "${d.file}"` : ''}` : 'Viewed'}`;
     case 'proposal_rejected':
       return `Rejected by the ${ROLE_LABEL[d.role] || d.role || 'office'}${d.reason ? ` · Reason: ${d.reason}` : ''}`;
     case 'draft_deleted':

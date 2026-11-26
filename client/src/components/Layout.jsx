@@ -162,7 +162,15 @@ const Layout = ({ children, navItems, role }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogout = () => {
+  const [leaving, setLeaving] = useState(false);
+  const handleLogout = async () => {
+    if (leaving) return;
+    setLeaving(true);
+    /* record the logout in the Audit Log; never wait more than 2 seconds for it */
+    await Promise.race([
+      API.post('/auth/logout').catch(() => {}),
+      new Promise((done) => setTimeout(done, 2000)),
+    ]);
     logout();
     navigate('/login');
   };
@@ -219,8 +227,8 @@ const Layout = ({ children, navItems, role }) => {
               <p className="user-email">{user?.email}</p>
             </div>
           </button>
-          <button className="logout-btn" onClick={handleLogout}>
-            <FaRightFromBracket className="ic" />Logout
+          <button className="logout-btn" onClick={handleLogout} disabled={leaving}>
+            <FaRightFromBracket className="ic" />{leaving ? 'Signing Out…' : 'Logout'}
           </button>
         </div>
       </aside>

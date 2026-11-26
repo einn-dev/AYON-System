@@ -11,6 +11,7 @@ const {
 } = require('../controllers/password.controller');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { limit } = require('../utils/rateLimit');
+const { logAudit, fullName } = require('../utils/audit');
 
 /* Profile pictures: kept in memory (they go to Supabase, not to disk), 2MB max. */
 const avatarUpload = multer({
@@ -51,6 +52,18 @@ router.post('/resend-verification', tries.emailSend, resendVerification);
 router.post('/forgot-password',     tries.emailSend, forgotPassword);
 router.post('/reset-password',      tries.code, resetPassword);
 router.post('/change-password',     verifyToken, tries.password, changePassword);
+
+/* Logout: the token simply stops being used on the device; this only records it in the Audit Log.
+   (A session that ends because the token expired or the tab closed is not a logout.) */
+router.post('/logout', verifyToken, async (req, res) => {
+  await logAudit(req, {
+    action:     'logout',
+    targetType: 'user',
+    targetId:   req.user.user_id,
+    targetName: fullName(req.user) || req.user.email,
+  });
+  return res.status(200).json({ message: 'Signed out.' });
+});
 
 router.get('/profile',   verifyToken, getProfile);
 router.patch('/profile', verifyToken, updateProfile);
