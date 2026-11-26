@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -212,6 +213,7 @@ const MsricStaffDashboard = () => {
             filters={STAFF_FILTERS}
             intro="Proposals arriving at MSIRC, final decisions, and new research in the Repository." />
         } />
+        <Route path="*" element={<NotFoundPanel base="/msric-staff" />} />
       </Routes>
     </Layout>
   );

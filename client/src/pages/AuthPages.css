@@ -109,3 +109,18 @@ body {
   display: flex; align-items: center; justify-content: center;
   min-height: 100vh; font-size: 1.1rem; color: #6b5e61;
 }
+/* ── Page Not Found / No Access ── */
+.status-card { text-align: center; }
+.status-ico {
+  width: 56px; height: 56px; margin: 4px auto 10px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #f8e8eb; color: #8d1b2d; font-size: 1.5rem;
+}
+.status-text { color: #6b5e61; font-size: 0.9rem; line-height: 1.6; margin: 0 0 18px; }
+.status-btn { display: block; text-decoration: none; text-align: center; }
+.status-back {
+  border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
+  color: #8d1b2d; font-weight: 600;
+}
+.status-back:hover { text-decoration: underline; }
+.status-back .ic { margin-right: 6px; vertical-align: -2px; }

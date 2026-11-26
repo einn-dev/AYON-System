@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TerminalReportLink, MyTerminalReportsPage } from '../../components/TerminalReport';
 import { Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import API    from '../../services/authService';
@@ -1309,6 +1310,7 @@ const ResearcherDashboard = () => {
         <Route path="external"   element={<ExternalResearchPage />} />
         <Route path="repository" element={<Repository />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="*" element={<NotFoundPanel base="/researcher" />} />
       </Routes>
     </Layout>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -87,6 +88,7 @@ const CollegeDeanDashboard = () => {
         } />
         <Route path="terminal-reports" element={<TerminalReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="*" element={<NotFoundPanel base="/college-dean" />} />
       </Routes>
     </Layout>
   );

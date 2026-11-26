@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -83,6 +84,7 @@ const ChairpersonDashboard = () => {
             note="Private items are shown to the researcher who owns them, the college offices of their college and MSIRC. Other researchers cannot see them. Only the owner or the Administrator can make one Public." />
         } />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="*" element={<NotFoundPanel base="/chairperson" />} />
       </Routes>
     </Layout>
   );

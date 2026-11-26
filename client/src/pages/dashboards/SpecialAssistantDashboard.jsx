@@ -4,6 +4,7 @@ import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -646,6 +647,7 @@ const SpecialAssistantDashboard = () => {
         <Route path="notifications" element={
           <OfficeNotifications queuePath="/special-assistant/validate"
             intro="New and resubmitted proposals waiting for you to validate, and reminders from the MSIRC Administrator." />} />
+        <Route path="*" element={<NotFoundPanel base="/special-assistant" />} />
       </Routes>
     </Layout>
   );

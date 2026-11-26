@@ -16,6 +16,7 @@ import VerifyEmailPage    from './pages/VerifyEmailPage';
 import LandingPage from './pages/LandingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 import lazyPage from './utils/lazyPage';
 
@@ -114,8 +115,8 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Any other address: "Page Not Found" (it no longer sends you to Sign In) */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </Suspense>
       </Router>

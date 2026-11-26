@@ -1,33 +1,37 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ROLE_REDIRECTS } from '../utils/roleRoutes';
+import logo from '../assets/ayon-logo.png';
+import './AuthPages.css';
+import { FaArrowLeft, FaLock } from '../utils/icons';
 
+/* A page that belongs to another role (for example a researcher opening an Admin link).
+   Same look as "Page Not Found": back to your own dashboard, or go back. */
 const Unauthorized = () => {
-  const { logout } = useAuth();
-  const navigate   = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const home = user ? `${ROLE_REDIRECTS[user.role] || ''}/dashboard` : '/login';
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: '#f0f4f8', fontFamily: 'Segoe UI, sans-serif'
-    }}>
-      <h1 style={{ fontSize: '4rem', color: '#1a3a5c', margin: 0 }}>403</h1>
-      <h2 style={{ color: '#2d3748', margin: '8px 0' }}>Access Denied</h2>
-      <p style={{ color: '#718096', marginBottom: 24 }}>
-        You don't have permission to view this page.
-      </p>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={() => navigate(-1)}
-          style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #d1d9e0',
-            background: '#fff', cursor: 'pointer', fontWeight: 600, color: '#2d3748' }}>
-          Go Back
-        </button>
-        <button onClick={() => { logout(); navigate('/login'); }}
-          style={{ padding: '10px 20px', borderRadius: 8, border: 'none',
-            background: '#1a3a5c', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
-          Log Out
-        </button>
+    <div className="auth-wrapper">
+      <div className="auth-card status-card">
+        <div className="auth-logo">
+          <img src={logo} alt="AYON logo" />
+          <h1>AYON</h1>
+          <p>MSIRC – MSU Main Campus</p>
+        </div>
+
+        <div className="status-ico" aria-hidden="true"><FaLock /></div>
+        <h2>No Access to This Page</h2>
+        <p className="status-text">
+          This page is for another role, so your account cannot open it.
+        </p>
+
+        <Link to={home} className="auth-btn status-btn">{user ? 'Go to My Dashboard' : 'Go to Sign In'}</Link>
+        <p className="auth-footer">
+          <button type="button" className="status-back" onClick={() => navigate(-1)}><FaArrowLeft className="ic" />Go Back</button>
+        </p>
       </div>
     </div>
   );

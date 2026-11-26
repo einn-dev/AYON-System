@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import API    from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
@@ -86,6 +87,7 @@ const AdminDashboard = () => {
             intro="New accounts that are ready to use, and emails that did not send." />
         } />
         <Route path="reports"   element={<ReportsPage />} />
+        <Route path="*" element={<NotFoundPanel base="/admin" />} />
       </Routes>
     </Layout>
   );

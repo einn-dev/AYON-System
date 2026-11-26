@@ -3,6 +3,7 @@ import { OfficeExternalPage } from './ExternalShared';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -474,6 +475,7 @@ const DirectorDashboard = () => {
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/director/for-review"
             intro="Proposals the MSIRC Special Assistant forwarded to you, and reminders from the MSIRC Administrator." />} />
+        <Route path="*" element={<NotFoundPanel base="/director" />} />
       </Routes>
     </Layout>
   );

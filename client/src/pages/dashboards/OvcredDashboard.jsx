@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import ProposalStats from '../../components/ProposalStats';
@@ -487,6 +488,7 @@ const OvcredDashboard = () => {
         <Route path="notifications"
           element={<OfficeNotifications queuePath="/ovcred/for-endorsement"
             intro="Proposals the MSIRC Director endorsed to you, and reminders from the MSIRC Administrator." />} />
+        <Route path="*" element={<NotFoundPanel base="/ovcred" />} />
       </Routes>
     </Layout>
   );
