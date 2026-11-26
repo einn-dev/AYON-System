@@ -11,6 +11,7 @@ import {
 } from './adminShared';
 import { personName, fullLegalName } from '../../utils/names';
 import MessageToast from '../../components/MessageToast';
+import { PasswordStrength } from '../../components/PasswordStrength';
 import { usePaged } from '../../components/Pager';
 
 const EMPTY_ADD = {
@@ -47,6 +48,10 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
     setErr('');
     if (form.password.length < 8) {
       setErr('Password must be at least 8 characters.');
+      return;
+    }
+    if (!/[A-Z]/.test(form.password) || !/\d/.test(form.password)) {
+      setErr('Password must contain at least one uppercase letter and one number.');
       return;
     }
     setSaving(true);
@@ -92,9 +97,11 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Password (at least 8 characters)</label>
-              <input type="password" required value={form.password}
+              <label>Password</label>
+              <input type="password" required value={form.password} autoComplete="new-password"
+                placeholder="8+ characters, 1 uppercase, 1 number"
                 onChange={e => setForm({ ...form, password: e.target.value })} />
+              <PasswordStrength value={form.password} />
             </div>
             <div className="form-group">
               <label>Role</label>

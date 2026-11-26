@@ -1,4 +1,5 @@
 const bcrypt   = require('bcryptjs');
+const { MIN_LENGTH, MAX_LENGTH, passwordProblem: sharedPasswordProblem } = require('../utils/passwordRule');
 const jwt      = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
@@ -14,21 +15,12 @@ const { forgetUser } = require('../middleware/authMiddleware');
      POST /api/auth/reset-password    (public)     the page the link opens
    ═════════════════════════════════════════════════════════════ */
 
-const MIN_LENGTH = 8;
-const MAX_LENGTH = 72;                    // bcrypt only reads the first 72 characters
 const RESEND_WAIT_MS = 60 * 1000;         // at least 1 minute between reset emails to one address
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/* Returns a message when the new password is not acceptable, otherwise null. */
-const passwordProblem = (pw) => {
-  if (typeof pw !== 'string' || pw.length < MIN_LENGTH) {
-    return `New password must be at least ${MIN_LENGTH} characters.`;
-  }
-  if (pw.length > MAX_LENGTH) {
-    return `New password must be ${MAX_LENGTH} characters or fewer.`;
-  }
-  return null;
-};
+/* Returns a message when the new password is not acceptable, otherwise null.
+   The rule itself is in utils/passwordRule.js, shared with Register and Add User. */
+const passwordProblem = (pw) => sharedPasswordProblem(pw, 'New password');
 
 /* The ONE place that saves a new password.
    It also ends every other login of that person (sessions_revoked_at), cancels any

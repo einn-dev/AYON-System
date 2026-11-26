@@ -1,4 +1,5 @@
 const bcrypt   = require('bcryptjs');
+const { passwordProblem } = require('../utils/passwordRule');
 const crypto   = require('crypto');
 const { attachSpotlight } = require('../utils/spotlight');
 const { attachFormChecks } = require('../utils/formChecks');
@@ -159,9 +160,8 @@ const createUser = async (req, res) => {
   if (!EMAIL_RE.test(emailLc)) {
     return res.status(400).json({ message: 'Please enter a valid email address.' });
   }
-  if (String(password).length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
-  }
+  const pwProblem = passwordProblem(String(password));
+  if (pwProblem) return res.status(400).json({ message: pwProblem });
 
   try {
     const { data: existing } = await supabase

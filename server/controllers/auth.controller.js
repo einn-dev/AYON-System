@@ -4,6 +4,7 @@ const supabase = require('../config/supabase');
 const { logAudit, fullName } = require('../utils/audit');
 const { notifyRole } = require('../utils/roleNotify');
 const { personName } = require('../utils/names');
+const { passwordProblem } = require('../utils/passwordRule');
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
 } = require('../utils/verification');
@@ -44,9 +45,8 @@ const register = async (req, res) => {
   if (middle.length > 50 || String(first_name).trim().length > 50 || String(last_name).trim().length > 50) {
     return res.status(400).json({ message: 'Names can be up to 50 characters.' });
   }
-  if (password.length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
-  }
+  const pwProblem = passwordProblem(password);
+  if (pwProblem) return res.status(400).json({ message: pwProblem });
 
   const emailLc = String(email).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLc)) {

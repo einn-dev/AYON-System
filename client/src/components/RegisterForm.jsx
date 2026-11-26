@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../services/authService';
 import PasswordInput from './PasswordInput';
+import { passwordNeeds, passwordScore, STRENGTH_LABELS } from './PasswordStrength';
 import ResendVerification from './ResendVerification';
 import logo from '../assets/ayon-logo.png';
 import { COLLEGES, getDepartments } from '../data/Colleges';
@@ -84,20 +85,11 @@ const RegisterForm = () => {
     setError('');
   };
 
+  /* the same strength as Reset and Change Password (components/PasswordStrength.jsx) */
   const getStrength = (pw) => {
-    if (!pw) return { level: 0, label: '', color: '#e0d3d5' };
-    let score = 0;
-    if (pw.length >= 8)          score++;
-    if (/[A-Z]/.test(pw))        score++;
-    if (/[0-9]/.test(pw))        score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    const levels = [
-      { level: 1, label: 'Weak',   color: '#e53e3e' },
-      { level: 2, label: 'Fair',   color: '#dd6b20' },
-      { level: 3, label: 'Good',   color: '#b09519' },
-      { level: 4, label: 'Strong', color: '#38a169' },
-    ];
-    return levels[score - 1] || levels[0];
+    const level = passwordScore(pw);
+    const colors = ['#e0d3d5', '#e53e3e', '#dd6b20', '#b09519', '#38a169'];
+    return { level, label: STRENGTH_LABELS[level], color: colors[level] };
   };
 
   const strength = getStrength(form.password);
@@ -264,6 +256,9 @@ const RegisterForm = () => {
               <span className="reg-strength-label"
                 style={form.password ? { color: strength.color } : undefined}>
                 {form.password ? strength.label : '8+ characters, 1 uppercase, 1 number'}
+                {form.password && passwordNeeds(form.password) && (
+                  <span className="reg-needs"> · {passwordNeeds(form.password)}</span>
+                )}
               </span>
             </div>
           </div>

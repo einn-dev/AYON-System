@@ -307,3 +307,5 @@
   .reg-grid { grid-template-columns: 1fr; }
   .reg-half, .reg-third, .reg-wide-sm, .reg-span-3 { grid-column: 1 / -1; }
 }
+/* what the password still needs, beside Weak / Fair */
+.reg-needs { color: #b3261e; font-weight: 500; }
