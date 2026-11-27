@@ -108,27 +108,31 @@ router.get('/', verifyToken, async (req, res) => {
     let repository = [];
     if (!idMatch) {
       let rq = supabase.from('repository')
-        .select('repo_id, title, author, college, keywords, access_type, source_type, external_id, store_date, file_path')
+        .select('repo_id, title, author, college, keywords, access_type, source_type, external_id, proposal_id, store_date, file_path')
         .order('store_date', { ascending: false }).limit(SCAN);
       const { data, error } = await rq;
       if (error) throw error;
 
-      /* private items: the offices see all; a college endorser sees its college's
-         externally funded research; a researcher sees their own; no one else */
+      /* private items: the offices see all; a college office sees its own college's;
+         a researcher sees their own; other researchers do not */
       let canSee = () => true;
       if (!ALL_REPO.includes(role)) {
         let myCollege = null;
         let myExternal = new Set();
+        let myProposals = new Set();
         if (['chairperson', 'research_coordinator', 'college_dean'].includes(role)) {
           const { data: me } = await supabase.from('users').select('college').eq('user_id', req.user.user_id).maybeSingle();
           myCollege = clean(me?.college) || null;
         } else if (role === 'researcher') {
           const { data: mine } = await supabase.from('externally_funded').select('external_id').eq('user_id', req.user.user_id);
           myExternal = new Set((mine || []).map(e => e.external_id));
+          const { data: own } = await supabase.from('research_proposals').select('proposal_id').eq('user_id', req.user.user_id);
+          myProposals = new Set((own || []).map(p => p.proposal_id));
         }
         canSee = (r) => r.access_type === 'public'
-          || (r.source_type === 'external' && myCollege && clean(r.college) === myCollege)
-          || (r.source_type === 'external' && myExternal.has(r.external_id));
+          || (myCollege && clean(r.college) === myCollege)
+          || (r.source_type === 'external' && myExternal.has(r.external_id))
+          || (r.proposal_id && myProposals.has(r.proposal_id));
       }
       repository = (data || []).filter(canSee).filter(r => has(r.title, r.author, r.keywords, r.college)).slice(0, LIMIT)
         .map(r => ({

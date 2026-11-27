@@ -1,163 +1,571 @@
 const express  = require('express');
 const router   = express.Router();
+const PDFDocument = require('pdfkit');
 const supabase = require('../config/supabase');
-const { verifyToken } = require('../middleware/authMiddleware');
-const { attachTrail } = require('../utils/endorsementChain');
-const { staffCanSee } = require('../controllers/proposal.controller');
-const { TYPE_LABEL, ROLE_LABEL } = require('../utils/terms');
+const { verifyToken, authorizeRoles } = require('../middleware/authMiddleware');
+const { withOptionalColumns } = require('../utils/optionalColumns');
+const { attachTrail, roundOf } = require('../utils/endorsementChain');
+
+const REPORT_ROLES = ['admin', 'msric_staff', 'msric_director', 'ovcred'];
 
 /* ─────────────────────────────────────────────────────────────
-   Global search (the search box in the top bar)
-     GET /api/search?q=lake
-   → { proposals: [...], repository: [...], users: [...] }
-
-   Each role only finds what it may already see on its own pages:
-     researcher              → own proposals (drafts too)
-     chairperson             → proposals of researchers in the same department
-     coordinator, dean       → proposals of researchers in the same college
-     MSIRC Staff             → proposals that reached the Special Assistant (list fields only)
-     SA, Director, OVCRED,
-     Administrator           → all submitted proposals
-   Repository: public items for researchers and the college roles; all items for the office.
-   Users: Administrator only.
-   It matches titles, researcher names, colleges, departments, types and proposal numbers
-   (not abstracts or file contents).
+   FILTERS (query string, the same for every report)
+     period  : all | year | 90 | 30 | custom
+     from,to : YYYY-MM-DD (only for period=custom)
+     college : exact college name, empty = all
+     status  : proposal status, empty = all      (proposals and summary)
+     type    : proposal type, empty = all        (proposals and summary)
    ───────────────────────────────────────────────────────────── */
+const STATUSES = ['for_endorsement', 'submitted', 'under_review', 'endorsed', 'returned', 'approved', 'rejected'];
+/* status groups the Status filter also accepts (the At MSIRC card on the Reports page) */
+const STATUS_GROUPS = { at_msirc: { label: 'At MSIRC (all steps)', statuses: ['submitted', 'under_review', 'endorsed'] } };
+const TYPES    = ['research_spotlight', 'internally_funded', 'externally_funded', 'travel_subsidy', 'oral_presentation', 'publication_incentive'];
+const PERIODS  = ['all', 'year', '90', '30', 'custom'];
 
-const LIMIT    = 8;
-const SCAN     = 1000;          // newest proposals looked at per search
-const Q_MAX    = 100;
-const OFFICE   = ['special_assistant', 'msric_director', 'ovcred', 'admin'];
-const ALL_REPO = ['admin', 'msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
+const { STATUS_LABEL, TYPE_LABEL, GRANT_TYPES } = require('../utils/terms');
+const { attachFormChecks } = require('../utils/formChecks');
+const { GRANT_FORMS, awardOf } = require('../utils/grantForms');
+const isGrantType = (t) => GRANT_TYPES.includes(t) || t === 'travel_oral';   // the old combined type too
+const PERIOD_LABEL = { all: 'All Time', year: 'This Year', 90: 'Last 90 Days', 30: 'Last 30 Days' };
+const STAGE_LABEL = {        // in endorsement order
+  chairperson: 'College Chairperson', research_coordinator: 'College Coordinator', college_dean: 'College Dean',
+};
+const OFFICE_ROLES = ['special_assistant', 'msric_director', 'ovcred'];
+const PH_OFFSET_MS = 8 * 60 * 60 * 1000;   // dates are read in Philippine time (UTC+8)
+const DAY_MS = 24 * 60 * 60 * 1000;
+const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && !Number.isNaN(Date.parse(v));
 
-const clean = (v) => String(v ?? '').trim();
+const readFilters = (q = {}) => {
+  const period = PERIODS.includes(String(q.period)) ? String(q.period) : 'all';
+  const f = {
+    period,
+    college: String(q.college || '').trim().slice(0, 100),
+    status:  STATUSES.includes(q.status) || STATUS_GROUPS[q.status] ? q.status : '',
+    type:    TYPES.includes(q.type) ? q.type : '',
+    from: null, to: null,
+  };
+  const now = Date.now();
+  if (period === '90' || period === '30') f.from = now - Number(period) * DAY_MS;
+  if (period === 'year') {
+    const ph = new Date(now + PH_OFFSET_MS);
+    f.from = Date.UTC(ph.getUTCFullYear(), 0, 1) - PH_OFFSET_MS;
+  }
+  if (period === 'custom') {
+    if (isDate(q.from)) f.from = Date.parse(`${q.from}T00:00:00Z`) - PH_OFFSET_MS;
+    if (isDate(q.to))   f.to   = Date.parse(`${q.to}T00:00:00Z`) - PH_OFFSET_MS + DAY_MS - 1;
+    f.fromText = isDate(q.from) ? q.from : '';
+    f.toText   = isDate(q.to) ? q.to : '';
+  }
+  return f;
+};
+
+const inPeriod = (f, when) => {
+  if (f.from === null && f.to === null) return true;
+  const t = Date.parse(when || '');
+  if (Number.isNaN(t)) return false;
+  return (f.from === null || t >= f.from) && (f.to === null || t <= f.to);
+};
+
+/* the filters in words, for the PDF header and the history list */
+const filterWords = (f, { withStatus = true } = {}) => {
+  const period = f.period === 'custom'
+    ? `${f.fromText || 'start'} to ${f.toText || 'today'}`
+    : PERIOD_LABEL[f.period];
+  const parts = [period, f.college || 'All Colleges'];
+  if (withStatus) {
+    parts.push(f.status ? (STATUS_GROUPS[f.status]?.label || STATUS_LABEL[f.status]) : 'All Statuses');
+    parts.push(f.type ? TYPE_LABEL[f.type] : 'All Types');
+  }
+  return parts.join(' · ');
+};
+
+/* reads every row (Supabase returns at most 1000 at a time) */
+const fetchAll = async (table, columns, orderBy) => {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase.from(table).select(columns)
+      .order(orderBy, { ascending: true }).range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+};
+
 const { personName } = require('../utils/names');
 const fullName = (u) => personName(u);
 
-router.get('/', verifyToken, async (req, res) => {
-  const raw = clean(req.query.q).slice(0, Q_MAX);
-  const q   = raw.toLowerCase();
-  const idMatch = q.match(/^#?(\d{1,9})$/);
-  if (!idMatch && q.length < 2) {
-    return res.status(200).json({ proposals: [], repository: [], users: [], q: raw });
+/* where an open proposal is waiting */
+const waitingOn = (p) => {
+  if (p.status === 'for_endorsement') return STAGE_LABEL[p.endorsement_stage] || 'College';
+  return { submitted: 'MSIRC Special Assistant', under_review: 'MSIRC Director', endorsed: 'VCRED', returned: 'Researcher' }[p.status] || '—';
+};
+
+/* MSIRC Staff see only proposals that reached the MSIRC Special Assistant (same rule as their dashboard) */
+const staffCanSee = (p) => {
+  if (['submitted', 'under_review', 'endorsed', 'approved', 'rejected'].includes(p.status)) return true;
+  if (p.status !== 'returned') return false;
+  if (p.returned_by_role) return OFFICE_ROLES.includes(p.returned_by_role);
+  return !p.returned_by && !(p.endorsements || []).some(e => e.endorse_status === 'returned' && Number(e.round || 1) === roundOf(p));
+};
+
+/* every submitted proposal the person may see, before the filters */
+const loadProposals = async (req) => {
+  const rows = await fetchAll('research_proposals',
+    '*, users ( first_name, middle_name, last_name, college, department )', 'proposal_id');
+  const list = rows
+    .filter(p => p.status !== 'draft')
+    .map(p => ({
+      ...p,
+      researcher: fullName(p.users) || '—',
+      college:    p.users?.college || '',
+      department: p.users?.department || '',
+      when:       p.submitted_at || p.created_at,
+    }));
+  if (req.user.role === 'msric_staff') {
+    await attachTrail(list);
+    return list.filter(staffCanSee);
+  }
+  return list;
+};
+
+const filterProposals = (list, f) => list.filter(p =>
+  inPeriod(f, p.when)
+  && (!f.college || p.college === f.college)
+  && (!f.status || (STATUS_GROUPS[f.status] ? STATUS_GROUPS[f.status].statuses.includes(p.status) : p.status === f.status))
+  && (!f.type || p.proposal_type === f.type));
+
+/* submissions over time: by month when the span is 24 months or less, else by year */
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LONG  = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const manila = (t) => { const d = new Date(t + 8 * 3600 * 1000); return { y: d.getUTCFullYear(), m: d.getUTCMonth() }; };
+const buildTimeline = (rows, f) => {
+  const times = rows.map(p => Date.parse(p.when || '')).filter(t => !Number.isNaN(t));
+  if (!times.length) return { unit: 'month', points: [] };
+  const start = manila(f.from !== null && f.from !== undefined ? f.from : Math.min(...times));
+  const end   = manila(f.to   !== null && f.to   !== undefined ? Math.min(f.to, Date.now()) : Math.max(Date.now(), ...times));
+  const months = (end.y - start.y) * 12 + (end.m - start.m) + 1;
+  if (months <= 24) {
+    const points = [];
+    for (let i = 0; i < Math.max(1, months); i += 1) {
+      const y = start.y + Math.floor((start.m + i) / 12); const m = (start.m + i) % 12;
+      points.push({ key: `${y}-${String(m + 1).padStart(2, '0')}`, label: MONTH_SHORT[m], long: `${MONTH_LONG[m]} ${y}`, year: y, count: 0 });
+    }
+    times.forEach(t => { const { y, m } = manila(t); const pt = points.find(x => x.year === y && x.key.endsWith(`-${String(m + 1).padStart(2, '0')}`)); if (pt) pt.count += 1; });
+    return { unit: 'month', points };
+  }
+  const points = [];
+  for (let y = start.y; y <= end.y; y += 1) points.push({ key: String(y), label: String(y), long: String(y), year: y, count: 0 });
+  times.forEach(t => { const pt = points.find(x => x.year === manila(t).y); if (pt) pt.count += 1; });
+  return { unit: 'year', points };
+};
+
+/* the numbers shown on the Reports page (and in the Summary PDF) */
+const buildSummary = (all, f) => {
+  const rows = filterProposals(all, f);
+  const count = (s) => rows.filter(p => p.status === s).length;
+  const approved = count('approved');
+  const rejected = count('rejected');
+  const decided  = approved + rejected;
+
+  const byCollege = {};
+  for (const p of rows) {
+    const c = p.college || 'Not specified';
+    const b = byCollege[c] || (byCollege[c] = { name: c, total: 0, at_college: 0, in_office: 0, returned: 0, approved: 0, rejected: 0 });
+    b.total += 1;
+    if (p.status === 'for_endorsement') b.at_college += 1;
+    if (['submitted', 'under_review', 'endorsed'].includes(p.status)) b.in_office += 1;
+    if (p.status === 'returned') b.returned += 1;
+    if (p.status === 'approved') b.approved += 1;
+    if (p.status === 'rejected') b.rejected += 1;
   }
 
-  const role = req.user.role;
-  const has  = (...vals) => vals.some(v => String(v ?? '').toLowerCase().includes(q));
+  return {
+    filters_text: filterWords(f),
+    totals: {
+      total:      rows.length,
+      at_college: count('for_endorsement'),
+      in_office:  count('submitted') + count('under_review') + count('endorsed'),
+      returned:   count('returned'),
+      approved,
+      rejected,
+      decided,
+      approval_rate: decided ? Math.round((approved / decided) * 100) : null,
+    },
+    by_status: STATUSES.map(s => ({ status: s, label: STATUS_LABEL[s], count: count(s) })),
+    waiting: [
+      ...Object.keys(STAGE_LABEL).map(r => ({
+        label: STAGE_LABEL[r], count: rows.filter(p => p.status === 'for_endorsement' && p.endorsement_stage === r).length,
+      })),
+      { label: 'MSIRC Special Assistant',     count: count('submitted') },
+      { label: 'MSIRC Director',        count: count('under_review') },
+      { label: 'VCRED',                count: count('endorsed') },
+      { label: 'Researcher (returned)', count: count('returned') },
+    ],
+    by_type: Object.keys(TYPE_LABEL)
+      .map(t => ({ type: t, label: TYPE_LABEL[t], count: rows.filter(p => p.proposal_type === t).length }))
+      .filter(x => x.count > 0),
+    timeline: buildTimeline(rows, f),
+    by_college: Object.values(byCollege)
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+      .map(b => ({ ...b, approval_rate: (b.approved + b.rejected) ? Math.round((b.approved / (b.approved + b.rejected)) * 100) : null })),
+  };
+};
+
+/* ── PDF helpers (maroon AYON style) ── */
+const MAROON = '#5e1420';
+
+/* the MSIRC logo for the report header (left out if the file is missing) */
+const MSIRC_LOGO = (() => {
+  try { return require('fs').readFileSync(require('path').join(__dirname, '..', 'assets', 'msirc-emblem.png')); } catch { return null; }
+})();
+
+const drawHeader = (doc, title, filtersText, who) => {
+  doc.rect(0, 0, doc.page.width, 84).fill(MAROON);
+  let x = 50;
+  if (MSIRC_LOGO) {                                   // the logo in a white circle, then the name
+    doc.circle(50 + 27, 42, 27).fill('#ffffff');
+    doc.image(MSIRC_LOGO, 50 + 27 - 18, 42 - 19.5, { height: 39 });
+    x = 50 + 54 + 14;
+  }
+  doc.fillColor('#ffffff').fontSize(22).font('Helvetica-Bold').text('AYON', x, 22);
+  doc.fontSize(9).font('Helvetica').text('Mamitua Saber Institute of Research and Creation (MSIRC)', x, 48);
+  doc.text('Mindanao State University – Main Campus', x, 60);
+  doc.fillColor(MAROON).fontSize(15).font('Helvetica-Bold').text(title, 50, 104);
+  doc.fontSize(9).font('Helvetica').fillColor('#6b5e61')
+     .text(`Filters: ${filtersText}`, 50, 124, { width: doc.page.width - 100 });
+  doc.text(`Generated: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}${who ? ` by ${who}` : ''}`, 50, doc.y + 2);
+  const y = doc.y + 8;
+  doc.moveTo(50, y).lineTo(doc.page.width - 50, y).strokeColor('#efe5e6').stroke();
+  doc.y = y + 12;
+};
+
+const drawRow = (doc, cols, widths, bold = false) => {
+  doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8.5);
+  const heights = cols.map((c, i) => doc.heightOfString(String(c ?? '—'), { width: widths[i] - 8 }));
+  const h = Math.min(Math.max(...heights, 10), 40);
+  if (doc.y + h > doc.page.height - 60) { doc.addPage(); doc.y = 50; }
+  const y = doc.y;
+  if (bold) doc.rect(46, y - 4, widths.reduce((a, b) => a + b, 0) + 4, h + 8).fill('#faf3f4');
+  let x = 50;
+  doc.fillColor(bold ? MAROON : '#2d2327');
+  cols.forEach((c, i) => {
+    doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8.5)
+       .text(String(c ?? '—'), x, y, { width: widths[i] - 8, height: 40, ellipsis: true });
+    x += widths[i];
+  });
+  doc.y = y + h + 7;
+  doc.moveTo(50, doc.y - 3).lineTo(50 + widths.reduce((a, b) => a + b, 0) - 4, doc.y - 3).strokeColor('#f3eced').stroke();
+};
+
+const drawTotal = (doc, text) => {
+  doc.moveDown(0.6).font('Helvetica-Bold').fontSize(10).fillColor(MAROON).text(text, 50);
+};
+
+const drawSection = (doc, title) => {
+  if (doc.y > doc.page.height - 120) { doc.addPage(); doc.y = 50; }
+  doc.moveDown(0.6).font('Helvetica-Bold').fontSize(11).fillColor(MAROON).text(title, 50).moveDown(0.4);
+};
+
+/* ── CSV helpers ── */
+const csvCell = (v) => {
+  let s = String(v ?? '');
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;                 // a spreadsheet must never run a cell as a formula
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+const toCsv = (header, rows) => '﻿' + [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+const cap = (v) => (v ? String(v).charAt(0).toUpperCase() + String(v).slice(1) : '');
+const day = (v) => (v ? new Date(v).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }) : '');
+
+/* ── report contents ── */
+const REPORT_KINDS = ['proposals', 'grants', 'external', 'repository', 'summary'];
+const TITLES = {
+  proposals:  'Research Proposals Report',
+  grants:     'Grants and Incentives Report',
+  external:   'Externally Funded Research Report',
+  repository: 'Research Repository Report',
+  summary:    'Summary Report',
+};
+
+const proposalRows = (list) => list
+  .slice().sort((a, b) => String(b.when || '').localeCompare(String(a.when || '')))
+  .map(p => ({
+    title:      p.title,
+    researcher: p.researcher,
+    college:    p.college || '—',
+    type:       TYPE_LABEL[p.proposal_type] || p.proposal_type,
+    status:     STATUS_LABEL[p.status] || p.status,
+    waiting:    ['approved', 'rejected'].includes(p.status) ? '—' : waitingOn(p),
+    submitted:  day(p.when),
+  }));
+
+/* Grants and Incentives: the applications on their MSIRC forms
+   (Travel Subsidy, Oral Presentation, Publication Incentive). */
+const loadGrants = async (req, f) => {
+  const list = filterProposals((await loadProposals(req)).filter(p => isGrantType(p.proposal_type)), f);
+  await attachFormChecks(list);
+  const current = list.map(p => {
+    const form  = GRANT_FORMS[p.form_no];
+    const award = awardOf(p);
+    return {
+      proposal:   p.title,
+      researcher: p.researcher,
+      college:    p.college,
+      type:       `${TYPE_LABEL[p.proposal_type] || p.proposal_type}${form ? ` (Form ${form.no})` : ''}`,
+      status:     STATUS_LABEL[p.status] || p.status,
+      amount:     award.amount,
+      applied:    p.when,
+    };
+  });
+  return current.sort((a, b) => String(b.applied || '').localeCompare(String(a.applied || '')));
+};
+const peso = (n) => (n === null || n === undefined ? '—' : `PHP ${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+
+const loadRepository = async (f) => {
+  const rows = await fetchAll('repository', 'repo_id, title, author, college, department, access_type, source_type, store_date', 'repo_id');
+  return rows
+    .filter(r => inPeriod(f, r.store_date) && (!f.college || r.college === f.college))
+    .sort((a, b) => String(b.store_date || '').localeCompare(String(a.store_date || '')));
+};
+
+/* External Research (externally funded research): uploaded to the Research Repository,
+   no approval steps, so it is counted on its own (projects, funding, colleges, SDGs).
+   Filters: period (by the date it was uploaded) and college. A Proposal type other than
+   "Externally Funded Research" leaves it out; the Status filter does not apply to it. */
+const loadExternal = async (f) => {
+  if (f.type && f.type !== 'externally_funded') return [];
+  const rows = await fetchAll('externally_funded', '*', 'external_id');
+  /* the researcher of each item (read separately: externally_funded is not joined to users here) */
+  const ids = [...new Set(rows.map(x => x.user_id).filter(Boolean))];
+  const people = new Map();
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data, error } = await supabase.from('users')
+      .select('user_id, first_name, middle_name, last_name, college, department').in('user_id', ids.slice(i, i + 500));
+    if (error) throw error;
+    (data || []).forEach(u => people.set(Number(u.user_id), u));
+  }
+  return rows
+    .map(x => {
+      const u = people.get(Number(x.user_id));
+      return {
+        ...x,
+        researcher: fullName(u) || '—',
+        college:    u?.college || '',
+        department: u?.department || '',
+        when:       x.uploaded_at,
+      };
+    })
+    .filter(x => inPeriod(f, x.when) && (!f.college || x.college === f.college))
+    .sort((a, b) => String(b.when || '').localeCompare(String(a.when || '')));
+};
+const sdgsOf = (v) => (Array.isArray(v) ? v : String(v || '').replace(/[{}]/g, '').split(','))
+  .map(Number).filter(n => n >= 1 && n <= 17).sort((a, b) => a - b);
+const buildExternal = (rows) => {
+  const byCollege = {};
+  const bySdg = {};
+  let funding = 0;
+  for (const x of rows) {
+    const amt = Number(x.funding_amount) || 0;
+    funding += amt;
+    const c = x.college || 'Not specified';
+    const b = byCollege[c] || (byCollege[c] = { name: c, count: 0, funding: 0 });
+    b.count += 1; b.funding += amt;
+    sdgsOf(x.sdgs).forEach(n => { bySdg[n] = (bySdg[n] || 0) + 1; });
+  }
+  return {
+    total: rows.length,
+    funding,
+    colleges: Object.keys(byCollege).filter(c => c !== 'Not specified').length,
+    by_college: Object.values(byCollege).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+    by_sdg: Object.entries(bySdg).map(([sdg, count]) => ({ sdg: Number(sdg), count }))
+      .sort((a, b) => b.count - a.count || a.sdg - b.sdg),
+  };
+};
+
+/* ── GET /api/reports/stats — the numbers on the Reports page (JSON) ── */
+router.get('/stats', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, res) => {
+  try {
+    const f   = readFilters(req.query);
+    const all = await loadProposals(req);
+    const ext = await loadExternal({ ...f, college: '' });
+    const colleges = [...new Set([...all, ...ext].map(p => p.college).filter(Boolean))].sort();
+    const external = buildExternal(ext.filter(x => !f.college || x.college === f.college));
+    return res.status(200).json({ ...buildSummary(all, f), external, colleges });
+  } catch (err) {
+    console.error('Report summary error:', err);
+    return res.status(500).json({ message: 'Could not load the report numbers.' });
+  }
+});
+
+/* ── GET /api/reports/:type?format=pdf|csv&filters — downloads a report ──
+   (the old name "activity" still works and gives the Summary report) */
+router.get('/:type', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, res) => {
+  const type   = req.params.type === 'activity' ? 'summary' : req.params.type;
+  const format = req.query.format === 'csv' ? 'csv' : 'pdf';
+  if (!REPORT_KINDS.includes(type)) {
+    return res.status(400).json({ message: 'Invalid report type.' });
+  }
+  if (type === 'summary' && format === 'csv') {
+    return res.status(400).json({ message: 'The Summary report is only available as a PDF.' });
+  }
+
+  const f = readFilters(req.query);
+  const words = filterWords(f, { withStatus: !['repository', 'external'].includes(type) });
+  const who = fullName(req.user) || null;
 
   try {
-    /* ── proposals ── */
-    let scopeIds = null;                                   // null = no limit by researcher
-    if (['chairperson', 'research_coordinator', 'college_dean'].includes(role)) {
-      const field = role === 'chairperson' ? 'department' : 'college';
-      const { data: me } = await supabase.from('users').select('college, department')
-        .eq('user_id', req.user.user_id).maybeSingle();
-      const mine = clean(me?.[field]);
-      if (!mine) scopeIds = [];
-      else {
-        const { data: same, error } = await supabase.from('users').select('user_id').eq(field, mine);
-        if (error) throw error;
-        scopeIds = (same || []).map(u => u.user_id);
-      }
+    /* gather everything BEFORE sending, so a database error can still answer with a clear message */
+    let rows = [];
+    let summary = null;
+    if (type === 'proposals')  rows = proposalRows(filterProposals(await loadProposals(req), f));
+    if (type === 'grants')     rows = await loadGrants(req, f);
+    if (type === 'repository') rows = await loadRepository(f);
+    if (type === 'external')   rows = await loadExternal(f);
+    let external = null;
+    if (type === 'summary') {
+      summary = buildSummary(await loadProposals(req), f);
+      external = buildExternal(await loadExternal(f));
     }
 
-    let proposals = [];
-    const canSearchProposals = role === 'researcher' || scopeIds !== null || OFFICE.includes(role) || role === 'msric_staff';
-    if (canSearchProposals && !(Array.isArray(scopeIds) && !scopeIds.length)) {
-      let qb = supabase.from('research_proposals')
-        .select('proposal_id, user_id, title, proposal_type, status, endorsement_stage, submitted_at, created_at, revision_count, returned_by, users ( first_name, middle_name, last_name, college, department )')
-        .order('created_at', { ascending: false })
-        .limit(SCAN);
-      if (role === 'researcher') qb = qb.eq('user_id', req.user.user_id);
-      if (Array.isArray(scopeIds)) qb = qb.in('user_id', scopeIds);
-      if (idMatch) qb = qb.eq('proposal_id', Number(idMatch[1]));
+    const stamp = new Date(Date.now() + PH_OFFSET_MS).toISOString().slice(0, 10);
+    const filename = `ayon-${type}-report-${stamp}.${format}`;
 
-      const { data, error } = await qb;
-      if (error) throw error;
-
-      let rows = (data || []).map(p => ({
-        ...p,
-        first_name: p.users?.first_name, middle_name: p.users?.middle_name, last_name: p.users?.last_name,
-        college: p.users?.college, department: p.users?.department,
-      }));
-      if (role !== 'researcher') rows = rows.filter(p => p.status !== 'draft');
-      if (!idMatch) {
-        rows = rows.filter(p => has(p.title, fullName(p), p.college, p.department,
-          TYPE_LABEL[p.proposal_type], p.proposal_type));
+    if (format === 'csv') {
+      let csv;
+      if (type === 'proposals') {
+        csv = toCsv(['Research Title', 'Researcher', 'College', 'Proposal Type', 'Status', 'Waiting On', 'Date Submitted'],
+          rows.map(r => [r.title, r.researcher, r.college, r.type, r.status, r.waiting, r.submitted]));
+      } else if (type === 'grants') {
+        csv = toCsv(['Title', 'Researcher', 'College', 'Type and Form', 'Status', 'Incentive Amount', 'Date Submitted'],
+          rows.map(g => [g.proposal, g.researcher, g.college || '', g.type, g.status, g.amount === null ? '' : g.amount.toFixed(2), day(g.applied)]));
+      } else if (type === 'external') {
+        /* the order of VCRED's "Externally Funded Projects" report */
+        csv = toCsv(['Title', 'Project Leader', 'Project Members', 'Funder', 'Funding Amount (PHP)', 'SDGs', 'Start Date', 'End Date', 'College', 'Department', 'Keywords', 'Date Uploaded'],
+          rows.map(x => [x.title, x.project_leader || x.researcher, x.researchers || '', x.external_agency || '',
+            x.funding_amount === null || x.funding_amount === undefined ? '' : Number(x.funding_amount).toFixed(2),
+            sdgsOf(x.sdgs).map(n => `SDG ${n}`).join('; '), x.start_date || '', x.end_date || '',
+            x.college || '', x.department || '', x.keywords || '', day(x.uploaded_at)]));
+      } else {
+        csv = toCsv(['Research Title', 'Author', 'College', 'Department', 'Access', 'Source', 'Date Stored'],
+          rows.map(r => [r.title, r.author || '', r.college || '', r.department || '', cap(r.access_type), r.source_type === 'external' ? 'Externally Funded Research' : 'Proposal', day(r.store_date)]));
       }
-      if (role === 'msric_staff') {
-        await attachTrail(rows);
-        rows = rows.filter(staffCanSee);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+      res.status(200).send(csv);
+    } else {
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+      doc.pipe(res);
+      drawHeader(doc, TITLES[type], words, who);
+
+      if (type === 'proposals') {
+        const widths = [150, 85, 80, 70, 55, 55];
+        drawRow(doc, ['Research Title', 'Researcher', 'College', 'Status', 'Waiting On', 'Date Submitted'], widths, true);
+        rows.forEach(r => drawRow(doc, [r.title, r.researcher, r.college, r.status, r.waiting, r.submitted], widths));
+        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No proposals match these filters.', 50);
+        drawTotal(doc, `Total Proposals: ${rows.length}`);
       }
-      proposals = rows.slice(0, LIMIT).map(p => {
-        const base = {
-          proposal_id:   p.proposal_id,
-          title:         p.title,
-          proposal_type: p.proposal_type,
-          status:        p.status,
-          submitted_at:  p.submitted_at,
-          researcher:    fullName(p),
-          college:       p.college || null,
-        };
-        if (role === 'msric_staff') return base;
-        return { ...base, department: p.department || null, endorsement_stage: p.endorsement_stage || null };
-      });
-    }
+      if (type === 'grants') {
+        const widths = [115, 75, 55, 85, 65, 55, 50];
+        drawRow(doc, ['Title', 'Researcher', 'College', 'Type and Form', 'Status', 'Amount', 'Submitted'], widths, true);
+        rows.forEach(g => drawRow(doc, [g.proposal, g.researcher, g.college || '—', g.type, g.status, peso(g.amount), day(g.applied)], widths));
+        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No grant or incentive applications match these filters.', 50);
+        const total = rows.reduce((a, g) => a + (g.amount || 0), 0);
+        drawTotal(doc, `Total Applications: ${rows.length}${total ? `   ·   Total incentive amount entered: ${peso(total)}` : ''}`);
+      }
+      if (type === 'external') {
+        const widths = [140, 80, 75, 70, 70, 60];
+        drawRow(doc, ['Title', 'Project Leader', 'College', 'Funder', 'Amount', 'SDGs'], widths, true);
+        rows.forEach(x => drawRow(doc, [x.title, x.project_leader || x.researcher, x.college || '—', x.external_agency || '—',
+          peso(x.funding_amount === null || x.funding_amount === undefined ? null : Number(x.funding_amount)),
+          sdgsOf(x.sdgs).join(', ') || '—'], widths));
+        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No externally funded research matches these filters.', 50);
+        const total = rows.reduce((a, x) => a + (Number(x.funding_amount) || 0), 0);
+        drawTotal(doc, `Total Projects: ${rows.length}   ·   Total Funding: ${peso(total)}`);
+      }
+      if (type === 'repository') {
+        const widths = [170, 100, 90, 55, 80];
+        drawRow(doc, ['Research Title', 'Author', 'College', 'Access', 'Date Stored'], widths, true);
+        rows.forEach(r => drawRow(doc, [r.title, r.author || '—', r.college || '—', cap(r.access_type), day(r.store_date)], widths));
+        if (!rows.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No repository items match these filters.', 50);
+        drawTotal(doc, `Total Stored: ${rows.length}`);
+      }
+      if (type === 'summary') {
+        const t = summary.totals;
+        drawSection(doc, 'Totals');
+        const tw = [250, 80];
+        [['Total Proposals', t.total], ['At the College (endorsement)', t.at_college],
+         ['In Office Review (MSIRC Special Assistant, MSIRC Director, VCRED)', t.in_office], ['Returned for Revision', t.returned],
+         ['Approved', t.approved], ['Rejected', t.rejected],
+         ['Approval Rate (approved ÷ decided)', t.approval_rate === null ? '—' : `${t.approval_rate}%`],
+        ].forEach(r => drawRow(doc, r, tw));
 
-    /* ── repository ── */
-    let repository = [];
-    if (!idMatch) {
-      let rq = supabase.from('repository')
-        .select('repo_id, title, author, college, keywords, access_type, source_type, external_id, proposal_id, store_date, file_path')
-        .order('store_date', { ascending: false }).limit(SCAN);
-      const { data, error } = await rq;
-      if (error) throw error;
+        drawSection(doc, 'Proposals by Status');
+        summary.by_status.forEach(s => drawRow(doc, [s.label, s.count], tw));
 
-      /* private items: the offices see all; a college office sees its own college's;
-         a researcher sees their own; other researchers do not */
-      let canSee = () => true;
-      if (!ALL_REPO.includes(role)) {
-        let myCollege = null;
-        let myExternal = new Set();
-        let myProposals = new Set();
-        if (['chairperson', 'research_coordinator', 'college_dean'].includes(role)) {
-          const { data: me } = await supabase.from('users').select('college').eq('user_id', req.user.user_id).maybeSingle();
-          myCollege = clean(me?.college) || null;
-        } else if (role === 'researcher') {
-          const { data: mine } = await supabase.from('externally_funded').select('external_id').eq('user_id', req.user.user_id);
-          myExternal = new Set((mine || []).map(e => e.external_id));
-          const { data: own } = await supabase.from('research_proposals').select('proposal_id').eq('user_id', req.user.user_id);
-          myProposals = new Set((own || []).map(p => p.proposal_id));
+        drawSection(doc, 'Where Open Proposals Are Waiting');
+        summary.waiting.forEach(w => drawRow(doc, [w.label, w.count], tw));
+
+        drawSection(doc, 'Proposals by College');
+        const cw = [150, 45, 60, 65, 55, 55, 65];
+        drawRow(doc, ['College', 'Total', 'At College', 'Office Review', 'Approved', 'Rejected', 'Approval Rate'], cw, true);
+        summary.by_college.forEach(c => drawRow(doc,
+          [c.name, c.total, c.at_college, c.in_office, c.approved, c.rejected, c.approval_rate === null ? '—' : `${c.approval_rate}%`], cw));
+        if (!summary.by_college.length) doc.font('Helvetica').fontSize(9).fillColor('#6b5e61').text('No proposals match these filters.', 50);
+
+        drawSection(doc, 'Externally Funded Research (uploaded to the Research Repository)');
+        [['Projects', external.total], ['Total Funding', peso(external.funding)], ['Colleges', external.colleges]]
+          .forEach(r => drawRow(doc, r, tw));
+        if (external.by_college.length) {
+          const ew = [250, 60, 120];
+          drawRow(doc, ['College', 'Projects', 'Funding'], ew, true);
+          external.by_college.forEach(c => drawRow(doc, [c.name, c.count, peso(c.funding)], ew));
         }
-        canSee = (r) => r.access_type === 'public'
-          || (myCollege && clean(r.college) === myCollege)
-          || (r.source_type === 'external' && myExternal.has(r.external_id))
-          || (r.proposal_id && myProposals.has(r.proposal_id));
       }
-      repository = (data || []).filter(canSee).filter(r => has(r.title, r.author, r.keywords, r.college)).slice(0, LIMIT)
-        .map(r => ({
-          repo_id: r.repo_id, title: r.title, author: r.author || null, college: r.college || null,
-          access_type: r.access_type, file_path: r.file_path || null, year: r.store_date ? new Date(r.store_date).getFullYear() : null,
-        }));
+      doc.end();
     }
 
-    /* ── users (Administrator) ── */
-    let users = [];
-    if (role === 'admin' && !idMatch) {
-      const { data, error } = await supabase.from('users')
-        .select('user_id, first_name, middle_name, last_name, email, is_active, user_roles!user_roles_user_id_fkey ( role_type )')
-        .limit(SCAN);
-      if (error) throw error;
-      users = (data || []).filter(u => has(fullName(u), u.email)).slice(0, LIMIT).map(u => {
-        const r = u.user_roles?.[0]?.role_type || 'researcher';
-        return { user_id: u.user_id, name: fullName(u), email: u.email, role: r, role_label: ROLE_LABEL[r] || r, is_active: u.is_active !== false };
-      });
+    /* log the generated report (best effort: a failed log never breaks the download) */
+    try {
+      const { error } = await withOptionalColumns(
+        (payload) => supabase.from('reports').insert(payload),
+        {
+          generated_by: req.user.user_id,
+          /* the table calls the summary "activity"; External Research is logged with the repository reports */
+          report_type:  type === 'summary' ? 'activity' : type === 'external' ? 'repository' : type,
+          report_title: `${TITLES[type]} (${format.toUpperCase()})`,
+        },
+        { filters: { text: words, period: f.period, college: f.college, status: f.status, type: f.type }, file_format: format },
+      );
+      if (error) console.error('Report log failed:', error.message || error);
+    } catch (logErr) {
+      console.error('Report log failed:', logErr.message || logErr);
     }
-
-    return res.status(200).json({ proposals, repository, users, q: raw });
   } catch (err) {
-    console.error('search error:', err);
-    return res.status(500).json({ message: 'Search is not available right now. Please try again.' });
+    console.error('Report error:', err);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Report generation failed.' });
+    }
+  }
+});
+
+/* ── GET report history ──
+   The Administrator sees every report; everyone else only the ones they made. */
+router.get('/', verifyToken, authorizeRoles(...REPORT_ROLES), async (req, res) => {
+  try {
+    let q = supabase
+      .from('reports')
+      .select(`*, users ( first_name, middle_name, last_name )`)
+      .order('generated_at', { ascending: false })
+      .limit(30);
+    if (req.user.role !== 'admin') q = q.eq('generated_by', req.user.user_id);
+    const { data, error } = await q;
+
+    if (error) throw error;
+    return res.status(200).json({ reports: data });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error.' });
   }
 });
 
