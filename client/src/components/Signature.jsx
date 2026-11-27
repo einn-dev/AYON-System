@@ -3,6 +3,7 @@ import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABEL } from '../utils/terms';
 import { FaPenNib, FaUpload, FaEraser, FaTrashCan, FaSignature } from '../utils/icons';
+import InfoNotice from './InfoNotice';
 import './Signature.css';
 import { personName } from '../utils/names';
 import MessageToast from './MessageToast';
@@ -215,6 +216,28 @@ export const useMySignature = () => {
   }, [reload]);
 
   return { sig, setSig, loading, error, reload, canSign };
+};
+
+/* ── "Set up your signature" notice ──
+   For the offices that sign (not the researcher): shown at the top of their pages until
+   a signature is saved, because they cannot endorse, validate or approve without one. */
+const OFFICE_SIGNERS = SIGNER_ROLES.filter((r) => r !== 'researcher');
+export const SignatureNotice = () => {
+  const { user } = useAuth();
+  const { sig, loading, error } = useMySignature();
+  if (!OFFICE_SIGNERS.includes(user?.role) || loading || error || sig) return null;
+  const verb = user.role === 'special_assistant' ? 'validate and forward'
+    : ['msric_director', 'ovcred'].includes(user.role) ? 'approve' : 'endorse';
+  return (
+    <InfoNotice action={
+      <button type="button" className="btn btn-primary btn-sm" onClick={() => openMyProfile('signature')}>
+        <FaSignature className="ic" />Set Up My Signature
+      </button>
+    }>
+      You have not set up your digital signature yet. You need one before you can {verb} a proposal.
+      It takes a minute: draw it, or upload a photo of it.
+    </InfoNotice>
+  );
 };
 
 /* ── Drawing pad ── */

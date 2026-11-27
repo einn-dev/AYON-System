@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TerminalReportLink, MyTerminalReportsPage } from '../../components/TerminalReport';
 import { Routes, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import InfoNotice from '../../components/InfoNotice';
 import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -341,22 +342,28 @@ const MyProposals = ({ proposals: everything, onRefresh, kind = 'research' }) =>
           <FaCirclePlus className="ic" />{K.submit}
         </Link>
       </div>
+      {proposals.length === 0 && (
+        <InfoNotice>
+          {kind === 'research'
+            ? <>You have no research in AYON yet. Click <b>Submit Research</b> to start a Research Spotlight or an Internally Funded Research.</>
+            : <>You have no grant or incentive applications in AYON yet. Click <b>Submit Application</b> to apply.</>}
+          {' '}For questions, please contact the Mamitua Saber Institute of Research and Creation (MSIRC).
+        </InfoNotice>
+      )}
 
       <MessageToast message={notice || (fromForm ? { type: 'success', msg: fromForm } : null)}
         onClose={() => { setNotice(null); setFromForm(null); }} />
 
       {/* filtered by status: the same status on the other page (research vs applications) */}
       {f.status !== 'all' && otherCount > 0 && (
-        <div className="alert alert-info" role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span>
-            You also have {otherCount} {f.status === 'in_progress' ? 'in progress' : statusLabel(f.status).toLowerCase()}{' '}
-            {otherKind === 'grants' ? `application${otherCount === 1 ? '' : 's'} in Grants and Incentives` : `research in My Research`}.
-          </span>
-          <Link className="btn btn-outline btn-sm" style={{ textDecoration: 'none', marginLeft: 'auto' }}
-            to={`${KINDS[otherKind].base}?status=${f.status}`}>
+        <InfoNotice action={
+          <Link className="btn btn-outline btn-sm" to={`${KINDS[otherKind].base}?status=${f.status}`}>
             Open {KINDS[otherKind].page}
           </Link>
-        </div>
+        }>
+          You also have {otherCount} {f.status === 'in_progress' ? 'in progress' : statusLabel(f.status).toLowerCase()}{' '}
+          {otherKind === 'grants' ? `application${otherCount === 1 ? '' : 's'} in Grants and Incentives` : `research in My Research`}.
+        </InfoNotice>
       )}
 
       {returnedCount > 0 && (
@@ -831,6 +838,22 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
       </div>
 
       {/* Step Indicator */}
+      {/* why a card below is closed, and who to contact (only while choosing the type) */}
+      {step === 1 && K === KINDS.research && approvedInternal === 0 && (
+        <InfoNotice>
+          You have no approved Internally Funded Research in AYON yet, so the Terminal Report is not open.
+          It opens once one of your Internally Funded Research is approved. For questions, please contact
+          the Mamitua Saber Institute of Research and Creation (MSIRC).
+        </InfoNotice>
+      )}
+      {step === 1 && K === KINDS.grants && spotlights.length === 0 && (
+        <InfoNotice>
+          You have no approved Research Spotlight in AYON yet, so presenting a paper (<b>Form 001</b>) and
+          the <b>Oral Presentation Incentive</b> are not open. Submit one in <Link to="/researcher/proposals">My Research</Link>.
+          Attending a conference (Form 008) and the Publication Incentive are open now. For questions, please contact
+          the Mamitua Saber Institute of Research and Creation (MSIRC).
+        </InfoNotice>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 28 }}>
         {STEPS.map((s, i) => (
           <React.Fragment key={s}>
@@ -868,13 +891,6 @@ const SubmitProposal = ({ onRefresh, kind = 'research', proposals = [] }) => {
             {step === 1 && (
               <>
                 <p style={{ fontWeight: 600, color: '#1a3a5c', marginBottom: 16 }}>{K.pick}</p>
-                {kind === 'grants' && spotlights.length === 0 && (
-                  <div className="alert alert-info" role="note">
-                    Presenting a paper (<strong>Form 001</strong>) and <strong>Oral Presentation</strong> open once you have an
-                    approved <strong>Research Spotlight</strong>. Submit one in{' '}
-                    <Link to="/researcher/proposals">My Research</Link>. Attending a conference (Form 008) and Publication Incentive are open now.
-                  </div>
-                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                   {K.types.map(t => {
                     const forms  = FORMS_OF_TYPE[t] || [];
@@ -1134,7 +1150,15 @@ const MyRepositoryItems = ({ onChanged }) => {
 
   const pager = usePaged(items);   // 10 rows a page, Previous / Next under the table
 
-  if (items && items.length === 0 && !failed) return null;     // nothing of theirs stored yet
+  if (items && items.length === 0 && !failed) {                 // nothing of theirs stored yet
+    return (
+      <InfoNotice>
+        None of your research is in the Research Repository yet. Approved research is stored here automatically
+        as <b>Private</b>, and you can make it Public anytime. For questions, please contact
+        the Mamitua Saber Institute of Research and Creation (MSIRC).
+      </InfoNotice>
+    );
+  }
 
   return (
     <div className="panel">

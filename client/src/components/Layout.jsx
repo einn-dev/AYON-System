@@ -14,7 +14,7 @@ import TopBar from './TopBar';
 import HelpPage from '../pages/HelpPage';
 import { FaBars, FaRightFromBracket, FaXmark, FaCircleUser } from '../utils/icons';
 import { personName } from '../utils/names';
-import { OPEN_PROFILE } from './Signature';
+import { OPEN_PROFILE, SignatureNotice } from './Signature';
 import { LIVE_EVERY, LIVE_UPDATE, OPEN_BELL } from '../utils/liveRefresh';
 import { FaBell, FaXmark as FaClose } from '../utils/icons';
 import { COLLAPSE_MENU } from './StatCard';
@@ -243,6 +243,7 @@ const Layout = ({ children, navItems, role }) => {
       <main className="main-content">
         <TopBar navItems={menuItems} unread={unread} onMenu={phone ? () => setMenuOpen(true) : null} />
         <AnnouncementBanner />
+        {!onProfile && <div className="sig-notice-wrap"><SignatureNotice /></div>}
         {/* /<role>/help shows the Help and User Guide (the ? button in the top bar) */}
         <div className={`page-anim${pageIn ? ' is-in' : ''}`}>
           {location.pathname.replace(/\/+$/, '') === `${helpBase}/help` ? <HelpPage />

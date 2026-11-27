@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaLock } from '../utils/icons';
+import InfoNotice from './InfoNotice';
 import API from '../services/authService';
 import ProposalTracker from './ProposalTracker';
 import { ProposalSignatures } from './Signature';
@@ -50,10 +50,7 @@ const RecordDetails = ({ proposalId, onClose }) => {
           <div className="empty-state loading-state" role="status"><p>Loading…</p></div>
         ) : (
           <>
-            <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <FaLock style={{ marginTop: 3, flexShrink: 0 }} />
-              <span>View only. You can follow this {w.p} here, but nothing can be changed from this window.</span>
-            </div>
+            <InfoNotice dismissKey="view_only">View only. You can follow this {w.p} here, but nothing can be changed from this window.</InfoNotice>
             <h3 style={{ marginBottom: 8 }}>{p.title}</h3>
             <p style={{ margin: '0 0 12px' }}>
               <span className={`badge ${statusBadge(p.status)}`}>{statusLabel(p.status)}</span>

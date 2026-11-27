@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { personName } from '../../utils/names';
 import { DocumentsEditor, MAX_SUPPORTING, OTHER } from '../../components/ProposalFiles';
 import { SDGS } from '../../utils/sdgs';
+import InfoNotice from '../../components/InfoNotice';
 import { ExternalDetails, SdgChips, peso, period } from './ExternalShared';
 import MessageToast from '../../components/MessageToast';
 import { dateText } from '../../utils/dates';
@@ -116,6 +117,7 @@ const SdgPicker = ({ value, onToggle }) => {
 const ExternalResearchPage = () => {
   const { user } = useAuth() || {};
   const [items,  setItems]  = useState([]);
+  const [loaded, setLoaded] = useState(false);      // the list has been fetched once
   const pager = usePaged(items);   // 10 rows a page, Previous / Next under the table
   const [alert,  setAlert]  = useState(null);
   const [saving, setSaving] = useState(false);
@@ -128,6 +130,7 @@ const ExternalResearchPage = () => {
       const res = await API.get('/external/my');
       setItems(res.data.items || []);
     } catch { setItems([]); }
+    setLoaded(true);
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
@@ -171,6 +174,13 @@ const ExternalResearchPage = () => {
 
       <MessageToast message={alert} onClose={() => setAlert(null)} />
 
+      {loaded && items.length === 0 && (
+        <InfoNotice>
+          You have no external research in AYON yet. Fill in the form to upload research funded outside MSU.
+          It is stored in the Research Repository as <b>Private</b> right away, with no office endorsement.
+          For questions, please contact the Mamitua Saber Institute of Research and Creation (MSIRC).
+        </InfoNotice>
+      )}
       <div className="ext-grid">
         {/* Upload Form */}
         <div className="panel">

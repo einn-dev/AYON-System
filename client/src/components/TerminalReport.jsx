@@ -5,6 +5,7 @@ import {
   FaFileLines, FaXmark, FaCloudArrowUp, FaCheck, FaRotateLeft, FaFlagCheckered, FaCircleCheck, FaFilePdf, FaFileWord,
   FaArrowRight, FaArrowLeft,
 } from '../utils/icons';
+import InfoNotice from './InfoNotice';
 import API from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { SignConfirm } from './Signature';
@@ -469,6 +470,13 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
           It goes to your College Dean, the MSIRC Special Assistant and the MSIRC Director. Once accepted, the research is Completed.</p>
       </div>
 
+      {reports && projects.length === 0 && (
+        <InfoNotice>
+          You have no approved Internally Funded Research in AYON yet, so there is no Terminal Report to submit.
+          For questions, please contact the Mamitua Saber Institute of Research and Creation (MSIRC).
+        </InfoNotice>
+      )}
+
       <div className="panel">
         <div className="panel-header">
           <h2>Your Approved Internally Funded Research</h2>
@@ -495,7 +503,7 @@ export const MyTerminalReportsPage = ({ proposals = [], onRefresh }) => {
             })}
             {reports && projects.length === 0 && (
               <tr><td colSpan={5}><div className="empty-state">
-                <p>No approved Internally Funded Research yet. When one of yours is approved, its Terminal Report is submitted here.</p>
+                <p>Nothing to report yet.</p>
               </div></td></tr>
             )}
             {!reports && <tr><td colSpan={5}><div className="empty-state loading-state" role="status"><p>Loading…</p></div></td></tr>}

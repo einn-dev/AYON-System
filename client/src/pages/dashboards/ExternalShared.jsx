@@ -6,6 +6,7 @@ import { personName } from '../../utils/names';
 import { useLiveRefresh } from '../../utils/liveRefresh';
 import { SDGS, sdgList } from '../../utils/sdgs';
 import './External.css';
+import InfoNotice from '../../components/InfoNotice';
 import { dateText } from '../../utils/dates';
 import { usePaged } from '../../components/Pager';
 
@@ -143,10 +144,9 @@ export const CollegeExternalPage = () => {
         <h1>External Research</h1>
         <p>Externally funded research by researchers of {college || 'your college'}. Read only: these do not need your endorsement.</p>
       </div>
-      <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <FaLock style={{ marginTop: 3, flexShrink: 0 }} />
-        <span>These are <b>private</b> in the Research Repository: only the researcher, their college (College Chairperson, College Coordinator, College Dean) and the MSIRC offices can see them. Other researchers cannot see or search them.</span>
-      </div>
+      <InfoNotice dismissKey="external_private_college">
+        These are <b>private</b> in the Research Repository: only the researcher, their college (College Chairperson, College Coordinator, College Dean) and the MSIRC offices can see them. Other researchers cannot see or search them.
+      </InfoNotice>
       {failed && <div className="alert alert-error" role="alert">{failed}</div>}
       <div className="panel">
         <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
@@ -255,10 +255,9 @@ export const OfficeExternalPage = () => {
         <h1>External Research</h1>
         <p>Externally funded research of every college, in the Research Repository. Read only: these do not go through the approval offices.</p>
       </div>
-      <div className="alert alert-info" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <FaLock style={{ marginTop: 3, flexShrink: 0 }} />
-        <span>These are <b>private</b>: only the researcher, their college and the MSIRC offices can see them. Other researchers cannot see or search them.</span>
-      </div>
+      <InfoNotice dismissKey="external_private_office">
+        These are <b>private</b>: only the researcher, their college and the MSIRC offices can see them. Other researchers cannot see or search them.
+      </InfoNotice>
       {failed && <div className="alert alert-error" role="alert">{failed}</div>}
 
       <div className="stats-grid">
