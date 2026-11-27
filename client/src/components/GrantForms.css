@@ -24,6 +24,8 @@
 .gf-slot-file { color: #8a7a7d !important; }
 .gf-slot.has .gf-slot-file { color: #276749 !important; font-weight: 600; }
 .gf-slot-actions { display: flex; gap: 6px; align-items: center; }
+.gf-slot-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.gf-slot-limit { font-size: 0.72rem; color: #8a7a7d; white-space: nowrap; }
 
 /* an office's checklist */
 .gf-check {

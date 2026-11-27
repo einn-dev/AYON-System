@@ -598,6 +598,7 @@ export const SlotDocs = ({ form, value, onChange, onError, disabled = false, dat
                 {fresh ? `${fresh.name} (not saved yet)` : saved ? (saved.file_name || 'Uploaded') : 'No file chosen'}
               </small>
             </div>
+            <div className="gf-slot-side">
             <div className="gf-slot-actions">
               <input type="file" hidden accept=".pdf,.doc,.docx" data-slot={d.label}
                 ref={(el) => { inputs.current[d.label] = el; }} onChange={pick(i, d.label)} />
@@ -609,6 +610,9 @@ export const SlotDocs = ({ form, value, onChange, onError, disabled = false, dat
                 <button type="button" className="btn btn-sm btn-danger-soft" disabled={disabled}
                   onClick={clear(i, d.label)} aria-label={`Remove ${d.label}`}><FaTrashCan /></button>
               )}
+            </div>
+            {/* what the Choose File button accepts (the same check runs when a file is picked, and on the server) */}
+            <small className="gf-slot-limit">PDF, DOC or DOCX · up to {MAX_MB} MB</small>
             </div>
           </li>
         );
