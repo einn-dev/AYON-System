@@ -30,13 +30,13 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/ovcred/dashboard',       label: 'Dashboard',           icon: <FaTableCellsLarge /> },
-  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList /> },
-  { path: '/ovcred/approved',        label: 'Approved',  icon: <FaCircleCheck /> },
-  { path: '/ovcred/rejected',        label: 'Rejected',  icon: <FaCircleXmark /> },
-  { path: '/ovcred/external',   label: 'External Research', icon: <FaGlobe /> },
-  { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive /> },
-  { path: '/ovcred/reports',         label: 'Reports',             icon: <FaChartColumn /> },
-  { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell /> },
+  { path: '/ovcred/for-endorsement', label: 'For Final Approval',  icon: <FaClipboardList />, section: 'Review' },
+  { path: '/ovcred/approved',        label: 'Approved',  icon: <FaCircleCheck />, section: 'Review' },
+  { path: '/ovcred/rejected',        label: 'Rejected',  icon: <FaCircleXmark />, section: 'Review' },
+  { path: '/ovcred/external',   label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/ovcred/repository',      label: 'Research Repository', icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/ovcred/reports',         label: 'Reports',             icon: <FaChartColumn />, section: 'Monitoring' },
+  { path: '/ovcred/notifications',   label: 'Notifications',       icon: <FaBell />, section: 'Account' },
 ];
 
 /* ─────────── Overview ─────────── */

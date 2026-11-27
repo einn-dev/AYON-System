@@ -46,7 +46,7 @@ const Layout = ({ children, navItems, role }) => {
   /* My Profile is a page for every role: /<role>/profile (shown by this layout, like Help) */
   const profilePath = `${helpBase}/profile`;
   const onProfile   = location.pathname.replace(/\/+$/, '') === profilePath;
-  const menuItems   = [...navItems, { path: profilePath, label: 'My Profile', icon: <FaCircleUser />, account: true }];
+  const menuItems   = [...navItems, { path: profilePath, label: 'My Profile', icon: <FaCircleUser />, section: 'Account' }];
 
   /* unread count for the Notifications item: on each page change, every minute,
      and right away when the Notifications page marks something as read */
@@ -197,9 +197,13 @@ const Layout = ({ children, navItems, role }) => {
         <div className="sidebar-role">{role}</div>
 
         <nav className="sidebar-nav">
-          {menuItems.map((item) => (
+          {menuItems.map((item, i) => (
             <React.Fragment key={item.path}>
-            {item.account && <div className="nav-section" aria-hidden="true">Account</div>}
+            {/* a small heading where a new group starts (Review, Library, Account...);
+                folded to icons, it becomes a thin line */}
+            {item.section && item.section !== menuItems[i - 1]?.section && (
+              <div className="nav-section" aria-hidden="true">{item.section}</div>
+            )}
             <NavLink
               to={item.path}
               /* on a computer, opening a page folds the sidebar to its icons; ☰ opens it again */

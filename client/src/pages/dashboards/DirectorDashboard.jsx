@@ -34,15 +34,15 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/director/dashboard',     label: 'Dashboard',          icon: <FaTableCellsLarge /> },
-  { path: '/director/for-review',    label: 'For Review',         icon: <FaClipboardList /> },
-  { path: '/director/endorsed',      label: 'Endorsed to VCRED', icon: <FaPaperPlane /> },
-  { path: '/director/approved',      label: 'Approved', icon: <FaCircleCheck /> },
-  { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark /> },
-  { path: '/director/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
-  { path: '/director/external',   label: 'External Research', icon: <FaGlobe /> },
-  { path: '/director/repository',    label: 'Research Repository', icon: <FaBoxArchive /> },
-  { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn /> },
-  { path: '/director/notifications', label: 'Notifications',      icon: <FaBell /> },
+  { path: '/director/for-review',    label: 'For Review',         icon: <FaClipboardList />, section: 'Review' },
+  { path: '/director/endorsed',      label: 'Endorsed to VCRED', icon: <FaPaperPlane />, section: 'Review' },
+  { path: '/director/approved',      label: 'Approved', icon: <FaCircleCheck />, section: 'Review' },
+  { path: '/director/rejected',      label: 'Rejected', icon: <FaCircleXmark />, section: 'Review' },
+  { path: '/director/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered />, section: 'Review' },
+  { path: '/director/external',   label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/director/repository',    label: 'Research Repository', icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/director/reports',       label: 'Reports',            icon: <FaChartColumn />, section: 'Monitoring' },
+  { path: '/director/notifications', label: 'Notifications',      icon: <FaBell />, section: 'Account' },
 ];
 
 /* ─────────── Overview ─────────── */

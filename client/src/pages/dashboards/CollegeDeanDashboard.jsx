@@ -21,12 +21,12 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/college-dean/dashboard',       label: 'Dashboard',       icon: <FaTableCellsLarge /> },
-  { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
-  { path: '/college-dean/endorsed',        label: 'Endorsed', icon: <FaCircleCheck /> },
-  { path: '/college-dean/external',       label: 'External Research', icon: <FaGlobe /> },
-  { path: '/college-dean/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
-  { path: '/college-dean/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
-  { path: '/college-dean/notifications',   label: 'Notifications',    icon: <FaBell /> },
+  { path: '/college-dean/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList />, section: 'Review' },
+  { path: '/college-dean/endorsed',        label: 'Endorsed', icon: <FaCircleCheck />, section: 'Review' },
+  { path: '/college-dean/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered />, section: 'Review' },
+  { path: '/college-dean/external',       label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/college-dean/repository',     label: 'Research Repository', icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/college-dean/notifications',   label: 'Notifications',    icon: <FaBell />, section: 'Account' },
 ];
 
 const Overview = ({ proposals }) => (

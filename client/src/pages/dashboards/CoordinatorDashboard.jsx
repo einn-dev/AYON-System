@@ -19,11 +19,11 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/coordinator/dashboard',     label: 'Dashboard',        icon: <FaTableCellsLarge /> },
-  { path: '/coordinator/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList /> },
-  { path: '/coordinator/endorsed',      label: 'Endorsed', icon: <FaCircleCheck /> },
-  { path: '/coordinator/external',       label: 'External Research', icon: <FaGlobe /> },
-  { path: '/coordinator/repository',     label: 'Research Repository', icon: <FaBoxArchive /> },
-  { path: '/coordinator/notifications', label: 'Notifications',     icon: <FaBell /> },
+  { path: '/coordinator/for-endorsement', label: 'For Endorsement', icon: <FaClipboardList />, section: 'Review' },
+  { path: '/coordinator/endorsed',      label: 'Endorsed', icon: <FaCircleCheck />, section: 'Review' },
+  { path: '/coordinator/external',       label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/coordinator/repository',     label: 'Research Repository', icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/coordinator/notifications', label: 'Notifications',     icon: <FaBell />, section: 'Account' },
 ];
 
 const Overview = ({ proposals }) => {

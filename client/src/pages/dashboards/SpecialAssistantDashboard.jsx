@@ -34,13 +34,13 @@ const PROPOSAL_TYPES = TYPE_LABEL;
 
 const NAV_ITEMS = [
   { path: '/special-assistant/dashboard',     label: 'Dashboard',           icon: <FaTableCellsLarge /> },
-  { path: '/special-assistant/validate',      label: 'For Validation',      icon: <FaClipboardCheck /> },
-  { path: '/special-assistant/forwarded',     label: 'Validated', icon: <FaPaperPlane /> },
-  { path: '/special-assistant/submissions',   label: 'All Submissions',       icon: <FaInbox /> },
-  { path: '/special-assistant/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered /> },
-  { path: '/special-assistant/external',   label: 'External Research', icon: <FaGlobe /> },
-  { path: '/special-assistant/repository', label: 'Research Repository', icon: <FaBoxArchive /> },
-  { path: '/special-assistant/notifications', label: 'Notifications',       icon: <FaBell /> },
+  { path: '/special-assistant/validate',      label: 'For Validation',      icon: <FaClipboardCheck />, section: 'Review' },
+  { path: '/special-assistant/forwarded',     label: 'Validated', icon: <FaPaperPlane />, section: 'Review' },
+  { path: '/special-assistant/submissions',   label: 'All Submissions',       icon: <FaInbox />, section: 'Review' },
+  { path: '/special-assistant/terminal-reports', label: 'Terminal Reports', icon: <FaFlagCheckered />, section: 'Review' },
+  { path: '/special-assistant/external',   label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/special-assistant/repository', label: 'Research Repository', icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/special-assistant/notifications', label: 'Notifications',       icon: <FaBell />, section: 'Account' },
 ];
 
 const REQUIREMENTS = [

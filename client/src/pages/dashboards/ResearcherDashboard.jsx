@@ -35,12 +35,11 @@ const statusText = (p) => (p?.completed_at ? 'Completed' : statusLabel(p?.status
 
 const NAV_ITEMS = [
   { path: '/researcher/dashboard',   label: 'Dashboard',         icon: <FaTableCellsLarge /> },
-  { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines /> },
-  { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
-  { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe /> },
-  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive /> },
-  { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell /> },
-  
+  { path: '/researcher/proposals',   label: 'My Research',       icon: <FaFileLines />, section: 'Submissions' },
+  { path: '/researcher/grants',      label: 'Grants and Incentives', icon: <FaHandHoldingDollar />, section: 'Submissions' },
+  { path: '/researcher/external',    label: 'External Research', icon: <FaGlobe />, section: 'Library' },
+  { path: '/researcher/repository',  label: 'Research Repository',        icon: <FaBoxArchive />, section: 'Library' },
+  { path: '/researcher/notifications', label: 'Notifications',   icon: <FaBell />, section: 'Account' },
 ];
 
 /* every type, for showing a label */

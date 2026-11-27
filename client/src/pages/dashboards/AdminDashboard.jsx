@@ -22,16 +22,16 @@ import { FaBell, FaBoxArchive, FaBullhorn, FaChartColumn, FaEnvelope, FaFileLine
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard',  label: 'Dashboard',             icon: <FaTableCellsLarge /> },
-  { path: '/admin/users',      label: 'User Accounts',         icon: <FaUsers /> },
-  { path: '/admin/proposals',  label: 'All Proposals',         icon: <FaFileLines /> },
-  { path: '/admin/grants',     label: 'Grants and Incentives', icon: <FaHandHoldingDollar /> },
-  { path: '/admin/external',   label: 'External Research', icon: <FaGlobe /> },
-  { path: '/admin/repository', label: 'Research Repository',   icon: <FaBoxArchive /> },
-  { path: '/admin/announcements', label: 'Announcements',      icon: <FaBullhorn /> },
-  { path: '/admin/reports',    label: 'Reports',               icon: <FaChartColumn /> },
-  { path: '/admin/audit',      label: 'Audit Log',             icon: <FaShieldHalved /> },
-  { path: '/admin/emails',     label: 'Email Log',             icon: <FaEnvelope /> },
-  { path: '/admin/notifications', label: 'Notifications',      icon: <FaBell /> },
+  { path: '/admin/users',      label: 'User Accounts',         icon: <FaUsers />, section: 'Manage' },
+  { path: '/admin/announcements', label: 'Announcements',      icon: <FaBullhorn />, section: 'Manage' },
+  { path: '/admin/proposals',  label: 'All Proposals',         icon: <FaFileLines />, section: 'Records' },
+  { path: '/admin/grants',     label: 'Grants and Incentives', icon: <FaHandHoldingDollar />, section: 'Records' },
+  { path: '/admin/external',   label: 'External Research', icon: <FaGlobe />, section: 'Records' },
+  { path: '/admin/repository', label: 'Research Repository',   icon: <FaBoxArchive />, section: 'Records' },
+  { path: '/admin/reports',    label: 'Reports',               icon: <FaChartColumn />, section: 'Monitoring' },
+  { path: '/admin/audit',      label: 'Audit Log',             icon: <FaShieldHalved />, section: 'Monitoring' },
+  { path: '/admin/emails',     label: 'Email Log',             icon: <FaEnvelope />, section: 'Monitoring' },
+  { path: '/admin/notifications', label: 'Notifications',      icon: <FaBell />, section: 'Account' },
 ];
 
 /* the Administrator's notices: new verified accounts and emails that did not send */
