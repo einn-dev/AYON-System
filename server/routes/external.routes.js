@@ -85,7 +85,7 @@ const problemOf = (f, file, supporting, labels) => {
   if (!f.researchers)     return 'Project members are required (write "None" if you worked alone).';
   if (!f.external_agency) return 'Funder is required.';
   if (!(Number(f.funding_amount) > 0)) return 'Funding amount is required (more than ₱0).';
-  if (!f.sdgs.length)     return 'Check at least one Sustainable Development Goal.';
+  if (!f.sdgs.length)     return 'Add at least one Sustainable Development Goal.';
   if (!f.description)     return 'Abstract is required.';
   if (wordsIn(f.description) > ABSTRACT_WORDS) return `The abstract must be ${ABSTRACT_WORDS} words or fewer.`;
   if (!isDate(f.start_date)) return 'Start date is required.';
@@ -246,7 +246,15 @@ router.get('/my', verifyToken, authorizeRoles('researcher'), async (req, res) =>
       .eq('user_id', req.user.user_id)
       .order('uploaded_at', { ascending: false });
     if (error) throw error;
-    return res.status(200).json({ items: await withFiles(data || []) });
+    /* Public or Private, from its Research Repository item (the researcher can change it there) */
+    const ids = (data || []).map((e) => e.external_id);
+    const access = {};
+    if (ids.length) {
+      const { data: reps } = await supabase.from('repository').select('external_id, access_type').in('external_id', ids);
+      (reps || []).forEach((r) => { access[r.external_id] = r.access_type; });
+    }
+    const items = (await withFiles(data || [])).map((e) => ({ ...e, access_type: access[e.external_id] || 'private' }));
+    return res.status(200).json({ items });
   } catch (err) {
     return res.status(500).json({ message: 'Server error.' });
   }

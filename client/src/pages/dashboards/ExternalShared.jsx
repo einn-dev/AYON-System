@@ -38,8 +38,12 @@ export const SdgChips = ({ value, small = false }) => {
   return (
     <span className={`ext-chips${small ? ' sm' : ''}`}>
       {list.map((n) => {
-        const [, name, color] = SDGS[n - 1];
-        return <span key={n} className="ext-chip" style={{ '--sdg': color }} title={`SDG ${n}: ${name}`}><b>{n}</b>{small ? '' : name}</span>;
+        const [, name] = SDGS[n - 1];
+        return (
+          <span key={n} className="ext-chip" title={`SDG ${n}: ${name}`}>
+            <b>SDG {n}</b>{!small && <span>{name}</span>}
+          </span>
+        );
       })}
     </span>
   );
