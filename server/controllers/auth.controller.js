@@ -5,6 +5,11 @@ const { logAudit, fullName } = require('../utils/audit');
 const { notifyRole } = require('../utils/roleNotify');
 const { personName } = require('../utils/names');
 const { passwordProblem } = require('../utils/passwordRule');
+
+/* Register accepts MSU Main Campus emails only: students (@s.msumain.edu.ph)
+   and faculty and staff (@msumain.edu.ph). Keep the same rule in client/src/components/RegisterForm.jsx. */
+const MSU_EMAIL = /@(s\.)?msumain\.edu\.ph$/;
+const MSU_EMAIL_MSG = 'Please use your MSU Main Campus email (ending in @s.msumain.edu.ph or @msumain.edu.ph).';
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
 } = require('../utils/verification');
@@ -51,6 +56,10 @@ const register = async (req, res) => {
   const emailLc = String(email).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLc)) {
     return res.status(400).json({ message: 'Please enter a valid email address.' });
+  }
+  /* only MSU Main Campus accounts can sign up (the Administrator can still add other emails) */
+  if (!MSU_EMAIL.test(emailLc)) {
+    return res.status(400).json({ message: MSU_EMAIL_MSG });
   }
 
   try {

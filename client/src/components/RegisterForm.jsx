@@ -104,6 +104,9 @@ const RegisterForm = () => {
       return 'Email address is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       return 'Please enter a valid email address.';
+    /* MSU Main Campus accounts only (the server checks the same) */
+    if (!/@(s\.)?msumain\.edu\.ph$/.test(form.email.trim().toLowerCase()))
+      return 'Please use your MSU Main Campus email (ending in @s.msumain.edu.ph or @msumain.edu.ph).';
     if (!form.college)
       return 'Please select your college.';
     if (!form.department)
@@ -200,7 +203,7 @@ const RegisterForm = () => {
           <div className="form-group reg-half">
             <label>Email Address *</label>
             <input type="text" name="email" value={form.email}
-              onChange={handleChange} placeholder="you@gmail.com" autoComplete="off" />
+              onChange={handleChange} placeholder="you@s.msumain.edu.ph" autoComplete="off" />
           </div>
 
           <div className="form-group reg-half">
