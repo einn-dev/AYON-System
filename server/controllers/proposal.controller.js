@@ -561,6 +561,40 @@ const getProposalById = async (req, res) => {
   }
 };
 
+/* ── Whose desk, and what each office may do there ──
+   MSIRC Special Assistant: For Validation (submitted)    → validate (under_review) or return
+   MSIRC Director:          For Review (under_review)     → endorse to VCRED (endorsed), return or reject
+   VCRED:                   For Final Approval (endorsed) → approve, return or reject
+   Returns [httpStatus, body] when the change is not allowed, otherwise null. */
+const OFFICE_DESK = { special_assistant: 'submitted', msric_director: 'under_review', ovcred: 'endorsed' };
+const OFFICE_MAY  = {
+  special_assistant: ['under_review', 'returned'],
+  msric_director:    ['endorsed', 'returned', 'rejected'],
+  ovcred:            ['approved', 'returned', 'rejected'],
+};
+const stageGate = (role, current, next) => {
+  if (role === 'admin') {
+    return [403, { message: 'Use Move on the Submissions page to change a proposal\'s status. It asks for a reason and is logged.', code: 'USE_MOVE' }];
+  }
+  if (role === 'msric_director' && next === 'approved') {
+    return [403, { message: 'Only VCRED gives the final approval. Use Endorse to VCRED instead.', code: 'DIRECTOR_CANNOT_APPROVE' }];
+  }
+  if (['approved', 'rejected'].includes(current)) {
+    return [409, { message: `This proposal is already ${statusLabel(current).toLowerCase()}. That decision is final.`, code: 'FINAL' }];
+  }
+  if (current === 'returned') {
+    return [409, { message: 'This proposal was already returned to the researcher.', code: 'ALREADY_RETURNED' }];
+  }
+  if (!OFFICE_DESK[role]) return [403, { message: 'Your role cannot change a proposal\'s status.' }];
+  if (current !== OFFICE_DESK[role]) {
+    return [409, { message: `This proposal is not at your stage. It is now: ${statusLabel(current)}.`, code: 'NOT_YOUR_STAGE' }];
+  }
+  if (!OFFICE_MAY[role].includes(next)) {
+    return [403, { message: 'You cannot make that change at this stage.', code: 'NOT_ALLOWED' }];
+  }
+  return null;
+};
+
 /* ── PATCH update proposal status ──
    Returning a proposal needs a reason: the researcher has to know what to fix. */
 const updateProposalStatus = async (req, res) => {
@@ -621,6 +655,11 @@ const updateProposalStatus = async (req, res) => {
         code: 'AT_COLLEGE',
       });
     }
+
+    /* each office acts only on research that is on its own desk, and only in its own ways.
+       Approved and rejected are final: the Administrator changes them with Move (logged). */
+    const gate = stageGate(req.user.role, proposal.status, status);
+    if (gate) return res.status(gate[0]).json(gate[1]);
 
     if (status === 'returned') {
       if (proposal.status === 'returned') {
