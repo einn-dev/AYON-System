@@ -638,3 +638,8 @@ div.loading::before {
   width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
 }
 .info-notice-x:hover, .info-notice-x:focus-visible { background: #f3dce0; outline: none; }
+/* office queues: how long a proposal has waited */
+.q-wait { color: #4a3f42; font-weight: 600; }
+.q-late { color: #b3261e; font-weight: 700; }
+.q-since { font-size: 0.72rem; color: #8a7a7d; }
+.q-none { color: #b3a5a8; }

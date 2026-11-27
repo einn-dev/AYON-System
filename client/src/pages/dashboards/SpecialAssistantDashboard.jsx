@@ -4,6 +4,8 @@ import RepositoryBrowser from '../../components/RepositoryBrowser';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { WaitCell, AmountCell, DateCell, oldestFirst } from '../../components/QueueCells';
+import { actedOn } from '../../utils/queue';
 import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -251,7 +253,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
   const [signReady,  setSignReady]  = useState(false);   // signature saved and the box ticked
   const [formCheck,  setFormCheck]  = useState(EMPTY_CHECK);   // the MSIRC Special Assistant's step on an MSIRC form
 
-  const pending = proposals.filter(p => p.status === 'submitted');
+  const pending = oldestFirst(proposals.filter(p => p.status === 'submitted'));   // longest wait first
   const pager = usePaged(pending);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its validation screen when it is waiting, otherwise read-only */
   const [viewId, setViewId] = useState(null);
@@ -364,7 +366,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                 <th>Researcher</th>
                 <th>Title</th>
                 <th>Type</th>
-                <th>Date Submitted</th>
+                <th>Amount</th>
+                <th>Waiting</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -379,9 +382,8 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                   <td style={{ fontSize: '0.8rem', color: '#718096' }}>
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
-                  <td style={{ color: '#718096' }}>
-                    {p.submitted_at ? dateText(p.submitted_at) : '—'}
-                  </td>
+                  <AmountCell p={p} />
+                  <WaitCell p={p} />
                   <td>
                     <button className="btn btn-primary btn-sm"
                       onClick={() => openValidation(p)}>
@@ -391,7 +393,7 @@ const ValidateDocuments = ({ proposals, onRefresh }) => {
                 </tr>
               ))}
               {pending.length === 0 && (
-                <tr><td colSpan={5}>
+                <tr><td colSpan={6}>
                   <div className="empty-state"><p>No proposals are waiting for validation.</p></div>
                 </td></tr>
               )}
@@ -572,7 +574,7 @@ const Forwarded = ({ proposals }) => {
               <th>Title</th>
               <th>Type</th>
               <th>Current Status</th>
-              <th>Date Submitted</th>
+              <th>Date Validated</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -592,9 +594,7 @@ const Forwarded = ({ proposals }) => {
                     {statusLabel(p.status)}
                   </span>
                 </td>
-                <td style={{ color: '#718096' }}>
-                  {p.submitted_at ? dateText(p.submitted_at) : '—'}
-                </td>
+                <DateCell value={actedOn(p, 'special_assistant')} />
                 <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button></td>
               </tr>
             ))}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { waitDays, waitText } from '../../utils/queue';
+import { stageLabel } from '../../components/ProposalTracker';
 import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -89,6 +91,9 @@ const Overview = ({ proposals }) => {
   );
 };
 
+/* who has it now: "MSIRC Director", "Researcher", "Done" */
+const nowWith = (p) => stageLabel(p);
+
 const AllSubmissions = ({ proposals }) => {
   const [search, setSearch] = useState('');
   /* a dashboard card can open this list already filtered (?status=approved) */
@@ -128,7 +133,7 @@ const AllSubmissions = ({ proposals }) => {
           <thead>
             <tr>
               <th>#</th><th>Researcher</th><th>Title</th>
-              <th>Type</th><th>Status</th><th>Date Submitted</th>
+              <th>Type</th><th>Status</th><th>Now With</th><th>Date Submitted</th>
             </tr>
           </thead>
           <tbody>
@@ -148,13 +153,19 @@ const AllSubmissions = ({ proposals }) => {
                     {statusLabel(p.status)}
                   </span>
                 </td>
+                <td style={{ fontSize: '0.82rem' }}>
+                  {nowWith(p)}
+                  {['submitted', 'under_review', 'endorsed', 'for_endorsement'].includes(p.status) && (
+                    <div className="q-since">{waitText(waitDays(p))}</div>
+                  )}
+                </td>
                 <td style={{ color: '#718096' }}>
                   {p.submitted_at ? dateText(p.submitted_at) : '—'}
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6}>
+              <tr><td colSpan={7}>
                 <div className="empty-state"><p>Nothing found.</p></div>
               </td></tr>
             )}

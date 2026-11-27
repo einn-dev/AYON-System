@@ -3,6 +3,8 @@ import { OfficeExternalPage } from './ExternalShared';
 import { TerminalReportsPage } from '../../components/TerminalReport';
 import { FaFlagCheckered } from '../../utils/icons';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { WaitCell, AmountCell, DateCell, oldestFirst } from '../../components/QueueCells';
+import { decisionAt } from '../../utils/queue';
 import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -126,7 +128,10 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
   const [formCheck, setFormCheck] = useState(EMPTY_CHECK);   // the MSIRC Director's step on an MSIRC form
-  const filtered = proposals.filter(p => p.status === statusFilter);
+  const inQueue  = statusFilter === 'under_review';            // waiting for the Director
+  const filtered = inQueue ? oldestFirst(proposals.filter(p => p.status === statusFilter))
+    : proposals.filter(p => p.status === statusFilter);
+  const dateHead = { approved: 'Date Approved', rejected: 'Date Rejected', endorsed: 'Date Endorsed' }[statusFilter] || 'Date';
   const pager = usePaged(filtered);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its review screen when it waits for you, otherwise read-only */
   const [viewId, setViewId] = useState(null);
@@ -233,7 +238,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 <th>Researcher</th>
                 <th>Title</th>
                 <th>Type</th>
-                <th>Date Submitted</th>
+                <th>Amount</th>
+                <th>{inQueue ? 'Waiting' : dateHead}</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -249,9 +255,8 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                   <td style={{ fontSize: '0.8rem', color: '#718096' }}>
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
-                  <td style={{ color: '#718096' }}>
-                    {p.submitted_at ? dateText(p.submitted_at) : '—'}
-                  </td>
+                  <AmountCell p={p} />
+                  {inQueue ? <WaitCell p={p} /> : <DateCell value={decisionAt(p)} />}
                   <td>
                     <button className="btn btn-primary btn-sm"
                       onClick={() => { setSelected(p); setFormCheck(EMPTY_CHECK); setRemarks(''); setAlert(null); }}>
@@ -261,7 +266,7 @@ const ProposalTable = ({ proposals, statusFilter, onRefresh }) => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6}>
+                <tr><td colSpan={7}>
                   <div className="empty-state"><p>Nothing found.</p></div>
                 </td></tr>
               )}

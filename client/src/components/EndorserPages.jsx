@@ -5,6 +5,7 @@ import { FaArrowLeft, FaCheck, FaRotateLeft } from '../utils/icons';
 import { STATUS_BADGE, statusLabel, TYPE_LABEL, ROLE_LABEL, wordFor } from '../utils/terms';
 import { SignConfirm, ProposalSignatures } from './Signature';
 import { ProposalFiles } from './ProposalFiles';
+import { WaitCell } from './QueueCells';
 import RecordDetails from './RecordDetails';
 import { useOpenHighlight } from './OpenHighlight';
 import { personName } from '../utils/names';
@@ -169,7 +170,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
             <thead>
               <tr>
                 <th>#</th><th>Researcher</th><th>Title</th>
-                <th>Type</th><th>Waiting Since</th><th>Action</th>
+                <th>Type</th><th>Waiting</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -191,7 +192,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
                   <td style={{ fontSize: '0.8rem', color: '#718096' }}>
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
-                  <td style={{ color: '#718096' }}>{fmt(p.updated_at || p.submitted_at)}</td>
+                  <WaitCell p={p} />
                   <td>
                     <button className="btn btn-primary btn-sm" onClick={() => open(p)}>
                       Review

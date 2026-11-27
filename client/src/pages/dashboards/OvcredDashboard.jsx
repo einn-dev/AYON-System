@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { OfficeExternalPage } from './ExternalShared';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { WaitCell, AmountCell, DateCell, oldestFirst } from '../../components/QueueCells';
+import { decisionAt } from '../../utils/queue';
 import NotFoundPanel from '../../components/NotFoundPanel';
 import Layout from '../../components/Layout';
 import { useLiveRefresh } from '../../utils/liveRefresh';
@@ -119,7 +121,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
   const [saving,   setSaving]   = useState(false);
   const [returning, setReturning] = useState(null);   // the proposal being returned to the researcher
   const [signReady, setSignReady] = useState(false);  // signature saved and the box ticked
-  const endorsed = proposals.filter(p => p.status === 'endorsed');
+  const endorsed = oldestFirst(proposals.filter(p => p.status === 'endorsed'));   // longest wait first
   const pager = usePaged(endorsed);   // 10 rows a page, Previous / Next under the table
   /* opened from a notification: its approval screen when it waits for you, otherwise read-only */
   const [viewId, setViewId] = useState(null);
@@ -205,6 +207,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 <th>Title</th>
                 <th>Type</th>
                 <th>College</th>
+                <th>Amount</th>
+                <th>Waiting</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -221,6 +225,8 @@ const ForApproval = ({ proposals, onRefresh }) => {
                     {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                   </td>
                   <td>{p.college || '—'}</td>
+                  <AmountCell p={p} />
+                  <WaitCell p={p} />
                   <td>
                     <button className="btn btn-primary btn-sm"
                       onClick={() => { setSelected(p); setRemarks(''); setAlert(null); }}>
@@ -230,7 +236,7 @@ const ForApproval = ({ proposals, onRefresh }) => {
                 </tr>
               ))}
               {endorsed.length === 0 && (
-                <tr><td colSpan={6}>
+                <tr><td colSpan={8}>
                   <div className="empty-state">
                     <p>No endorsed proposals awaiting final approval.</p>
                   </div>
@@ -410,7 +416,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
               <th>Title</th>
               <th>Type</th>
               <th>College</th>
-              <th>Date Submitted</th>
+              <th>{statusFilter === 'approved' ? 'Date Approved' : 'Date Rejected'}</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -427,9 +433,7 @@ const FilteredList = ({ proposals, statusFilter }) => {
                   {PROPOSAL_TYPES[p.proposal_type] || p.proposal_type}
                 </td>
                 <td>{p.college || '—'}</td>
-                <td style={{ color: '#718096' }}>
-                  {p.submitted_at ? dateText(p.submitted_at) : '—'}
-                </td>
+                <DateCell value={decisionAt(p)} />
                 <td><button type="button" className="btn btn-outline btn-sm" onClick={() => setOpenId(p.proposal_id)}>View Details</button></td>
               </tr>
             ))}
