@@ -148,3 +148,20 @@
 /* a rejection, with its reason (same box as a return, in red) */
 .pt-reject-box { background: #fdf0f0; border-color: #f1c6c6; border-left-color: #c53030; }
 .pt-reject-box b { color: #9b2c2c; }
+
+/* Endorsement History: hidden until opened (click the heading) */
+.pt-history summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  cursor: pointer; list-style: none; user-select: none;
+}
+.pt-history summary::-webkit-details-marker { display: none; }
+.pt-history summary h4 { margin: 0; display: flex; align-items: center; gap: 8px; }
+.pt-history summary:hover h4 { color: #7a1626; }
+.pt-history summary:focus-visible { outline: 2px solid #8d1b2d; outline-offset: 3px; border-radius: 6px; }
+.pt-hcount {
+  font-size: 0.68rem; letter-spacing: 0; text-transform: none; font-weight: 700;
+  background: #f1e4e6; color: #7a1626; border-radius: 999px; padding: 1px 8px;
+}
+.pt-htoggle { color: #8a7a7d; display: inline-flex; transition: transform 0.2s; }
+.pt-history[open] .pt-htoggle { transform: rotate(180deg); }
+.pt-history[open] summary { margin-bottom: 6px; }

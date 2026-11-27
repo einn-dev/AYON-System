@@ -1,14 +1,15 @@
 import React from 'react';
 import './ProposalTracker.css';
 import { ROLE_LABEL, statusLabel } from '../utils/terms';
-import { FaCheck, FaCircle, FaExclamation, FaMinus, FaXmark } from '../utils/icons';
+import { FaCheck, FaChevronDown, FaCircle, FaExclamation, FaMinus, FaXmark } from '../utils/icons';
 import { dateText } from '../utils/dates';
 
 /* ─────────────────────────────────────────────────────────────
    Shows where a proposal is in the workflow:
      College:  College Chairperson → College Coordinator → College Dean
      Office:   MSIRC Special Assistant → MSIRC Director → VCRED → Decision
-   and the endorsement history (every round), with the notes.
+   and the history of every round: the college endorsements, then the office steps
+   (validated, endorsed to VCRED, approved, returned, rejected), with the notes.
 
    The proposal needs (the server adds these):
      status, endorsement_stage, round, endorsements[], returned_by_role,
@@ -61,7 +62,7 @@ export const stageLabel = (p) => {
 /* state of every step: done | now | todo | skip | returned | rejected | unreached */
 const buildSteps = (p) => {
   const round   = roundOf(p);
-  const rows    = (p.endorsements || []).filter(e => Number(e.round || 1) === round);
+  const rows    = (p.endorsements || []).filter(e => !e.office && Number(e.round || 1) === round);   // the college steps
   const endorsedBy = (role) => rows.find(e => e.endorser_role === role && e.endorse_status === 'endorsed');
   const returnRow  = rows.find(e => e.endorse_status === 'returned');
   const stageIdx   = COLLEGE_CHAIN.indexOf(p.endorsement_stage);
@@ -156,14 +157,18 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
       )}
 
       {showHistory && history.length > 0 && (
-        <div className="pt-history">
-          <h4>Endorsement History</h4>
+        /* hidden until opened: the progress bar above already shows where it is */
+        <details className="pt-history">
+          <summary>
+            <h4>Endorsement History <span className="pt-hcount">{history.length}</span></h4>
+            <span className="pt-htoggle" aria-hidden="true"><FaChevronDown /></span>
+          </summary>
           <ul>
             {history.map((e, i) => (
               <li key={e.endorsement_id || i}>
                 <span className="pt-hround">Round {Number(e.round || 1)}</span>
                 <span className={`pt-hact ${e.endorse_status === 'endorsed' ? 'ok' : 'back'}`}>
-                  {e.endorse_status === 'endorsed' ? 'Endorsed' : e.endorse_status === 'returned' ? 'Returned' : 'Rejected'}
+                  {e.endorse_status === 'endorsed' ? (e.action_label || 'Endorsed') : e.endorse_status === 'returned' ? 'Returned' : 'Rejected'}
                 </span>
                 {' '}by {e.endorser_name ? `${e.endorser_name} ` : ''}({ROLE_LABEL[e.endorser_role] || e.endorser_role})
                 {e.date && <span className="pt-hdate"> · {fmt(e.date)}</span>}
@@ -171,7 +176,7 @@ const ProposalTracker = ({ proposal, showHistory = true, showReturn = true, comp
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
     </div>
   );

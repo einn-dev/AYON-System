@@ -102,6 +102,96 @@ const notifyIds = async (ids, { proposal_id = null, notif_type, title, message }
 /* Current round: 1 for the first submission, +1 for every resubmission */
 const roundOf = (proposal) => (Number(proposal?.revision_count) || 0) + 1;
 
+/* ── The office part of the history ──
+   The MSIRC Special Assistant, MSIRC Director and VCRED are not in the endorsements table:
+     signed (validated, endorsed to VCRED, approved, final approval) -> proposal_signatures
+     returned by an office (in any round)                           -> the Audit Log
+     rejected (it ends the proposal, so there is only one)          -> the proposal itself
+   Each item: { endorser_role, endorse_status, action_label, remarks, date, round, endorser_name, office: true }
+   A return belongs to the round it happened in: 1 + the resubmissions before it. */
+const OFFICE_ROLES = ['special_assistant', 'msric_director', 'ovcred'];
+const ACTION_TEXT = {
+  validate: 'Validated and forwarded', endorse_to_ovcred: 'Endorsed to VCRED',
+  approve: 'Approved', final_approval: 'Granted final approval',
+};
+const officeTrail = async (list, ids, names, roles) => {
+  const out = {};
+  const add = (pid, item) => { (out[pid] = out[pid] || []).push({ office: true, ...item }); };
+
+  try {
+    const { data: sigs, error } = await supabase
+      .from('proposal_signatures')
+      .select('signature_id, proposal_id, signer_role, signer_name, action, round, signed_at')
+      .in('proposal_id', ids)
+      .in('signer_role', OFFICE_ROLES);
+    if (error) throw error;
+    (sigs || []).forEach(g => add(g.proposal_id, {
+      endorsement_id: `s${g.signature_id}`, endorser_role: g.signer_role, endorse_status: 'endorsed',
+      action_label: ACTION_TEXT[g.action] || 'Signed', remarks: null, date: g.signed_at,
+      round: Number(g.round) || 1, endorser_name: g.signer_name || null,
+    }));
+  } catch (err) {
+    if (!/proposal_signatures|does not exist|schema cache/i.test(String(err?.message || ''))) {
+      console.error('officeTrail signatures failed:', err.message || err);
+    }
+  }
+
+  const returnTimes = {};                                  // proposal_id -> times already listed
+  try {
+    const { data: logs, error } = await supabase
+      .from('audit_logs')
+      .select('audit_id, actor_name, actor_role, action, target_id, details, created_at')
+      .eq('target_type', 'proposal')
+      .in('target_id', ids.map(String))
+      .in('action', ['proposal_returned', 'proposal_resubmitted'])
+      .order('audit_id', { ascending: true });
+    if (error) throw error;
+    const resubmits = {};
+    (logs || []).forEach(r => {
+      if (r.action === 'proposal_resubmitted') (resubmits[r.target_id] = resubmits[r.target_id] || []).push(r.created_at);
+    });
+    (logs || []).forEach(r => {
+      const d = r.details || {};
+      if (r.action !== 'proposal_returned' || !OFFICE_ROLES.includes(r.actor_role)) return;
+      if (d.stage || d.from === 'for_endorsement') return;          // a college return: already in the endorsements
+      (returnTimes[r.target_id] = returnTimes[r.target_id] || []).push(Date.parse(r.created_at));
+      add(r.target_id, {
+        endorsement_id: `a${r.audit_id}`, endorser_role: r.actor_role, endorse_status: 'returned',
+        action_label: null, remarks: d.reason || null, date: r.created_at,
+        round: 1 + (resubmits[r.target_id] || []).filter(t => t < r.created_at).length,
+        endorser_name: r.actor_name || null,
+      });
+    });
+  } catch (err) {
+    console.error('officeTrail returns failed:', err.message || err);
+  }
+
+  list.forEach(p => {
+    /* a return still waiting for the researcher that is older than the Audit Log */
+    const retRole = roles[p.returned_by];
+    if (p.status === 'returned' && OFFICE_ROLES.includes(retRole) && p.returned_at) {
+      const t = Date.parse(p.returned_at);
+      if (!(returnTimes[p.proposal_id] || []).some(x => Math.abs(x - t) < 60000)) {
+        add(p.proposal_id, {
+          endorsement_id: `r${p.proposal_id}`, endorser_role: retRole, endorse_status: 'returned',
+          action_label: null, remarks: p.return_reason || null, date: p.returned_at,
+          round: p.round, endorser_name: names[p.returned_by] || null,
+        });
+      }
+    }
+    /* the rejection */
+    const decRole = roles[p.decided_by];
+    if (p.status === 'rejected' && OFFICE_ROLES.includes(decRole)) {
+      add(p.proposal_id, {
+        endorsement_id: `d${p.proposal_id}`, endorser_role: decRole, endorse_status: 'rejected',
+        action_label: null, remarks: p.decision_reason || null, date: p.decided_at || null,
+        round: p.round, endorser_name: names[p.decided_by] || null,
+      });
+    }
+  });
+  return out;
+};
+
 /* Adds to each proposal (best effort, never throws):
      endorsements     : [{ endorser_role, endorse_status, remarks, date, round, endorser_name }]
      returned_by_role : role of the person who returned it (when returned)
@@ -147,6 +237,13 @@ const attachTrail = async (proposals) => {
         round:          Number(r.round) || 1,
         endorser_name:  names[r.endorser_id] || null,
       });
+    });
+
+    /* the office level (MSIRC Special Assistant, MSIRC Director, VCRED) is not in the endorsements
+       table: its steps are signatures, returns and rejections, all written to the Audit Log */
+    const office = await officeTrail(list, ids, names, roles);
+    Object.entries(office).forEach(([pid, items]) => {
+      (byProposal[pid] = byProposal[pid] || []).push(...items);
     });
 
     list.forEach(p => {

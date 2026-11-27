@@ -409,7 +409,7 @@ const staffCanSee = (p) => {
   if (p.status !== 'returned') return false;
   if (p.returned_by_role) return OFFICE_ROLES.includes(p.returned_by_role);
   /* older returns saved no "returned by": show them unless the college returned it */
-  return !p.returned_by && !(p.endorsements || []).some(e => e.endorse_status === 'returned' && Number(e.round || 1) === roundOf(p));
+  return !p.returned_by && !(p.endorsements || []).some(e => !e.office && e.endorse_status === 'returned' && Number(e.round || 1) === roundOf(p));
 };
 
 const staffFields = (p) => ({
