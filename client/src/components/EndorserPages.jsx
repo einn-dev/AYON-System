@@ -287,7 +287,7 @@ export const EndorsementQueue = ({ proposals, role, onRefresh }) => {
               onChange={(v) => { setFormCheck(v); setAlert(null); }} />
             <div className="form-group">
               <label htmlFor="endorse-note">
-                Remarks <span style={{ color: '#b3261e' }}>*</span>
+                Remarks <span className="req">*</span>
               </label>
               <textarea id="endorse-note" rows={6} value={note} maxLength={NOTE_MAX}
                 onChange={e => { setNote(e.target.value); setAlert(null); }}

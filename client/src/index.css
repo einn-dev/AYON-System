@@ -11,3 +11,6 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* the "required" star after a field name: red and bold everywhere */
+.req, .gf-req, .pf-req, .gf-pbox > span i { color: #b3261e !important; font-weight: 800 !important; font-style: normal; font-size: 1.15em; line-height: 0; }

@@ -183,25 +183,25 @@ const RegisterForm = () => {
           autoComplete="off"
         >
           <div className="form-group reg-third">
-            <label>First Name *</label>
+            <label>First Name <span className="req">*</span></label>
             <input name="first_name" value={form.first_name} maxLength={50}
               onChange={handleChange} placeholder="Juan" autoComplete="off" />
           </div>
 
           <div className="form-group reg-third">
-            <label>Middle Name *</label>
+            <label>Middle Name <span className="req">*</span></label>
             <input name="middle_name" value={form.middle_name} maxLength={50}
               onChange={handleChange} placeholder="Santos" autoComplete="off" />
           </div>
 
           <div className="form-group reg-third">
-            <label>Last Name *</label>
+            <label>Last Name <span className="req">*</span></label>
             <input name="last_name" value={form.last_name}
               onChange={handleChange} placeholder="Dela Cruz" autoComplete="off" />
           </div>
 
           <div className="form-group reg-half">
-            <label>Email Address *</label>
+            <label>Email Address <span className="req">*</span></label>
             <input type="text" name="email" value={form.email}
               onChange={handleChange} placeholder="you@s.msumain.edu.ph" autoComplete="off" />
           </div>
@@ -214,7 +214,7 @@ const RegisterForm = () => {
           </div>
 
           <div className="form-group reg-half reg-wide-sm">
-            <label>College *</label>
+            <label>College <span className="req">*</span></label>
             <select name="college" value={form.college} title={form.college}
               onChange={handleChange} autoComplete="off">
               <option value="">— Select your college —</option>
@@ -223,7 +223,7 @@ const RegisterForm = () => {
           </div>
 
           <div className="form-group reg-half reg-wide-sm">
-            <label>Department *</label>
+            <label>Department <span className="req">*</span></label>
             <select name="department" value={form.department} title={form.department}
               onChange={handleChange} autoComplete="off" disabled={!form.college}>
               <option value="">
@@ -234,14 +234,14 @@ const RegisterForm = () => {
           </div>
 
           <div className="form-group reg-third">
-            <label>Password *</label>
+            <label>Password <span className="req">*</span></label>
             <PasswordInput name="password" value={form.password}
               onChange={handleChange} placeholder="Min. 8 characters"
               autoComplete="new-password" />
           </div>
 
           <div className="form-group reg-third">
-            <label>Confirm Password *</label>
+            <label>Confirm Password <span className="req">*</span></label>
             <PasswordInput name="confirm_password" value={form.confirm_password}
               onChange={handleChange} placeholder="Repeat password"
               autoComplete="new-password" />

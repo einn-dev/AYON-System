@@ -111,7 +111,7 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
             </div>
           </div>
           <div className="form-group">
-            <label>College{needsCollege ? ' *' : ''}</label>
+            <label>College{needsCollege && <span className="req"> *</span>}</label>
             <select required={needsCollege} disabled={!needsCollege}
               value={form.college} title={form.college}
               style={needsCollege ? undefined : LOCKED_STYLE}
@@ -123,7 +123,7 @@ const AddUserModal = ({ onClose, onCreated, notify }) => {
             </select>
           </div>
           <div className="form-group">
-            <label>Department{needsDepartment ? ' *' : ''}</label>
+            <label>Department{needsDepartment && <span className="req"> *</span>}</label>
             <select required={needsDepartment} disabled={!needsDepartment || !form.college}
               value={form.department} title={form.department}
               style={(!needsDepartment || !form.college) ? LOCKED_STYLE : undefined}
@@ -406,7 +406,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
           )}
 
           <div className="form-group">
-            <label>College{needsCollege && roleChanged ? ' *' : ''}</label>
+            <label>College{needsCollege && roleChanged && <span className="req"> *</span>}</label>
             <select disabled={!needsCollege}
               value={form.college} title={form.college}
               style={needsCollege ? undefined : LOCKED_STYLE}
@@ -421,7 +421,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
             </select>
           </div>
           <div className="form-group">
-            <label>Department{needsDepartment && roleChanged ? ' *' : ''}</label>
+            <label>Department{needsDepartment && roleChanged && <span className="req"> *</span>}</label>
             <select disabled={!needsDepartment || !form.college}
               value={form.department} title={form.department}
               style={(!needsDepartment || !form.college) ? LOCKED_STYLE : undefined}

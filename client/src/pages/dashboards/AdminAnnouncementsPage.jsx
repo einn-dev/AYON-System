@@ -104,13 +104,13 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
         <MessageToast message={error ? { type: 'error', msg: error } : null} onClose={() => setError('')} />
 
         <div className="form-group">
-          <label htmlFor="an-title">Title *</label>
+          <label htmlFor="an-title">Title <span className="req">*</span></label>
           <input id="an-title" value={title} maxLength={TITLE_MAX} disabled={saving}
             placeholder="Deadline for internally funded proposals"
             onChange={(e) => setTitle(e.target.value)} />
         </div>
         <div className="form-group">
-          <label htmlFor="an-msg">Message *</label>
+          <label htmlFor="an-msg">Message <span className="req">*</span></label>
           <textarea id="an-msg" className="ac-textarea" rows={4} value={message} maxLength={MESSAGE_MAX} disabled={saving}
             placeholder="The deadline for internally funded proposals is November 30."
             onChange={(e) => setMessage(e.target.value)} />
@@ -149,7 +149,7 @@ const AnnouncementForm = ({ item, onClose, onSaved }) => {
 
         <div className="ann-dates">
           <div className="form-group">
-            <label htmlFor="an-from">Show From *</label>
+            <label htmlFor="an-from">Show From <span className="req">*</span></label>
             <input id="an-from" type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} disabled={saving} />
           </div>
           <div className="form-group">

@@ -55,7 +55,7 @@ const ReturnReasonModal = ({ title, researcher, onConfirm, onClose }) => {
 
         <div className="rs-field">
           <label className="rs-label" htmlFor="rr-reason">
-            Reason for Return <span style={{ color: '#b3261e' }}>*</span>
+            Reason for Return <span className="req">*</span>
             <span className="rs-count" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>
               {clean.length}/{REASON_MAX}
             </span>
