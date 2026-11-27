@@ -63,24 +63,114 @@ const exportTrimmed = (src) => {
   return out.toDataURL('image/png');
 };
 
-/* Redraws an uploaded PNG/JPG at a safe size (this also strips anything that is not the picture) */
+/* ── Is this picture a signature? ──
+   A photo of a signature is mostly plain, light paper with a little dark ink.
+   A photo of a person, a place or a thing has many colours and no plain background.
+   The paper's brightness is measured in small areas, so a shadow across the paper is fine.
+   This cannot read handwriting: it only refuses pictures that clearly are not ink on paper.
+   Returns { ok, why, paperAt } where paperAt[i] is the paper brightness behind pixel i. */
+export const SIG_NOT_SIGNATURE = "This doesn't look like a signature. Use a clear photo of your signature in dark ink on plain white paper, or draw it instead.";
+const SIG_NO_INK = 'No signature was found in this picture. Make sure the ink is dark and the photo is in focus.';
+const lumOf = (px, i) => 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+
+/* the paper brightness around every pixel: the bright end (85%) of each area of a grid,
+   blended smoothly between areas */
+const paperMap = (lum, w, h) => {
+  const cols = Math.max(1, Math.min(12, Math.round(w / 80))), rows = Math.max(1, Math.min(8, Math.round(h / 80)));
+  const cw = w / cols, ch = h / rows;
+  const grid = new Float32Array(cols * rows);
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const hist = new Uint32Array(256);
+      let n = 0;
+      for (let y = Math.floor(r * ch); y < Math.floor((r + 1) * ch); y += 2) {
+        for (let x = Math.floor(c * cw); x < Math.floor((c + 1) * cw); x += 2) { hist[Math.round(lum[y * w + x])] += 1; n += 1; }
+      }
+      let seen = 0, v = 255;
+      for (let k = 0; k < 256; k += 1) { seen += hist[k]; if (seen >= n * 0.85) { v = k; break; } }
+      grid[r * cols + c] = v;
+    }
+  }
+  const at = new Float32Array(w * h);
+  for (let y = 0; y < h; y += 1) {
+    const gy = Math.min(rows - 1, Math.max(0, y / ch - 0.5)), y0 = Math.floor(gy), y1 = Math.min(rows - 1, y0 + 1), fy = gy - y0;
+    for (let x = 0; x < w; x += 1) {
+      const gx = Math.min(cols - 1, Math.max(0, x / cw - 0.5)), x0 = Math.floor(gx), x1 = Math.min(cols - 1, x0 + 1), fx = gx - x0;
+      const top = grid[y0 * cols + x0] * (1 - fx) + grid[y0 * cols + x1] * fx;
+      const bot = grid[y1 * cols + x0] * (1 - fx) + grid[y1 * cols + x1] * fx;
+      at[y * w + x] = top * (1 - fy) + bot * fy;
+    }
+  }
+  return at;
+};
+
+export const checkSignaturePixels = (px, w, h) => {
+  const n = w * h;
+  if (!n) return { ok: false, why: SIG_NOT_SIGNATURE };
+  const lum = new Float32Array(n);
+  let rg = 0, yb = 0, rg2 = 0, yb2 = 0;                      // colourfulness (Hasler and Süsstrunk)
+  for (let i = 0; i < n; i += 1) {
+    const r = px[i * 4], g = px[i * 4 + 1], b = px[i * 4 + 2];
+    lum[i] = lumOf(px, i);
+    const a = r - g, c = 0.5 * (r + g) - b;
+    rg += a; yb += c; rg2 += a * a; yb2 += c * c;
+  }
+  const mrg = rg / n, myb = yb / n;
+  const colour = Math.sqrt(Math.max(0, rg2 / n - mrg * mrg) + Math.max(0, yb2 / n - myb * myb))
+    + 0.3 * Math.sqrt(mrg * mrg + myb * myb);
+  const paperAt = paperMap(lum, w, h);
+  let paper = 0, ink = 0, light = 0;
+  for (let i = 0; i < n; i += 1) {
+    if (Math.abs(lum[i] - paperAt[i]) <= 35) paper += 1;
+    if (lum[i] < paperAt[i] - 70) ink += 1;
+    if (paperAt[i] >= 130) light += 1;
+  }
+  if (light / n < 0.8)   return { ok: false, why: SIG_NOT_SIGNATURE };                       // no light paper
+  if (colour > 30)       return { ok: false, why: SIG_NOT_SIGNATURE };                       // a colourful photo
+  if (paper / n < 0.70)  return { ok: false, why: SIG_NOT_SIGNATURE };                       // no plain background
+  if (ink / n > 0.25)    return { ok: false, why: SIG_NOT_SIGNATURE };                       // far too much "ink"
+  if (ink / n < 0.0005)  return { ok: false, why: SIG_NO_INK };
+  return { ok: true, paperAt };
+};
+
+/* Keeps only the ink: the paper becomes see-through, then the picture is trimmed to the
+   signature and saved as a PNG, like a drawn signature */
+const inkOnly = (c, paperAt) => {
+  const ctx = c.getContext('2d');
+  const img = ctx.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  for (let i = 0, p = 0; i < d.length; i += 4, p += 1) {
+    const L = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    const fadeFrom = paperAt[p] - 30, fadeTo = paperAt[p] - 90;   // lighter: paper; darker: full ink
+    const a = L >= fadeFrom ? 0 : L <= fadeTo ? 1 : (fadeFrom - L) / (fadeFrom - fadeTo);
+    const k = 0.75;                                          // a little darker, so it prints clearly
+    d[i] *= k; d[i + 1] *= k; d[i + 2] *= k;
+    d[i + 3] = Math.round(a * 255);
+  }
+  ctx.putImageData(img, 0, 0);
+  return exportTrimmed(c);
+};
+
+/* Reads an uploaded PNG/JPG, checks that it looks like a signature, and keeps only the ink */
 const prepareUpload = (file) => new Promise((resolve, reject) => {
   if (!/^image\/(png|jpeg)$/.test(file.type)) return reject(new Error('Please choose a PNG or JPG image.'));
   if (file.size > 5 * MAX_BYTES) return reject(new Error('That image is too large. Please choose one under 5 MB.'));
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    const scale = Math.min(1, OUT_W / img.width, OUT_H / img.height);
+    URL.revokeObjectURL(url);
+    const scale = Math.min(1, 900 / img.width, 400 / img.height);
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.round(img.width * scale));
     c.height = Math.max(1, Math.round(img.height * scale));
     const ctx = c.getContext('2d');
-    ctx.fillStyle = '#fff';                      // JPG photos have no transparency
+    ctx.fillStyle = '#fff';                      // a see-through PNG counts as white paper
     ctx.fillRect(0, 0, c.width, c.height);
     ctx.drawImage(img, 0, 0, c.width, c.height);
-    URL.revokeObjectURL(url);
-    const isPng = file.type === 'image/png';
-    const out = isPng ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.9);
+    const check = checkSignaturePixels(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
+    if (!check.ok) return reject(new Error(check.why));
+    const out = inkOnly(c, check.paperAt);
+    if (!out) return reject(new Error(SIG_NO_INK));
     if (bytesOf(out) > MAX_BYTES) return reject(new Error('That image is too large. The limit is 1 MB.'));
     resolve(out);
   };
@@ -204,6 +294,7 @@ export const MySignature = ({ onSaved }) => {
   const [busy,    setBusy]    = useState(false);
   const [alert,   setAlert]   = useState(null);
   const [askRemove, setAskRemove] = useState(false);
+  const [vouched, setVouched] = useState(false);    // "this is my own handwritten signature"
   const padRef  = useRef(null);
   const fileRef = useRef(null);
 
@@ -233,6 +324,7 @@ export const MySignature = ({ onSaved }) => {
       if (!image) return setAlert({ type: 'error', msg: 'Choose a PNG or JPG image first.' });
     }
     if (bytesOf(image) > MAX_BYTES) return setAlert({ type: 'error', msg: 'The signature image is too large. The limit is 1 MB.' });
+    if (!vouched) return setAlert({ type: 'error', msg: 'Please tick the box to confirm this is your own handwritten signature.' });
 
     setBusy(true);
     try {
@@ -241,6 +333,7 @@ export const MySignature = ({ onSaved }) => {
       setEditing(false);
       setUpload(null);
       setInked(false);
+      setVouched(false);
       setMode('draw');
       setAlert({ type: 'success', msg: res.data?.message || 'Your signature was saved.' });
       window.dispatchEvent(new Event(SIG_CHANGED));
@@ -337,9 +430,16 @@ export const MySignature = ({ onSaved }) => {
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => fileRef.current?.click()}>
                     <FaUpload className="ic" />{upload ? 'Choose Another Image' : 'Choose Image'}
                   </button>
-                  <div className="sig-hint">PNG or JPG, up to 1 MB. A clear photo of your signature on white paper works.</div>
+                  <div className="sig-hint">
+                    PNG or JPG, up to 1 MB. Sign in dark ink on plain white paper and take a clear photo of it.
+                    AYON keeps only the ink, so the paper does not show. Photos of people or other things are refused.
+                  </div>
                 </>
               )}
+              <label className="sig-vouch">
+                <input type="checkbox" checked={vouched} onChange={(e) => setVouched(e.target.checked)} />
+                <span>I confirm this is my own handwritten signature, and I allow AYON to place it on the forms I sign.</span>
+              </label>
             </div>
           )}
 
@@ -356,7 +456,8 @@ export const MySignature = ({ onSaved }) => {
           ) : (
             <div className="sig-actions">
               {showEditor && (
-                <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={save}>
+                <button type="button" className="btn btn-primary btn-sm" disabled={busy || !vouched} onClick={save}
+                  title={vouched ? undefined : 'Tick the box above first'}>
                   {busy ? 'Saving…' : (sig ? 'Save New Signature' : 'Save Signature')}
                 </button>
               )}
@@ -366,7 +467,7 @@ export const MySignature = ({ onSaved }) => {
                 </button>
               )}
               {sig && editing && (
-                <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => { setEditing(false); setAlert(null); }}>
+                <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => { setEditing(false); setAlert(null); setVouched(false); }}>
                   Cancel
                 </button>
               )}

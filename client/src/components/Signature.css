@@ -48,3 +48,7 @@
 .sig-st.wait { color: #8a7413; }
 .sig-st.todo, .sig-st.skip, .sig-st.none { color: #b3a5a8; }
 .sig-older { margin: 6px 0 0; padding-left: 18px; font-size: 0.78rem; color: #5e5155; line-height: 1.6; }
+
+/* "I confirm this is my own handwritten signature" (needed before saving) */
+.sig-vouch { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 0.82rem; color: #4a3f42; line-height: 1.45; cursor: pointer; }
+.sig-vouch input { margin-top: 3px; accent-color: #8d1b2d; flex-shrink: 0; }
