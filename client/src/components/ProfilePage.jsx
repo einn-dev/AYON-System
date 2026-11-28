@@ -34,6 +34,11 @@ const cleanPhone = (raw) => {
    The Administrator also has no contact number on the profile. */
 const CAMPUS_WIDE = ['msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
 
+/* The college (and department) of a college endorser decides whose research they endorse,
+   so only the Administrator can change it (Admin → User Accounts → Edit). */
+const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];
+const LOCK_NOTE = 'Only the Administrator can change this, because it decides which submissions you endorse.';
+
 const OFFICE = {
   msric_staff: 'MSIRC', special_assistant: 'MSIRC', msric_director: 'MSIRC',
   ovcred: 'Office of the VCRED', admin: 'AYON System Administration',
@@ -55,6 +60,7 @@ const ProfilePage = ({ roleLabel }) => {
   const signs = SIGNER_ROLES.includes(user?.role);
   const showCollege = !['admin', ...CAMPUS_WIDE].includes(user?.role);
   const showDept    = showCollege && user?.role !== 'college_dean';
+  const placeLocked = SET_BY_ADMIN.includes(user?.role);
   const showContact = user?.role !== 'admin';
 
   const TABS = [
@@ -138,9 +144,9 @@ const ProfilePage = ({ roleLabel }) => {
     setAlert(null);
     if (!form.first_name?.trim() || !form.last_name?.trim())
       return setAlert({ type: 'error', msg: 'First name and last name are required.' });
-    if (showCollege && !form.college)
+    if (showCollege && !placeLocked && !form.college)
       return setAlert({ type: 'error', msg: 'Please select your college.' });
-    if (showDept && !form.department)
+    if (showDept && !placeLocked && !form.department)
       return setAlert({ type: 'error', msg: 'Please select your department.' });
     if (showContact && form.contact_number && !/^09\d{9}$/.test(form.contact_number))
       return setAlert({ type: 'error', msg: 'Contact number must be exactly 11 digits, numbers only, starting with 09.' });
@@ -162,7 +168,7 @@ const ProfilePage = ({ roleLabel }) => {
         first_name:  form.first_name.trim(),
         middle_name: (form.middle_name || '').trim(),
         last_name:   form.last_name.trim(),
-        ...(showCollege ? { college: form.college, department: form.department } : {}),
+        ...(showCollege && !placeLocked ? { college: form.college, department: form.department } : {}),
         ...(showContact ? { contact_number: form.contact_number || null } : {}),
       });
 
@@ -333,7 +339,26 @@ const ProfilePage = ({ roleLabel }) => {
                   <label htmlFor="pp-email">Email</label>
                   <input id="pp-email" value={form.email || ''} disabled style={{ background: '#f0f4f8', color: '#a0aec0' }} />
                 </div>
-                {showCollege && (
+                {showCollege && placeLocked && (
+                  <>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="pp-college">College</label>
+                        <input id="pp-college" value={saved.college || ''} title={saved.college || ''} disabled
+                          style={{ background: '#f0f4f8', color: '#718096' }} />
+                      </div>
+                      {showDept && (
+                        <div className="form-group">
+                          <label htmlFor="pp-dept">Department</label>
+                          <input id="pp-dept" value={saved.department || ''} title={saved.department || ''} disabled
+                            style={{ background: '#f0f4f8', color: '#718096' }} />
+                        </div>
+                      )}
+                    </div>
+                    <p className="pp-locked-note">{LOCK_NOTE}</p>
+                  </>
+                )}
+                {showCollege && !placeLocked && (
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="pp-college">College</label>

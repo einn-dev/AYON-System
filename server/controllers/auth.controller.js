@@ -9,6 +9,7 @@ const { passwordProblem } = require('../utils/passwordRule');
 /* Register accepts MSU Main Campus emails only: students (@s.msumain.edu.ph)
    and faculty and staff (@msumain.edu.ph). Keep the same rule in client/src/components/RegisterForm.jsx. */
 const MSU_EMAIL = /@(s\.)?msumain\.edu\.ph$/;
+const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];   // their college is set by the Admin
 const MSU_EMAIL_MSG = 'Please use your MSU Main Campus email (ending in @s.msumain.edu.ph or @msumain.edu.ph).';
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
@@ -408,6 +409,21 @@ const updateProfile = async (req, res) => {
   }
 
   try {
+    /* A college endorser's college (and department) decides whose research they endorse,
+       so only the Administrator can change it (Admin → User Accounts → Edit). */
+    if (SET_BY_ADMIN.includes(req.user.role) && (college !== undefined || department !== undefined)) {
+      const { data: me, error: meErr } = await supabase
+        .from('users').select('college, department').eq('user_id', req.user.user_id).maybeSingle();
+      if (meErr) throw meErr;
+      const differs = (sent, now) => sent !== undefined && String(sent || '').trim() !== String(now || '').trim();
+      if (me && (differs(college, me.college) || differs(department, me.department))) {
+        return res.status(403).json({
+          message: 'Only the Administrator can change your college or department, because it decides which submissions you endorse.',
+          code: 'PLACE_SET_BY_ADMIN',
+        });
+      }
+    }
+
     const updates = {};
     if (first_name)     updates.first_name     = first_name;
     if (last_name)      updates.last_name      = last_name;
@@ -417,8 +433,10 @@ const updateProfile = async (req, res) => {
       if (m.length > 50) return res.status(400).json({ message: 'Names can be up to 50 characters.' });
       updates.middle_name = m || null;
     }
-    if (department)     updates.department     = department;
-    if (college)        updates.college        = college;
+    if (!SET_BY_ADMIN.includes(req.user.role)) {
+      if (department)   updates.department     = department;
+      if (college)      updates.college        = college;
+    }
     // sent as empty / null = the person cleared the field, so the saved number is removed
     if (contact_number !== undefined) updates.contact_number = String(contact_number || '').trim() || null;
 

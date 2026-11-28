@@ -134,3 +134,6 @@
 @media (prefers-reduced-motion: reduce) {
   .pm-overlay, .pm-dialog { animation: none; }
 }
+
+/* College / Department of a college endorser: shown, not editable */
+.pp-locked-note { margin: -6px 0 14px; font-size: 0.8rem; color: #718096; }
