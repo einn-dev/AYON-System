@@ -9,7 +9,7 @@ const { passwordProblem } = require('../utils/passwordRule');
 /* Register accepts MSU Main Campus emails only: students (@s.msumain.edu.ph)
    and faculty and staff (@msumain.edu.ph). Keep the same rule in client/src/components/RegisterForm.jsx. */
 const MSU_EMAIL = /@(s\.)?msumain\.edu\.ph$/;
-const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];   // their college is set by the Admin
+const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];   // college endorsers: their college is set by the Admin
 const MSU_EMAIL_MSG = 'Please use your MSU Main Campus email (ending in @s.msumain.edu.ph or @msumain.edu.ph).';
 const {
   TOKEN_TTL_MS, newToken, hashToken, sendVerificationEmail,
@@ -409,16 +409,28 @@ const updateProfile = async (req, res) => {
   }
 
   try {
-    /* A college endorser's college (and department) decides whose research they endorse,
-       so only the Administrator can change it (Admin → User Accounts → Edit). */
-    if (SET_BY_ADMIN.includes(req.user.role) && (college !== undefined || department !== undefined)) {
+    /* College and department are set by the Administrator (Admin → User Accounts → Edit):
+       for a college endorser they decide whose research they endorse, and for a researcher
+       which college endorses their submissions. A researcher whose college or department is
+       still empty (an older account) may fill it in once. */
+    let placeOpen = false;
+    if (college !== undefined || department !== undefined) {
       const { data: me, error: meErr } = await supabase
         .from('users').select('college, department').eq('user_id', req.user.user_id).maybeSingle();
       if (meErr) throw meErr;
+      const has = (v) => !!String(v || '').trim();
       const differs = (sent, now) => sent !== undefined && String(sent || '').trim() !== String(now || '').trim();
-      if (me && (differs(college, me.college) || differs(department, me.department))) {
+      const changing = !!me && (differs(college, me.college) || differs(department, me.department));
+      placeOpen = req.user.role === 'researcher' && !(has(me?.college) && has(me?.department));
+      if (changing && SET_BY_ADMIN.includes(req.user.role)) {
         return res.status(403).json({
           message: 'Only the Administrator can change your college or department, because it decides which submissions you endorse.',
+          code: 'PLACE_SET_BY_ADMIN',
+        });
+      }
+      if (changing && req.user.role === 'researcher' && !placeOpen) {
+        return res.status(403).json({
+          message: 'To change your college or department, please contact the Administrator.',
           code: 'PLACE_SET_BY_ADMIN',
         });
       }
@@ -433,7 +445,7 @@ const updateProfile = async (req, res) => {
       if (m.length > 50) return res.status(400).json({ message: 'Names can be up to 50 characters.' });
       updates.middle_name = m || null;
     }
-    if (!SET_BY_ADMIN.includes(req.user.role)) {
+    if (placeOpen) {
       if (department)   updates.department     = department;
       if (college)      updates.college        = college;
     }

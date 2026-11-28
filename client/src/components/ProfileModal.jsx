@@ -24,10 +24,15 @@ const cleanPhone = (raw) => {
    The Administrator also has no contact number on the profile. */
 const CAMPUS_WIDE = ['msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
 
-/* The college (and department) of a college endorser decides whose research they endorse,
-   so only the Administrator can change it (Admin → User Accounts → Edit). */
-const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];
-const LOCK_NOTE = 'Only the Administrator can change this, because it decides which submissions you endorse.';
+/* College and department are set by the Administrator (Admin → User Accounts → Edit):
+   for a college endorser they decide whose research they endorse, and for a researcher
+   they decide which college endorses their submissions. A researcher whose college or
+   department is still empty (an older account) can fill it in once. */
+const ENDORSER_ROLES = ['chairperson', 'research_coordinator', 'college_dean'];
+const LOCK_NOTE = {
+  endorser:   'Only the Administrator can change this, because it decides which submissions you endorse.',
+  researcher: 'To change your college or department, please contact the Administrator.',
+};
 
 const ProfileModal = ({ onClose, startTab = 'profile' }) => {
   const { user, updateUser } = useAuth();
@@ -41,7 +46,10 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
   const current = TABS.find(t => t.key === tab) || TABS[0];
   const showCollege = !['admin', ...CAMPUS_WIDE].includes(user?.role);
   const showDept    = showCollege && user?.role !== 'college_dean';
-  const placeLocked = SET_BY_ADMIN.includes(user?.role);
+  const [stored,   setStored]   = useState({ ...user });   // what is saved (decides if College is locked)
+  const isEndorser  = ENDORSER_ROLES.includes(user?.role);
+  const placeLocked = isEndorser || (user?.role === 'researcher' && !!stored.college && !!stored.department);
+  const lockNote    = isEndorser ? LOCK_NOTE.endorser : LOCK_NOTE.researcher;
   const showContact = user?.role !== 'admin';
   const [form,     setForm]     = useState({ ...user });
   const [alert,    setAlert]    = useState(null);
@@ -59,7 +67,10 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
     let alive = true;
     API.get('/auth/profile')
       .then((res) => {
-        if (alive) setForm((f) => ({ ...f, ...res.data.user }));
+        if (alive) {
+          setForm((f) => ({ ...f, ...res.data.user }));
+          setStored((f) => ({ ...f, ...res.data.user }));
+        }
       })
       .catch(() => {
         if (alive) setAlert({ type: 'error', msg: 'Could not load your profile details. Please try again.' });
@@ -260,7 +271,7 @@ const ProfileModal = ({ onClose, startTab = 'profile' }) => {
                 </div>
                 )}
               </div>
-              <p className="pp-locked-note">{LOCK_NOTE}</p>
+              <p className="pp-locked-note">{lockNote}</p>
               </>
               )}
               {showCollege && !placeLocked && (

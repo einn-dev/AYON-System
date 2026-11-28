@@ -309,6 +309,24 @@ const applyUserChanges = async (req, id, input) => {
 
   if (statusChanging) userUpdates.is_active = newActive;
 
+  /* Moving a researcher to another college or department while some of their submissions are
+     still with the college endorsers: those go on with the new college's endorsers, at the step
+     they are on now. The Admin is told how many, and saves again to confirm. */
+  const placeMoving = 'college' in userUpdates || 'department' in userUpdates;
+  if (placeMoving && effectiveRole === 'researcher' && input.confirm_move !== true) {
+    const { count, error: cErr } = await supabase
+      .from('research_proposals').select('proposal_id', { count: 'exact', head: true })
+      .eq('user_id', target.user_id).eq('status', 'for_endorsement');
+    if (cErr) throw cErr;
+    if (count > 0) {
+      return { code: 409, body: {
+        code: 'CONFIRM_COLLEGE_MOVE', count,
+        message: `${count} submission${count === 1 ? ' is' : 's are'} still with the college endorsers. `
+          + 'If you save, they go on with the endorsers of the new college or department, at the step they are on now.',
+      } };
+    }
+  }
+
   if (Object.keys(userUpdates).length === 0 && !roleChanging) {
     return { code: 200, body: { message: 'No changes to save.', changed: false } };
   }
@@ -385,7 +403,7 @@ const updateUser = runChange((b) => ({
   first_name: b.first_name, middle_name: b.middle_name, last_name: b.last_name, email: b.email,
   role_type:  b.role_type,  is_active: b.is_active,
   college:    b.college,    department: b.department,
-  reason:     b.reason,
+  reason:     b.reason,     confirm_move: b.confirm_move === true,
 }));
 
 /* PATCH /admin/users/:id/status  — kept for the Activate / Deactivate button */

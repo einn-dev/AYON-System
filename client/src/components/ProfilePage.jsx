@@ -34,10 +34,15 @@ const cleanPhone = (raw) => {
    The Administrator also has no contact number on the profile. */
 const CAMPUS_WIDE = ['msric_staff', 'special_assistant', 'msric_director', 'ovcred'];
 
-/* The college (and department) of a college endorser decides whose research they endorse,
-   so only the Administrator can change it (Admin → User Accounts → Edit). */
-const SET_BY_ADMIN = ['chairperson', 'research_coordinator', 'college_dean'];
-const LOCK_NOTE = 'Only the Administrator can change this, because it decides which submissions you endorse.';
+/* College and department are set by the Administrator (Admin → User Accounts → Edit):
+   for a college endorser they decide whose research they endorse, and for a researcher
+   they decide which college endorses their submissions. A researcher whose college or
+   department is still empty (an older account) can fill it in once. */
+const ENDORSER_ROLES = ['chairperson', 'research_coordinator', 'college_dean'];
+const LOCK_NOTE = {
+  endorser:   'Only the Administrator can change this, because it decides which submissions you endorse.',
+  researcher: 'To change your college or department, please contact the Administrator.',
+};
 
 const OFFICE = {
   msric_staff: 'MSIRC', special_assistant: 'MSIRC', msric_director: 'MSIRC',
@@ -60,7 +65,6 @@ const ProfilePage = ({ roleLabel }) => {
   const signs = SIGNER_ROLES.includes(user?.role);
   const showCollege = !['admin', ...CAMPUS_WIDE].includes(user?.role);
   const showDept    = showCollege && user?.role !== 'college_dean';
-  const placeLocked = SET_BY_ADMIN.includes(user?.role);
   const showContact = user?.role !== 'admin';
 
   const TABS = [
@@ -74,6 +78,9 @@ const ProfilePage = ({ roleLabel }) => {
 
   const [saved,    setSaved]    = useState({ ...user });   // what is stored
   const [form,     setForm]     = useState({ ...user });   // what is being edited
+  const isEndorser  = ENDORSER_ROLES.includes(user?.role);
+  const placeLocked = isEndorser || (user?.role === 'researcher' && !!saved.college && !!saved.department);
+  const lockNote    = isEndorser ? LOCK_NOTE.endorser : LOCK_NOTE.researcher;
   const [editing,  setEditing]  = useState(false);
   const [alert,    setAlert]    = useState(null);
   const [saving,   setSaving]   = useState(false);
@@ -355,7 +362,7 @@ const ProfilePage = ({ roleLabel }) => {
                         </div>
                       )}
                     </div>
-                    <p className="pp-locked-note">{LOCK_NOTE}</p>
+                    <p className="pp-locked-note">{lockNote}</p>
                   </>
                 )}
                 {showCollege && !placeLocked && (

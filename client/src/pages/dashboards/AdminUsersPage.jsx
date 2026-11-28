@@ -210,6 +210,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
   const [err,          setErr]          = useState('');
   const [busy,         setBusy]         = useState('');   // which account tool is running
   const [confirmReset, setConfirmReset] = useState(false);
+  const [moveWarn, setMoveWarn] = useState(null);   // the researcher still has submissions with the college
   const [tempPw,       setTempPw]       = useState('');
   const [copied,       setCopied]       = useState(false);
 
@@ -243,9 +244,10 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
 
   const handleCollegeChange = (college) => setForm({ ...form, college, department: '' });
 
-  const save = async (e) => {
-    e.preventDefault();
+  const save = async (e, confirmMove = false) => {
+    if (e) e.preventDefault();
     setErr('');
+    setMoveWarn(null);
 
     if (!form.first_name.trim() || !form.last_name.trim()) {
       setErr('First name and last name cannot be empty.');
@@ -270,6 +272,7 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
     if (statusChanged) { payload.is_active = nowActive; payload.reason = form.reason; }
     if (needsCollege)    payload.college    = form.college;
     if (needsDepartment) payload.department = form.department;
+    if (confirmMove)     payload.confirm_move = true;
 
     setSaving(true);
     try {
@@ -278,7 +281,9 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
       onChanged();
       onClose();
     } catch (error) {
-      setErr(errText(error, 'Could not save the changes.'));
+      const d = error?.response?.data;
+      if (d?.code === 'CONFIRM_COLLEGE_MOVE') setMoveWarn(d);
+      else setErr(errText(error, 'Could not save the changes.'));
     } finally {
       setSaving(false);
     }
@@ -437,6 +442,20 @@ const EditUserModal = ({ user, isSelf, isLastAdmin, onClose, onChanged, notify }
               )}
             </select>
           </div>
+
+          {moveWarn && (
+            <div className="am-confirm" role="alert">
+              <strong>{moveWarn.count} submission{moveWarn.count === 1 ? '' : 's'}</strong> by {personName(user)}
+              {moveWarn.count === 1 ? ' is' : ' are'} still with the college endorsers. If you save, {moveWarn.count === 1 ? 'it goes' : 'they go'} on
+              with the endorsers of the new college or department, at the step {moveWarn.count === 1 ? 'it is' : 'they are'} on now.
+              <div className="am-actions">
+                <button type="button" className="btn btn-primary btn-sm" disabled={saving}
+                  onClick={() => save(null, true)}>{saving ? 'Saving…' : 'Yes, save'}</button>
+                <button type="button" className="btn btn-outline btn-sm"
+                  onClick={() => setMoveWarn(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
 
           <div className="am-tools">
             <h4>Account Tools</h4>
