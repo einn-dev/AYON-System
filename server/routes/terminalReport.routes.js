@@ -223,6 +223,10 @@ router.post('/proposals/:id/terminal-report', verifyToken, authorizeRoles('resea
 
     const me  = await userOf(req.user.user_id);
     const now = new Date().toISOString();
+    /* a college with no active College Dean: the Dean step is skipped and the report
+       goes straight to the MSIRC Special Assistant, like a submission skips a missing role */
+    const deans = await endorsersFor('college_dean', me);
+    const noDean = deans.length === 0;
     const stored = req.file ? await storeFile(req.file, p.proposal_id) : null;
     const leader = {
       role: 'researcher', signer_name: personName(me) || 'Project Leader',
@@ -230,11 +234,13 @@ router.post('/proposals/:id/terminal-report', verifyToken, authorizeRoles('resea
     };
     const history = [...asList(old?.history), {
       action: 'submitted', label: old ? 'Resubmitted' : 'Submitted', by: personName(me) || 'Researcher', at: now,
-    }];
+    }, ...(noDean ? [{
+      action: 'skipped', label: 'College Dean step skipped: the college has no College Dean account, so it went to the MSIRC Special Assistant', at: now,
+    }] : [])];
     const row = {
       proposal_id: p.proposal_id,
       user_id:     req.user.user_id,
-      status:      'for_dean',
+      status:      noDean ? 'for_validation' : 'for_dean',
       form_data:   f,
       ...(stored ? { file_path: stored.url, file_name: clean(req.file.originalname, 255), file_size: req.file.size } : {}),
       signatures:  [leader],                  // a resubmit starts the signing again
@@ -252,20 +258,28 @@ router.post('/proposals/:id/terminal-report', verifyToken, authorizeRoles('resea
     }
     if (stored && old?.file_path) await removeFile(old.file_path);
 
-    const deans = await endorsersFor('college_dean', me);
-    await notifyIds(deans, {
-      proposal_id: p.proposal_id, notif_type: 'submission',
-      title: old ? 'Terminal Report Resubmitted' : 'New Terminal Report',
-      message: `${personName(me) || 'A researcher'} ${old ? 'resubmitted' : 'submitted'} the Terminal Report for "${p.title}". It is waiting for your endorsement.`,
-    });
+    if (noDean) {
+      await notifyRole('special_assistant', {
+        proposal_id: p.proposal_id, notif_type: 'submission',
+        title: old ? 'Terminal Report Resubmitted' : 'New Terminal Report',
+        message: `${personName(me) || 'A researcher'} ${old ? 'resubmitted' : 'submitted'} the Terminal Report for "${p.title}". `
+          + `${me?.college || 'Their college'} has no College Dean account, so it came straight to you for validation.`,
+      });
+    } else {
+      await notifyIds(deans, {
+        proposal_id: p.proposal_id, notif_type: 'submission',
+        title: old ? 'Terminal Report Resubmitted' : 'New Terminal Report',
+        message: `${personName(me) || 'A researcher'} ${old ? 'resubmitted' : 'submitted'} the Terminal Report for "${p.title}". It is waiting for your endorsement.`,
+      });
+    }
     await logAudit(req, {
       action: old ? 'terminal_report_resubmitted' : 'terminal_report_submitted',
       targetType: 'proposal', targetId: p.proposal_id, targetName: p.title,
     });
     return res.status(old ? 200 : 201).json({
-      message: deans.length
-        ? 'Terminal report submitted. It is now with your College Dean.'
-        : 'Terminal report submitted. Your college has no College Dean account yet, so the MSIRC will follow it up.',
+      message: noDean
+        ? 'Terminal report submitted. Your college has no College Dean account, so it went straight to the MSIRC Special Assistant.'
+        : 'Terminal report submitted. It is now with your College Dean.',
     });
   } catch (err) {
     return fail(res, err, 'submit');

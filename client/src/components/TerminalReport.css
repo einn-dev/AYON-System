@@ -99,3 +99,8 @@
 .tr-link.is-done .tr-box-ic { color: #0ca30c; }
 .tr-link-text { flex: 1; min-width: 200px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .tr-link .btn { text-decoration: none; }
+
+/* a step that was skipped (the college has no College Dean) */
+.tr-track li.skip .tr-dot { background: #fff; border-color: #c9bcbe; border-style: dashed; color: #8a7a7d; }
+.tr-track li.skip .tr-lbl { color: #8a7a7d; font-weight: 600; }
+.tr-track li.skip .tr-lbl em { color: #8a7a7d; }

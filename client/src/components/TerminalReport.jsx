@@ -134,15 +134,20 @@ export const ReportTracker = ({ report }) => {
   const at = report.status === 'accepted' ? 4 : report.status === 'returned' ? -1
     : TR_STEPS.findIndex((s) => s.status === report.status) + 1;
   const steps = [{ label: 'Submitted' }, ...TR_STEPS, { label: 'Completed' }];
+  /* the Dean step was skipped in the latest submission (the college has no College Dean) */
+  const hist = report.history || [];
+  const lastSubmit = hist.map((h) => h.action).lastIndexOf('submitted');
+  const deanSkipped = hist.slice(Math.max(lastSubmit, 0)).some((h) => h.action === 'skipped');
   return (
     <ol className="tr-track" aria-label="Terminal report steps">
       {steps.map((s, i) => {
         const done = report.status === 'accepted' ? true : i < at;
         const now = i === at && report.status !== 'accepted';
+        const skip = deanSkipped && s.status === 'for_dean' && done;
         return (
-          <li key={s.label} className={`${done ? 'done' : ''} ${now ? 'now' : ''}`}>
-            <span className="tr-dot">{done ? <FaCheck /> : i + 1}</span>
-            <span className="tr-lbl">{s.label}{now && <em>Current</em>}</span>
+          <li key={s.label} className={`${done ? 'done' : ''} ${now ? 'now' : ''} ${skip ? 'skip' : ''}`}>
+            <span className="tr-dot">{skip ? '–' : done ? <FaCheck /> : i + 1}</span>
+            <span className="tr-lbl">{s.label}{now && <em>Current</em>}{skip && <em>Skipped</em>}</span>
           </li>
         );
       })}
@@ -200,7 +205,7 @@ const History = ({ report }) => (report.history?.length ? (
     <ul>
       {report.history.map((h, i) => (
         <li key={i}>
-          <b className={h.action === 'returned' ? 'bad' : ''}>{h.label}</b> by {h.by} · {short(h.at)}
+          <b className={h.action === 'returned' ? 'bad' : ''}>{h.label}</b>{h.by ? <> by {h.by}</> : null} · {short(h.at)}
           {h.remarks && <q>{h.remarks}</q>}
         </li>
       ))}
